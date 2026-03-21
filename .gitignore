@@ -1,0 +1,34 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+dist/
+build/
+*.egg-info/
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
+
+# Type checkers / linters
+.mypy_cache/
+.ruff_cache/
+
+# Testing
+.pytest_cache/
+
+# Jupyter
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Data — downloaded separately via scripts/download_osf_data.py
+data/
+
+# macOS
+.DS_Store
+
+# IDE
+.vscode/
+.idea/
