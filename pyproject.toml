@@ -18,6 +18,8 @@ dependencies = [
     "pandas",
     "dill",
     "colour-science",
+    "scikit-image",
+    "shapely",
 ]
 
 [project.optional-dependencies]
