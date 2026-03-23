@@ -98,9 +98,7 @@ if flag_load_MOCS:
         xref_temp = [
             arr[: vars_dict["nLevels"]] for arr in vars_dict["refStimulus"]
         ]  # Take first 12 rows of each (240, 2) array
-        xref = np.concatenate(
-            xref_temp, axis=0
-        )  # Concatenate into a single (300, 2) array
+        xref = np.concatenate(xref_temp, axis=0)  # Concatenate into a single (300, 2) array
         x1_temp = [arr[: vars_dict["nLevels"]] for arr in vars_dict["compStimulus"]]
         x1 = np.concatenate(x1_temp, axis=0)
 else:
@@ -124,9 +122,7 @@ else:
 # Create settings instance with custom fig_dir
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=8)
 pltSettings_tp = replace(Plot2DSamplingSettings(), **pltSettings_base.__dict__)
-sampling_vis = SamplingRefCompPairVisualization(
-    2, color_thres_data, settings=pltSettings_tp, save_fig=False
-)
+sampling_vis = SamplingRefCompPairVisualization(2, color_thres_data, settings=pltSettings_tp, save_fig=False)
 
 if flag_load_MOCS:
     marker_alpha = [0.6]
@@ -147,9 +143,7 @@ else:
     str_ext = ""
 
 # Loop over the selected data points to generate and visualize each corresponding figure.
-for i, (lb_i, ub_i) in enumerate(
-    zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)
-):
+for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
     # Construct a filename for each figure based on the plane and number of experiments.
     str_idx = f"{ub_i:05}total" if lb_i == 0 else f"{ub_i:05}total_from{lb_i:05}"
     fig_name = f"TrialPlacement{str_ext}_isothreshold_Isoluminant plane_{COLOR_DIMENSION}DExpt_{str_idx}_sub{subN}"

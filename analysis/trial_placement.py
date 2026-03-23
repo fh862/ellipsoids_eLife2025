@@ -103,9 +103,7 @@ class StimConfig_isoluminant_sobolref:
     M_2DWToRGB: np.ndarray = field(default_factory=lambda: np.eye(3))
 
 
-StimConfig_sobolref = Union[
-    StimConfig_RGBslices_sobolref, StimConfig_isoluminant_sobolref
-]
+StimConfig_sobolref = Union[StimConfig_RGBslices_sobolref, StimConfig_isoluminant_sobolref]
 
 
 @dataclass
@@ -226,9 +224,7 @@ class NonAdaptiveTrialPlacement(ABC):
 
         if self.config.fixed_plane not in space_mappings:
             allowed = ", ".join(space_mappings.keys())
-            raise ValueError(
-                f"Unknown fixed_plane={self.config.fixed_plane!r}. Allowed: {allowed}"
-            )
+            raise ValueError(f"Unknown fixed_plane={self.config.fixed_plane!r}. Allowed: {allowed}")
 
         spec = space_mappings[self.config.fixed_plane]
         for k, v in spec.items():
@@ -245,9 +241,7 @@ class NonAdaptiveTrialPlacement(ABC):
         # If we are slicing the RGB cube (R/G/B fixed), we must know the fixed channel value.
         # (For example: fixed_plane='R' requires fixed_val to set the R coordinate.)
         if self.config.fixed_plane in {"R", "G", "B"} and self.config.fixed_val is None:
-            raise ValueError(
-                "Config error: `fixed_val` must be provided when `fixed_plane` is 'R', 'G', or 'B'."
-            )
+            raise ValueError("Config error: `fixed_val` must be provided when `fixed_plane` is 'R', 'G', or 'B'.")
 
     def _validate_stim(self, stim):
         """
@@ -295,9 +289,7 @@ class NonAdaptiveTrialPlacement(ABC):
                 # Only varying dims provided: insert the fixed coordinate.
                 stim = np.insert(stim, fd, fv, axis=0)
             else:
-                raise ValueError(
-                    f"Expected stim with first dim 2 or 3 for ndims==2, got shape {stim.shape}"
-                )
+                raise ValueError(f"Expected stim with first dim 2 or 3 for ndims==2, got shape {stim.shape}")
 
         # Clip to the appropriate bounds.
         lo, hi = (-1, 1) if self.config.flag_W_space else (0, 1)
@@ -501,9 +493,7 @@ class TrialPlacement_sobolRef(NonAdaptiveTrialPlacement):
 
             # Build unit direction vectors in the 2D subspace.
             # column_stack -> (nSims, 2), transpose -> (2, nSims)
-            self.sim["vecDir"][vd] = np.column_stack(
-                (np.cos(np.radians(sobolAngle)), np.sin(np.radians(sobolAngle)))
-            ).T
+            self.sim["vecDir"][vd] = np.column_stack((np.cos(np.radians(sobolAngle)), np.sin(np.radians(sobolAngle)))).T
 
             # Ensure no motion along the fixed dimension in 2D RGB-slice settings.
             self.sim["vecDir"][fd] = 0
@@ -562,29 +552,21 @@ class TrialPlacement_sobolRef(NonAdaptiveTrialPlacement):
         if ref.ndim == 1:
             # (3,)
             step = np.linalg.norm(comp - ref)  # scalar
-            jitter = (
-                np.random.randn(*ref.shape) * step * self.config.random_jitter
-            )  # (3,)
+            jitter = np.random.randn(*ref.shape) * step * self.config.random_jitter  # (3,)
 
         elif ref.ndim == 2:
             # (3, N)
             if ref.shape[0] != 3:
-                raise ValueError(
-                    f"Expected shape (3, N) for batched inputs; got {ref.shape}."
-                )
+                raise ValueError(f"Expected shape (3, N) for batched inputs; got {ref.shape}.")
 
             # step per column -> shape (N,)
             step = np.linalg.norm(comp - ref, axis=0)
 
             # broadcast step to (1, N) so jitter becomes (3, N)
-            jitter = np.random.randn(*ref.shape) * (
-                step[None, :] * self.config.random_jitter
-            )
+            jitter = np.random.randn(*ref.shape) * (step[None, :] * self.config.random_jitter)
 
         else:
-            raise ValueError(
-                f"`ref` and `comp` must be shape (3,) or (3, N). Got ndim={ref.ndim}."
-            )
+            raise ValueError(f"`ref` and `comp` must be shape (3,) or (3, N). Got ndim={ref.ndim}.")
 
         fixed_dim = self.config.fixed_color_dim
         if fixed_dim is not None:
@@ -657,14 +639,10 @@ class TrialPlacement_sobolRef(NonAdaptiveTrialPlacement):
         rgb_comp = self._convert_stim_toRGB(comp)
 
         # Compute perceptual distance using the configured CIE ΔE variant
-        deltaE = sim_CIELab.compute_deltaE(
-            rgb_ref, None, None, comp_RGB=rgb_comp, method=self.config.gt
-        )
+        deltaE = sim_CIELab.compute_deltaE(rgb_ref, None, None, comp_RGB=rgb_comp, method=self.config.gt)
 
         # Psychometric function: ΔE -> p(correct)
-        probC = self.WeibullFunc(
-            deltaE, self.sim["alpha"], self.sim["beta"], self.sim["guessing_rate"]
-        )
+        probC = self.WeibullFunc(deltaE, self.sim["alpha"], self.sim["beta"], self.sim["guessing_rate"])
 
         # Bernoulli draw for a binary response
         randNum = np.random.rand()
@@ -743,10 +721,8 @@ class TrialPlacement_sobolRef(NonAdaptiveTrialPlacement):
             self.sim["comp"][:, i] = self._validate_stim(stim_thres_v + jitter_i)
 
             # 4) Compute ΔE, probability correct, and simulate a binary response
-            self.sim["deltaE"][i], self.sim["probC"][i], self.sim["resp_binary"][i] = (
-                self.run_sim_1ref(
-                    sim_CIELab, self.sim["ref"][:, i], self.sim["comp"][:, i]
-                )
+            self.sim["deltaE"][i], self.sim["probC"][i], self.sim["resp_binary"][i] = self.run_sim_1ref(
+                sim_CIELab, self.sim["ref"][:, i], self.sim["comp"][:, i]
             )
 
     def setup_WeibullFunc(self, alpha, beta, guessing_rate, deltaE_1JND):
@@ -778,9 +754,7 @@ class TrialPlacement_sobolRef(NonAdaptiveTrialPlacement):
         )
 
         # Calculate the probability of correct response given alpha and beta.
-        self.sim["pC_given_alpha_beta"] = self.WeibullFunc(
-            deltaE_1JND, alpha, beta, guessing_rate
-        )
+        self.sim["pC_given_alpha_beta"] = self.WeibullFunc(deltaE_1JND, alpha, beta, guessing_rate)
 
     @staticmethod
     def WeibullFunc(x, alpha, beta, guessing_rate):
@@ -935,9 +909,7 @@ class TrialPlacement_gridRef(TrialPlacement_sobolRef):
 
         """
         if self.config.ndims == 2:
-            ellPara = self.gt_CIE_results["ellParams"][self.config.fixed_color_dim][
-                *ref_idx
-            ]
+            ellPara = self.gt_CIE_results["ellParams"][self.config.fixed_color_dim][*ref_idx]
         else:
             # Use ellipsoidal parameters to generate comparison stimuli
             i, j, k = ref_idx
@@ -1066,27 +1038,19 @@ class TrialPlacement_gridRef(TrialPlacement_sobolRef):
         # sanity check: ellipse center (xc, yc) should match the reference in varying dims
         vd = self.config.varying_color_dim
         if not np.allclose(ref[vd], paramEllipse[:2], rtol=1e-3, atol=1e-6):
-            raise ValueError(
-                "Ellipse center (xc, yc) does not match the provided reference (varying dims)."
-            )
+            raise ValueError("Ellipse center (xc, yc) does not match the provided reference (varying dims).")
 
         # Initialize output matrix
         comp_sim = np.full((3, self.config.nSims), np.nan)
 
         # Generate noisy and noise-free points on a unit circle
-        randx, randy, randx_noNoise, randy_noNoise = (
-            self._random_points_on_unit_circle()
-        )
+        randx, randy, randx_noNoise, randy_noNoise = self._random_points_on_unit_circle()
 
         # Stretch unit circle to match ellipse shape
-        randx_stretched, randy_stretched = stretch_unit_circle(
-            randx, randy, paramEllipse[2], paramEllipse[3]
-        )
+        randx_stretched, randy_stretched = stretch_unit_circle(randx, randy, paramEllipse[2], paramEllipse[3])
 
         # Rotate and translate points based on reference and ellipse parameters
-        comp_sim[vd] = rotate_relocate_stretched_ellipse(
-            randx_stretched, randy_stretched, paramEllipse[-1], *ref[vd]
-        )
+        comp_sim[vd] = rotate_relocate_stretched_ellipse(randx_stretched, randy_stretched, paramEllipse[-1], *ref[vd])
 
         # Clip values to remain within the valid space
         comp_sim = self._validate_stim(comp_sim)
@@ -1131,9 +1095,7 @@ class TrialPlacement_gridRef(TrialPlacement_sobolRef):
         radii, eigenVec = paramEllipsoid["radii"], paramEllipsoid["evecs"]
 
         # Generate noisy and noise-free points on a unit sphere
-        randx, randy, randz, randx_noNoise, randy_noNoise, randz_noNoise = (
-            self._random_points_on_unit_sphere()
-        )
+        randx, randy, randz, randx_noNoise, randy_noNoise, randz_noNoise = self._random_points_on_unit_sphere()
 
         # Stretch to match ellipsoid dimensions
         randx_stretched, randy_stretched, randz_stretched = stretch_unit_circle(
@@ -1197,9 +1159,7 @@ class TrialPlacement_gridRef(TrialPlacement_sobolRef):
 
         # Compute deltaE and probability of correct response for each comparison
         for n in range(N):
-            deltaE[n] = sim_CIELab.compute_deltaE(
-                rgb_ref, None, None, comp_RGB=rgb_comp[:, n], method=self.config.gt
-            )
+            deltaE[n] = sim_CIELab.compute_deltaE(rgb_ref, None, None, comp_RGB=rgb_comp[:, n], method=self.config.gt)
             probC[n] = self.WeibullFunc(
                 deltaE[n],
                 self.sim["alpha"],
@@ -1382,9 +1342,7 @@ class TrialPlacement_sobolRef_W(TrialPlacement_sobolRef):
         nd = self.sim["ref"].shape[0]
 
         # Candidate step sizes along vecDir_unit, shape: (nRep,)
-        vecLength_grid = np.asarray(
-            self.gt_model_pred._set_up_grid_search(), dtype=float
-        )
+        vecLength_grid = np.asarray(self.gt_model_pred._set_up_grid_search(), dtype=float)
         nRep = vecLength_grid.size
 
         # Broadcast refs and directions to evaluate all (step length × sim) candidates.
@@ -1410,9 +1368,7 @@ class TrialPlacement_sobolRef_W(TrialPlacement_sobolRef):
         probC_reshape = np.reshape(probC, (nRep, nSims))
 
         # For each sim (each column), pick the step length index whose pC is closest to target_pC
-        idx = np.abs(probC_reshape - self.gt_model_pred.target_pC).argmin(
-            axis=0
-        )  # (nSims,)
+        idx = np.abs(probC_reshape - self.gt_model_pred.target_pC).argmin(axis=0)  # (nSims,)
 
         # Gather the selected comparison stimuli: (nSims, nd) -> return as (nd, nSims)
         comp_thres = comp_rep[idx, np.arange(nSims)]
@@ -1451,9 +1407,7 @@ class TrialPlacement_sobolRef_W(TrialPlacement_sobolRef):
 
         # 1) Compute local noise covariances Σ(ref) from the fitted model.
         #    Many APIs take points as (nSims, D), hence the transpose.
-        U = self.model.compute_U(
-            self.W_est, ref_v.T
-        )  # expected: (nSims, ndims, ndims + 1)
+        U = self.model.compute_U(self.W_est, ref_v.T)  # expected: (nSims, ndims, ndims + 1)
         Sigmas = self.model.compute_Sigmas(U)  # expected: (nSims, ndims, ndims)
 
         # Preallocate step vectors (ref -> threshold) in the varying subspace
@@ -1770,6 +1724,4 @@ class TrialPlacement_gridRef_W(TrialPlacement_gridRef):
             # Use only varying dimensions for the psychometric evaluation
             comp_v = self.sim["comp"][idx][vd].T
 
-            self.sim["probC"][idx], self.sim["resp_binary"][idx] = self.run_sim_1ref(
-                ref_v, comp_v
-            )
+            self.sim["probC"][idx], self.sim["resp_binary"][idx] = self.run_sim_1ref(ref_v, comp_v)

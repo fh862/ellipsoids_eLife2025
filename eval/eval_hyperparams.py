@@ -143,9 +143,7 @@ from plotting.wishart_predictions_plotting import (
 # Define base directory (adjusted for local access; comment out if running on HPC)
 flag_running_on_hpc = False
 base_dir = (
-    os.path.dirname(__file__)
-    if flag_running_on_hpc
-    else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
+    os.path.dirname(__file__) if flag_running_on_hpc else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
 )
 
 # Specify participant and experiment details
@@ -162,9 +160,7 @@ color_thres_data = color_thresholds(stim_dims, base_dir, plane_2D="Isoluminant p
 color_thres_data.load_transformation_matrix(file_date="02242025")
 
 # Set output directory for saving model fitting results or plots
-output_fileDir_fits = os.path.join(
-    base_dir, "hpc_sweeps", f"cv_{hyper_param}", f"sub{subN}"
-)
+output_fileDir_fits = os.path.join(base_dir, "hpc_sweeps", f"cv_{hyper_param}", f"sub{subN}")
 os.makedirs(output_fileDir_fits, exist_ok=True)
 
 # %%
@@ -178,37 +174,27 @@ total_folds = 5
 shuffle_seed = subN
 
 # Retrieve file paths and metadata for all sessions of the given subject
-path_str = os.path.join(
-    base_dir, "ELPS_analysis", "Experiment_DataFiles", "pilot2", f"sub{subN}"
-)
-session_files, session_file_name_part1 = load_expt_data.get_all_sessions_file_names(
-    subN, nSessions, path_str
-)
+path_str = os.path.join(base_dir, "ELPS_analysis", "Experiment_DataFiles", "pilot2", f"sub{subN}")
+session_files, session_file_name_part1 = load_expt_data.get_all_sessions_file_names(subN, nSessions, path_str)
 
 # Load data from all session files into a list
 data_allSessions = load_expt_data.load_data_all_sessions(session_files)
 
 # Extract and concatenate AEPsych trials and pregenerated Sobol trials
-aepsych_data, sobol_data, combined_data = load_expt_data.load_combine_AEPsych_pregSobol(
-    data_allSessions
-)
+aepsych_data, sobol_data, combined_data = load_expt_data.load_combine_AEPsych_pregSobol(data_allSessions)
 
 # Unpack combined data into individual arrays
 xref_combined, x1_combined, y_combined = combined_data
 
 # Shuffle the data (preserving correspondence across xref, x1, and y)
-data_shuffled = CrossValidation.shuffle_data(
-    (y_combined, xref_combined, x1_combined), seed=shuffle_seed
-)
+data_shuffled = CrossValidation.shuffle_data((y_combined, xref_combined, x1_combined), seed=shuffle_seed)
 
 # Split the shuffled dataset into N folds for cross-validation
 # Returns a dictionary where each key corresponds to a fold index (0 to total_folds-1)
 # For each fold, the value is a tuple:
 #   (training_data, validation_data, training_indices, validation_indices)
 # Each training/validation data is a tuple of (y, xref, x1)
-data_split_NFold = CrossValidation.select_NFold_data_noFixedRef(
-    data_shuffled, total_folds
-)
+data_split_NFold = CrossValidation.select_NFold_data_noFixedRef(data_shuffled, total_folds)
 
 # %% cross validation
 # -----------------------------------------------------------------------
@@ -349,20 +335,14 @@ if flag_running_on_hpc:
                     # SECTION 4: Define the Wishart model with different decay rate
                     # -----------------------------------------------------------------------
                     # Override just the parameter being swept
-                    model = WishartProcessModel(
-                        **(base_kwargs | {sweep_arg: float(val)})
-                    )
+                    model = WishartProcessModel(**(base_kwargs | {sweep_arg: float(val)}))
 
                     # Generate a matrix of random seeds for each initialization
                     random_seeds = np.random.randint(0, 2**32, size=(2,))
 
                     # Generate random keys for initializing parameters, data, and optimizer
-                    W_INIT_KEY = jax.random.PRNGKey(
-                        random_seeds[0]
-                    )  # Key to initialize `W_est`.
-                    OPT_KEY = jax.random.PRNGKey(
-                        random_seeds[1]
-                    )  # Key passed to optimizer.
+                    W_INIT_KEY = jax.random.PRNGKey(random_seeds[0])  # Key to initialize `W_est`.
+                    OPT_KEY = jax.random.PRNGKey(random_seeds[1])  # Key passed to optimizer.
 
                     # Fit model, initialized at a random W sampled from the prior distribution
                     W_init = model.sample_W_prior(W_INIT_KEY)
@@ -388,9 +368,7 @@ if flag_running_on_hpc:
                     # -------------------------------------------------------
                     # Compute the covariance matrices ('Sigmas') at each point in the grid using
                     # the model's compute_U function.
-                    Sigmas_noise_grid = model.compute_Sigmas(
-                        model.compute_U(W_est, grid)
-                    )
+                    Sigmas_noise_grid = model.compute_Sigmas(model.compute_U(W_est, grid))
 
                     # Initialize the Wishart model prediction using various parameters.
                     model_pred_Wishart = wishart_model_pred(
@@ -453,9 +431,7 @@ if flag_running_on_hpc:
                 )
 
                 # Define the new key under which the dictionary will be nested
-                new_key_name = (
-                    f"{hyper_param}{val:.{decimals}f}_CVfold{f}_rep{nSuccess}"
-                )
+                new_key_name = f"{hyper_param}{val:.{decimals}f}_CVfold{f}_rep{nSuccess}"
 
                 # % append data
                 append_variable_names = [
@@ -520,9 +496,7 @@ if not flag_running_on_hpc:
 
     sub_loaded = extract_sub_number(file_name_set)
     if sub_loaded != subN:
-        raise ValueError(
-            f"Subject mismatch: expected sub{subN}, but loaded sub{sub_loaded} from '{file_name_set}'."
-        )
+        raise ValueError(f"Subject mismatch: expected sub{subN}, but loaded sub{sub_loaded} from '{file_name_set}'.")
 
     # Construct the full path to the selected file
     full_path_set = os.path.join(input_fileDir_fits_set, file_name_set)
@@ -576,16 +550,12 @@ if not flag_running_on_hpc:
             nLL_test[d, f] = nLL_test_allreps[idx_i]
 
             # ell parameters
-            var_dfi_min_nLP = vars_dict_set_d[
-                f"{hyper_param}{val:.{decimals}f}_CVfold{f}_rep{idx_i + 1}"
-            ]
+            var_dfi_min_nLP = vars_dict_set_d[f"{hyper_param}{val:.{decimals}f}_CVfold{f}_rep{idx_i + 1}"]
             # Extract ellipse parameters at each grid point
             for k in range(NUM_GRID_PTS):
                 for l in range(NUM_GRID_PTS):
                     # Format: (x0, y0, a, b, theta)
-                    params_ell[d, f, k, l] = var_dfi["model_pred_Wishart"].params_ell[
-                        k
-                    ][l]
+                    params_ell[d, f, k, l] = var_dfi["model_pred_Wishart"].params_ell[k][l]
 
     # Average and std dev across folds (for plotting or model selection)
     nLL_test_avg = np.nanmean(nLL_test, axis=1)
@@ -597,31 +567,23 @@ if not flag_running_on_hpc:
     # Visualize nLL as a function of decay rate
     # -----------------------------------------------------------------------
     # Replace 'Experiment_DataFiles' with 'Experiment_FigFiles' in the file path
-    output_fileDir_figs_set = input_fileDir_fits_set.replace(
-        "Experiment_DataFiles", "Experiment_FigFiles"
-    )
+    output_fileDir_figs_set = input_fileDir_fits_set.replace("Experiment_DataFiles", "Experiment_FigFiles")
     os.makedirs(output_fileDir_figs_set, exist_ok=True)
 
     # Standardize figure file name by removing numeric value from 'varyingDecayRate'
-    fig_name = re.sub(
-        rf"varying{hyper_param}[\d.]+", f"varying{hyper_param}", file_name_set[:-4]
-    )
+    fig_name = re.sub(rf"varying{hyper_param}[\d.]+", f"varying{hyper_param}", file_name_set[:-4])
 
     # Configure plotting settings
     # Base plotting settings (e.g., figure directory and font size)
     pltSettings_base = PlotSettingsBase(fig_dir=output_fileDir_figs_set, fontsize=9)
 
     # Initialize figure-specific settings by merging with base settings
-    nLL_vis_settings = replace(
-        PltVaryingHyperParamSettings(), **pltSettings_base.__dict__
-    )
+    nLL_vis_settings = replace(PltVaryingHyperParamSettings(), **pltSettings_base.__dict__)
     nLL_vis_settings = replace(
         nLL_vis_settings,
         fig_size=(5, 3),
         xticks=[1e-6, 3e-4, 1e-3, 3e-3] if hyper_param == "VarianceScale" else None,
-        xticklabels=[r"$10^{-6}$", "0.0003", "0.001", "0.003"]
-        if hyper_param == "VarianceScale"
-        else None,
+        xticklabels=[r"$10^{-6}$", "0.0003", "0.001", "0.003"] if hyper_param == "VarianceScale" else None,
         xlabel=rf"Hyperparameter ${hp_symbol}$",
         fig_name=fig_name,
     )
@@ -669,14 +631,10 @@ if not flag_running_on_hpc:
 
     for d, val in enumerate(hyper_param_arr):
         # Compute inner and outer contours (confidence bounds) from fitted ellipses
-        fitEll_min, fitEll_max = find_inner_outer_contours_for_gridRefs(
-            params_ell_trans[d]
-        )
+        fitEll_min, fitEll_max = find_inner_outer_contours_for_gridRefs(params_ell_trans[d])
 
         # Create figure and axes for current decay rate
-        fig_d, ax_d = plt.subplots(
-            1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi
-        )
+        fig_d, ax_d = plt.subplots(1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi)
         pred2D_settings = replace(
             pred2D_settings,
             title=rf"Hyperparameter ${hp_symbol} = {val:.{decimals}f}$",
@@ -698,8 +656,7 @@ if not flag_running_on_hpc:
             for j in range(NUM_GRID_PTS):
                 cm = color_thres_data.W2D_to_rgb(grid[i, j])
                 lbl = (
-                    f"Full range of model predictions evaluated \nusing {total_folds}"
-                    + "-fold cross-validation"
+                    f"Full range of model predictions evaluated \nusing {total_folds}" + "-fold cross-validation"
                     if (i == 0 and j == 0)
                     else None
                 )
@@ -733,16 +690,12 @@ if not flag_running_on_hpc:
 
     # --- colors: sample extra + drop brightest end ---
     cmap_full = plt.get_cmap("bone", n_hyper_param + 2)
-    colors = cmap_full(
-        np.arange(n_hyper_param)
-    )  # keep first n_hyper_param colors (avoid whitest)
+    colors = cmap_full(np.arange(n_hyper_param))  # keep first n_hyper_param colors (avoid whitest)
 
     cmap = mpl.colors.ListedColormap(colors, name="bone_trunc_discrete")
 
     # --- map actual hyperparameter values to [0,1] for the colorbar ---
-    norm = mpl.colors.Normalize(
-        vmin=float(np.min(hyper_param_arr)), vmax=float(np.max(hyper_param_arr))
-    )
+    norm = mpl.colors.Normalize(vmin=float(np.min(hyper_param_arr)), vmax=float(np.max(hyper_param_arr)))
 
     fig, ax = plt.subplots(1, 1, figsize=(7, 2), dpi=1024)
 
@@ -759,9 +712,7 @@ if not flag_running_on_hpc:
             )
     ax.legend(loc="upper right")
     ax.set_xlabel(r"The order of 2D Chebyshev basis functions $(i + j)$")
-    ax.set_ylabel(
-        "Variance of weights\n" + r"$(\eta_{i+j} = \gamma \cdot \epsilon^{i+j})$"
-    )
+    ax.set_ylabel("Variance of weights\n" + r"$(\eta_{i+j} = \gamma \cdot \epsilon^{i+j})$")
 
     # colorbar whose scale is in *hyper_param values*
     sm = mpl.cm.ScalarMappable(norm=norm, cmap=cmap)

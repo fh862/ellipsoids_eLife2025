@@ -81,9 +81,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
         # if it exceed the max, then we do not continue bumping up more MOCS trials
         # that would disrupt the balance between MOCS and AEPsych trials too much
         self.max_shifts_MOCS = max_shifts_MOCS
-        self.keep_track_trials_finished = (
-            0  # AEPsych and MOCS trials (pregenerated sobol trials are not included)
-        )
+        self.keep_track_trials_finished = 0  # AEPsych and MOCS trials (pregenerated sobol trials are not included)
         self.keep_track_trials_finished_pregenSobol = 0
         self.flag_noMore_MOCS = flag_noMore_MOCS
 
@@ -113,9 +111,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
 
         return x_rgb
 
-    def _send_stim_and_wait_for_resp(
-        self, trial_counter, trial_identity, xref, x1, x2=None, background=None
-    ):
+    def _send_stim_and_wait_for_resp(self, trial_counter, trial_identity, xref, x1, x2=None, background=None):
         """
         Convert stimuli from W-space to RGB, write them to the shared file, and
         wait for Unity’s confirmation + response.
@@ -156,9 +152,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
         display_time = time.time()
 
         # Send the RGB values to the recipient
-        self.communicator.send_RGBvals(
-            trial_type_details, xref_rgb, x1_rgb, x2_rgb, background_rgb
-        )
+        self.communicator.send_RGBvals(trial_type_details, xref_rgb, x1_rgb, x2_rgb, background_rgb)
 
         # Wait for confirmation
         while True:
@@ -171,8 +165,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
             # Check if the timeout duration has been exceeded
             if time.time() - display_time > self.communicator.timeout:
                 raise TimeoutError(
-                    "Timeout: Did not receive 'Image_Confirmed' "
-                    + f"within {self.communicator.timeout} seconds."
+                    "Timeout: Did not receive 'Image_Confirmed' " + f"within {self.communicator.timeout} seconds."
                 )
 
             # Pause for a short period to prevent CPU overload
@@ -219,16 +212,12 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
         num_bumped_up_MOCS = 0
         while not stop_event.is_set():  # Exit if stop_event is set
             elapsed_time = time.time() - start_time
-            max_wait_time_ii = (
-                max_wait_time[0] if num_bumped_up_MOCS == 0 else max_wait_time[-1]
-            )
+            max_wait_time_ii = max_wait_time[0] if num_bumped_up_MOCS == 0 else max_wait_time[-1]
 
             # if the time elapsed exceeds the max wait time
             if elapsed_time > max_wait_time_ii:
                 # find the next available MOCS trial in the list
-                print(
-                    f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated MOCS trial..."
-                )
+                print(f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated MOCS trial...")
                 (
                     trial_replacement_idx_MOCSlist,
                     trial_placement_idx_originallist,
@@ -241,29 +230,19 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                     break
 
                 # Get the stimulus information
-                xref = trial_sequence.pregenerated_MOCS["xref"][
-                    trial_replacement_idx_MOCSlist
-                ]
-                x1 = trial_sequence.pregenerated_MOCS["x1"][
-                    trial_replacement_idx_MOCSlist
-                ]
+                xref = trial_sequence.pregenerated_MOCS["xref"][trial_replacement_idx_MOCSlist]
+                x1 = trial_sequence.pregenerated_MOCS["x1"][trial_replacement_idx_MOCSlist]
 
                 # Send the stimulus information and wait for the subject to make a response
                 binaryResp = self._send_stim_and_wait_for_resp(
                     trial_placement_idx_originallist, f"{trial_placement_id}", xref, x1
                 )
-                print(
-                    f"Responses (MOCS #trial {trial_replacement_idx_MOCSlist}): {binaryResp}"
-                )
+                print(f"Responses (MOCS #trial {trial_replacement_idx_MOCSlist}): {binaryResp}")
 
                 # Store simulated responses
-                trial_sequence.update_data_MOCS(
-                    trial_replacement_idx_MOCSlist, xref, x1, binaryResp
-                )
+                trial_sequence.update_data_MOCS(trial_replacement_idx_MOCSlist, xref, x1, binaryResp)
                 # Set the status of the MOCS trial to 'completed'
-                trial_sequence.set_trial_status(
-                    expt_counter, trial_placement_idx_originallist, "Completed"
-                )
+                trial_sequence.set_trial_status(expt_counter, trial_placement_idx_originallist, "Completed")
 
                 # Set the flag to indicate a MOCS trial was run
                 event_triggered.set()
@@ -291,17 +270,13 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
         while not stop_event.is_set():  # Exit if stop_event is set
             elapsed_time = time.time() - start_time
 
-            max_wait_time_ii = (
-                max_wait_time[0] if num_bumped_up_Sobol == 0 else max_wait_time[-1]
-            )
+            max_wait_time_ii = max_wait_time[0] if num_bumped_up_Sobol == 0 else max_wait_time[-1]
 
             # if the time elapsed exceeds the max wait time
             if elapsed_time > max_wait_time_ii:
                 print("Reached the maximum shift for the MOCS trials within a block!")
                 # find the next available MOCS trial in the list
-                print(
-                    f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated Sobol trial..."
-                )
+                print(f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated Sobol trial...")
                 sobol_idx = self.keep_track_trials_finished_pregenSobol
 
                 # Get the stimulus information
@@ -321,9 +296,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                 trial_sequence.pregenerated_Sobol["binaryResp"][sobol_idx] = binaryResp
 
                 # Set the status of the MOCS trial to 'completed'
-                trial_sequence.set_trial_status(
-                    expt_counter, trial_counter, f"Insert_Sobol_{sobol_idx}"
-                )
+                trial_sequence.set_trial_status(expt_counter, trial_counter, f"Insert_Sobol_{sobol_idx}")
 
                 # Set the flag to indicate a MOCS trial was run
                 event_triggered.set()
@@ -351,9 +324,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
         if bg is not None and room is not None:
             self.communicator.change_background(bg, room)
 
-    def run_experiment_wMOCSinserted(
-        self, client, trial_sequence, max_wait_time=[2.9, 4.1]
-    ):
+    def run_experiment_wMOCSinserted(self, client, trial_sequence, max_wait_time=[2.9, 4.1]):
         """
         This method can be used to run or simulates color-discrimination responses
             using AEPsych.
@@ -397,27 +368,18 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                     self.update_background(trial_sequence)
 
                 # Check if the trial is already completed
-                current_trial_status = trial_sequence.trial_status[expt_idx][
-                    trial_counter
-                ]
+                current_trial_status = trial_sequence.trial_status[expt_idx][trial_counter]
 
-                if (
-                    "Completed" in current_trial_status
-                    or "Completed_in_time" in current_trial_status
-                ):
+                if "Completed" in current_trial_status or "Completed_in_time" in current_trial_status:
                     # If already completed, mark as skipped and move to the next trial
                     print(f"Skipping trial {trial_counter} as it is already completed.")
                     new_status = current_trial_status + ["Skipped"]
-                    trial_sequence.trial_status[expt_idx][trial_counter] = list(
-                        new_status
-                    )
+                    trial_sequence.trial_status[expt_idx][trial_counter] = list(new_status)
                     trial_counter += 1
                     continue
 
                 # Retrieve trial identity (e.g., 'MOCS_1', 'AEPsych_1')
-                trial_identity = trial_sequence.updated_sequence[expt_idx][
-                    trial_counter
-                ]
+                trial_identity = trial_sequence.updated_sequence[expt_idx][trial_counter]
                 # Extract trial type ('MOCS' or 'AEPsych') and trial index
                 trial_type, trial_idx = trial_identity.split("_")
                 trial_idx = int(trial_idx)
@@ -429,25 +391,19 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                     x1 = trial_sequence.pregenerated_MOCS["x1"][trial_idx]
 
                     # write down the RGB values to a text file in a shared disk
-                    binaryResp = self._send_stim_and_wait_for_resp(
-                        trial_counter, trial_identity, xref, x1
-                    )
+                    binaryResp = self._send_stim_and_wait_for_resp(trial_counter, trial_identity, xref, x1)
 
                     # Update the MOCS trial data with the simulated response
                     trial_sequence.update_data_MOCS(trial_idx, xref, x1, binaryResp)
                     # Mark the trial as completed within the time window
-                    trial_sequence.set_trial_status(
-                        expt_idx, trial_counter, "Completed_in_time"
-                    )
+                    trial_sequence.set_trial_status(expt_idx, trial_counter, "Completed_in_time")
                     self.keep_track_trials_finished += 1
 
                 elif trial_type == "AEPsych":
                     # Configure the trial for the AEPsych client
                     # self._configure_session_trial(client, trial_idx)
 
-                    if (
-                        self.keep_track_trials_finished - trial_counter
-                    ) >= self.max_shifts_MOCS:
+                    if (self.keep_track_trials_finished - trial_counter) >= self.max_shifts_MOCS:
                         pause_for_bumpingMOCS = True
                     if (self.keep_track_trials_finished - trial_counter) == 0:
                         pause_for_bumpingMOCS = False
@@ -506,13 +462,9 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                     # Extract stimulus dimensions for the trial
                     trial_val = [trial_AEPsych["config"][s][0] for s in self.parnames]
                     # Derive xref and x1 based on par1, par2, par3 and par4
-                    xref, x1, trial_val_report = self._derive_xref_x1(
-                        trial_idx, trial_val, config_index=expt_idx
-                    )
+                    xref, x1, trial_val_report = self._derive_xref_x1(trial_idx, trial_val, config_index=expt_idx)
                     # Get a response (can either be a simulated resp or from a real participant)
-                    binaryResp = self._send_stim_and_wait_for_resp(
-                        trial_counter, trial_identity, xref, x1
-                    )
+                    binaryResp = self._send_stim_and_wait_for_resp(trial_counter, trial_identity, xref, x1)
 
                     # Report the result back to AEPsych
                     client.tell(
@@ -535,13 +487,9 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                             trial_counter,
                             f"Elapsed_time_{trial_duration:.4f}",
                         )
-                        trial_sequence.set_trial_status(
-                            expt_idx, trial_counter, "Completed"
-                        )
+                        trial_sequence.set_trial_status(expt_idx, trial_counter, "Completed")
                     else:
-                        trial_sequence.set_trial_status(
-                            expt_idx, trial_counter, "Completed_in_time"
-                        )
+                        trial_sequence.set_trial_status(expt_idx, trial_counter, "Completed_in_time")
 
                 # Record the actual trial sequence that was executed
                 trial_sequence.final_sequence[expt_idx].append(trial_identity)
@@ -576,9 +524,7 @@ class LoadExptInfo:
         with open(file_path, "rb") as f:
             vars_dict = pickled.load(f)
 
-        MOCS_xref_shuffled = vars_dict[
-            "MOCS_xref_shuffled"
-        ]  # Shuffled reference colors
+        MOCS_xref_shuffled = vars_dict["MOCS_xref_shuffled"]  # Shuffled reference colors
         MOCS_x1_shuffled = vars_dict["MOCS_x1_shuffled"]  # Shuffled comparison color
 
         # Determine the start and end indices for the current session's trials
@@ -589,12 +535,8 @@ class LoadExptInfo:
 
         # Extract the corresponding subset of trials for the current session
         MOCS_subset_trials = {
-            "xref": MOCS_xref_shuffled[
-                idxTrial_MOCS[0] : idxTrial_MOCS[1]
-            ],  # Subset of reference colors
-            "x1": MOCS_x1_shuffled[
-                idxTrial_MOCS[0] : idxTrial_MOCS[1]
-            ],  # The corresponding comparison stimuli
+            "xref": MOCS_xref_shuffled[idxTrial_MOCS[0] : idxTrial_MOCS[1]],  # Subset of reference colors
+            "x1": MOCS_x1_shuffled[idxTrial_MOCS[0] : idxTrial_MOCS[1]],  # The corresponding comparison stimuli
         }
 
         return MOCS_subset_trials, idxTrial_MOCS
@@ -614,9 +556,7 @@ class LoadExptInfo:
         return Sobol_subset_trials
 
     @staticmethod
-    def load_pregenerated_val_scaler(
-        file_path, session_today, nTrials_AEPsych_perSession
-    ):
+    def load_pregenerated_val_scaler(file_path, session_today, nTrials_AEPsych_perSession):
         """
         Load the Sobol scalers generated in the first session
 
@@ -643,8 +583,6 @@ class LoadExptInfo:
         ]
 
         # Extract the subset of Sobol scalers for the current session.
-        customized_sobol_scaler = customized_sobol_scaler_all[
-            idxTrial_AEPsych[0] : idxTrial_AEPsych[1]
-        ]
+        customized_sobol_scaler = customized_sobol_scaler_all[idxTrial_AEPsych[0] : idxTrial_AEPsych[1]]
 
         return customized_sobol_scaler, idxTrial_AEPsych, customized_sobol_scaler_all

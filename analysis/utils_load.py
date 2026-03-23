@@ -69,9 +69,7 @@ def find_files_with_prefix(path, prefix, file_type="csv"):
         print(f"{i}: {os.path.basename(file)}")
 
     # Prompt user input: file number or "all"
-    choice = input(
-        "Enter the number of the file to choose, or type 'all' for all matches: "
-    ).strip()
+    choice = input("Enter the number of the file to choose, or type 'all' for all matches: ").strip()
 
     # If user types 'all', return the whole list
     if choice.lower() == "all":
@@ -193,17 +191,12 @@ def extract_between_patterns(str_list, str_prefix, str_suffix):
         List of extracted substrings. Returns None for strings that do not match.
     """
     pattern = re.escape(str_prefix) + r"(.*?)" + re.escape(str_suffix)
-    return [
-        re.search(pattern, s).group(1) if re.search(pattern, s) else None
-        for s in str_list
-    ]
+    return [re.search(pattern, s).group(1) if re.search(pattern, s) else None for s in str_list]
 
 
 # %%
 class load_expt_data:
-    def get_all_sessions_file_names(
-        subN, nSessions, path_str, exptCond="_4dExpt_Isoluminant plane", str_ext="_copy"
-    ):
+    def get_all_sessions_file_names(subN, nSessions, path_str, exptCond="_4dExpt_Isoluminant plane", str_ext="_copy"):
         """
         Generate a list of file paths for all session data files of a given subject.
 
@@ -221,10 +214,7 @@ class load_expt_data:
 
         # Generate full file paths for all session files
         session_files = [
-            os.path.join(
-                path_str, f"{session_file_name_part1}_session{n + 1}{str_ext}.pkl"
-            )
-            for n in range(nSessions)
+            os.path.join(path_str, f"{session_file_name_part1}_session{n + 1}{str_ext}.pkl") for n in range(nSessions)
         ]
 
         return session_files, session_file_name_part1
@@ -269,9 +259,7 @@ class load_expt_data:
         """
 
         # Extract MOCS trial data from each session and store in separate lists
-        xref_MOCS_list = [
-            jnp.array(d["data_vis_MOCS"].xref_all) for d in data_allSessions
-        ]
+        xref_MOCS_list = [jnp.array(d["data_vis_MOCS"].xref_all) for d in data_allSessions]
         x1_MOCS_list = [jnp.array(d["data_vis_MOCS"].x1_all) for d in data_allSessions]
         y_MOCS_list = [jnp.array(d["data_vis_MOCS"].y_all) for d in data_allSessions]
 
@@ -321,9 +309,7 @@ class load_expt_data:
 
         # Iterate through each unique reference stimulus and collect matching trials
         for i in range(nRefs_MOCS):
-            matching_indices = np.where((xref_MOCS == xref_unique_MOCS[i]).all(axis=1))[
-                0
-            ]
+            matching_indices = np.where((xref_MOCS == xref_unique_MOCS[i]).all(axis=1))[0]
             if i not in leave_out_conditions:
                 refStimulus_MOCS.append(xref_MOCS[matching_indices])
                 compStimulus_MOCS.append(x1_MOCS[matching_indices])
@@ -373,13 +359,9 @@ class load_expt_data:
 
         # Extract relevant data for AEPsych trials from each session
         time_elapsed_list = [d["expt_trials"].time_elapsed for d in data_allSessions]
-        xref_AEPsych_list = [
-            jnp.array(d["expt_trials"].xref_all) for d in data_allSessions
-        ]
+        xref_AEPsych_list = [jnp.array(d["expt_trials"].xref_all) for d in data_allSessions]
         x1_AEPsych_list = [jnp.array(d["expt_trials"].x1_all) for d in data_allSessions]
-        y_AEPsych_list = [
-            jnp.array(d["expt_trials"].binaryResp_all) for d in data_allSessions
-        ]
+        y_AEPsych_list = [jnp.array(d["expt_trials"].binaryResp_all) for d in data_allSessions]
 
         # Concatenate data across all sessions along axis 0
         xref_AEPsych, x1_AEPsych, y_AEPsych, time_elapsed = map(
@@ -574,10 +556,7 @@ class load_expt_data:
 
         # Validate trials_split
         if len(trials_split) > 1:
-            if not all(
-                trials_split[i] < trials_split[i + 1]
-                for i in range(len(trials_split) - 1)
-            ):
+            if not all(trials_split[i] < trials_split[i + 1] for i in range(len(trials_split) - 1)):
                 raise ValueError("trials_split must be in strictly increasing order.")
 
         # append the first and the last indices
@@ -655,11 +634,7 @@ class load_expt_data:
 
             # Find the index of the last 'MOCS' trial in the sequence
             last_mocs_index = next(
-                (
-                    i
-                    for i in range(len(sequence_array) - 1, -1, -1)
-                    if sequence_array[i].startswith("MOCS")
-                ),
+                (i for i in range(len(sequence_array) - 1, -1, -1) if sequence_array[i].startswith("MOCS")),
                 None,
             )
 
@@ -667,12 +642,8 @@ class load_expt_data:
             last_idx_included_AEPsych.append(last_mocs_index + 1)
 
             # Extract the trial number from the last included AEPsych trial
-            match = re.search(
-                r"AEPsych_(\d+)", sequence_array[last_idx_included_AEPsych[-1]]
-            )
-            trial_num = (
-                int(match.group(1)) if match else None
-            )  # Convert to integer if found, otherwise None
+            match = re.search(r"AEPsych_(\d+)", sequence_array[last_idx_included_AEPsych[-1]])
+            trial_num = int(match.group(1)) if match else None  # Convert to integer if found, otherwise None
 
             # Store the number of AEPsych trials included for this session
             nTrials_included_AEPsych.append(trial_num)
@@ -681,9 +652,7 @@ class load_expt_data:
             time_elapsed_list.append(d["expt_trials"].time_elapsed[:trial_num])
             xref_AEPsych_list.append(jnp.array(d["expt_trials"].xref_all[:trial_num]))
             x1_AEPsych_list.append(jnp.array(d["expt_trials"].x1_all[:trial_num]))
-            y_AEPsych_list.append(
-                jnp.array(d["expt_trials"].binaryResp_all[:trial_num])
-            )
+            y_AEPsych_list.append(jnp.array(d["expt_trials"].binaryResp_all[:trial_num]))
 
         # Concatenate data across all sessions along axis 0
         xref_AEPsych, x1_AEPsych, y_AEPsych, time_elapsed = map(
@@ -721,15 +690,9 @@ class load_expt_data:
 
         if flag_combine:
             # Stack reference stimuli (xref), comparison stimuli (x1), and responses (y) from both datasets
-            xref_jnp = jnp.vstack(
-                (data_AEPsych[0], data_MOCS[0])
-            )  # Vertical stack for 2D data
-            x1_jnp = jnp.vstack(
-                (data_AEPsych[1], data_MOCS[1])
-            )  # Vertical stack for 2D data
-            y_jnp = jnp.hstack(
-                (data_AEPsych[2], data_MOCS[2])
-            )  # Horizontal stack for 1D response data
+            xref_jnp = jnp.vstack((data_AEPsych[0], data_MOCS[0]))  # Vertical stack for 2D data
+            x1_jnp = jnp.vstack((data_AEPsych[1], data_MOCS[1]))  # Vertical stack for 2D data
+            y_jnp = jnp.hstack((data_AEPsych[2], data_MOCS[2]))  # Horizontal stack for 1D response data
         else:
             # Use only AEPsych data without modification
             xref_jnp, x1_jnp, y_jnp = data_AEPsych
@@ -823,9 +786,7 @@ class load_util_files:
         ellipses_fine = np.full((n_ellipses, 2, num_ell_pts), np.nan)
 
         # Generate finely sampled points on each ellipse
-        for idx, (a, b, theta, xc, yc) in enumerate(
-            zip(semi_major, semi_minor, angles_deg, xc_array, yc_array)
-        ):
+        for idx, (a, b, theta, xc, yc) in enumerate(zip(semi_major, semi_minor, angles_deg, xc_array, yc_array)):
             x_fine, y_fine = PointsOnEllipseQ(a, b, theta, xc, yc, nTheta=num_ell_pts)
             ellipses_fine[idx] = np.stack((x_fine, y_fine))
 

@@ -43,21 +43,15 @@ class Plot2DPredSettings(PlotSettingsBase):
     samples_s: float = 10
     samples_alpha: float = 0.5
     samples_label: str = "Simulated CIELab data"
-    samples_c_no: str | np.ndarray | list[float] = field(
-        default_factory=lambda: np.array([107, 142, 35]) / 255
-    )
-    samples_c_yes: str | np.ndarray | list[float] = field(
-        default_factory=lambda: np.array([128, 0, 0]) / 255
-    )
+    samples_c_no: str | np.ndarray | list[float] = field(default_factory=lambda: np.array([107, 142, 35]) / 255)
+    samples_c_yes: str | np.ndarray | list[float] = field(default_factory=lambda: np.array([128, 0, 0]) / 255)
     gt_lc: str | np.ndarray | list[float] = "r"
     gt_alpha: float = 1.0
     gt_ls: str = "--"
     gt_label: str = "Ground truths"
     gt_lw: float = 2
     ticks: np.ndarray | None = None
-    plane_2D: str | None = (
-        None  # You can set this in code after instantiating with color_thres.plane_2D
-    )
+    plane_2D: str | None = None  # You can set this in code after instantiating with color_thres.plane_2D
     modelpred_lc: str | None = None
     modelpred_ls: str = "-"
     modelpred_lw: float = 1
@@ -72,9 +66,7 @@ class Plot2DPredSettings(PlotSettingsBase):
     anchor_legend_box: tuple[float, float] = field(default=(0.5, -0.47))
     title: str | None = None
     fig_name: str = field(
-        default_factory=lambda: (
-            f"Fitted_isothreshold_ellipses_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
+        default_factory=lambda: f"Fitted_isothreshold_ellipses_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
 
 
@@ -111,9 +103,7 @@ class Plot3DPredSettings(PlotSettingsBase):
     sigma_alpha: float = 0.5
     sigma_label: str = "Model-estimated cov matrix"
     axes_samples: list[int] = field(default_factory=lambda: [0])
-    fixedRGB_val_scaled: list[float] = field(
-        default_factory=lambda: [-0.6, -0.3, 0, 0.3, 0.6]
-    )
+    fixedRGB_val_scaled: list[float] = field(default_factory=lambda: [-0.6, -0.3, 0, 0.3, 0.6])
     scatter_label: str = "Simulated CIELab data"
     contour_3D_label: str = "3D ground truths"
     contour_2D_label: str = "2D ground truths"
@@ -123,22 +113,12 @@ class Plot3DPredSettings(PlotSettingsBase):
     CI_3D_label: str = "Range of model-predicted projections"
     CI_2D_label: str = "Range of model-predicted slices"
     # These values are fixed and not meant to be changed after creation
-    dim_indices: list[int] = field(
-        default_factory=lambda: [0, 1, 2], init=False, repr=False
-    )
-    dim_labels: list[str] = field(
-        default_factory=lambda: ["R", "G", "B"], init=False, repr=False
-    )
-    orthogonal_pairs: list[list[int]] = field(
-        default_factory=lambda: [[1, 2], [0, 2], [0, 1]], init=False, repr=False
-    )
-    plane_labels: list[str] = field(
-        default_factory=lambda: ["GB", "RB", "RG"], init=False, repr=False
-    )
+    dim_indices: list[int] = field(default_factory=lambda: [0, 1, 2], init=False, repr=False)
+    dim_labels: list[str] = field(default_factory=lambda: ["R", "G", "B"], init=False, repr=False)
+    orthogonal_pairs: list[list[int]] = field(default_factory=lambda: [[1, 2], [0, 2], [0, 1]], init=False, repr=False)
+    plane_labels: list[str] = field(default_factory=lambda: ["GB", "RB", "RG"], init=False, repr=False)
     fig_name: str = field(
-        default_factory=lambda: (
-            f"Fitted_isothreshold_ellipsoids_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
+        default_factory=lambda: f"Fitted_isothreshold_ellipsoids_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
 
 
@@ -160,12 +140,8 @@ class Plot3DPredHTMLSettings:
     camera_center: tuple[float, float, float] = (0, 0, 0)
     camera_up: tuple[float, float, float] = (0, 0, 1)
     # Plane style
-    isoluminant_plane_color: np.ndarray | list[float] = field(
-        default_factory=lambda: np.array([0.75, 0.75, 0.75])
-    )
-    isoluminant_edge_color: np.ndarray | list[float] = field(
-        default_factory=lambda: np.array([0, 0, 0])
-    )
+    isoluminant_plane_color: np.ndarray | list[float] = field(default_factory=lambda: np.array([0.75, 0.75, 0.75]))
+    isoluminant_edge_color: np.ndarray | list[float] = field(default_factory=lambda: np.array([0, 0, 0]))
     isoluminant_plane_alpha: float = 0.30
     isoluminant_plane_lw: float = 1.0
     plane_hover_info: str = "skip"
@@ -181,9 +157,7 @@ class Plot3DPredHTMLSettings:
     ell_hover_info: str = "skip"  # 3D ellipsoids
     # sliced ellipses
     sEll_hover_info: str = "skip"  # sliced ellipses
-    sEll_line_color: np.ndarray | list[float] = field(
-        default_factory=lambda: np.array([0, 0, 0])
-    )
+    sEll_line_color: np.ndarray | list[float] = field(default_factory=lambda: np.array([0, 0, 0]))
     sEll_line_width: float = 5.0
     # Lighting
     flag_lighting: bool = True
@@ -195,9 +169,7 @@ class Plot3DPredHTMLSettings:
     light_position: tuple[float, float, float] = (10.0, 10.0, 10.0)
     # Lines
     geo_path_lw: float = 2.0
-    geo_path_color: np.ndarray | list[float] = field(
-        default_factory=lambda: np.array([0, 0, 0])
-    )
+    geo_path_color: np.ndarray | list[float] = field(default_factory=lambda: np.array([0, 0, 0]))
     geo_hover_info: str = "skip"
 
 
@@ -212,24 +184,16 @@ class PlotMahaSettings(PlotSettingsBase):
     markersize: float = 50
     markercolor: tuple[float, float, float] | str = (0.3, 0.3, 0.3)
     edgecolor: tuple[float, float, float] | str = (1.0, 1.0, 1.0)
-    linecolor: np.ndarray = field(
-        default_factory=lambda: np.array([70, 130, 180]) / 255
-    )
-    CI_color: np.ndarray = field(
-        default_factory=lambda: np.array([167, 199, 231]) / 255
-    )
+    linecolor: np.ndarray = field(default_factory=lambda: np.array([70, 130, 180]) / 255)
+    CI_color: np.ndarray = field(default_factory=lambda: np.array([167, 199, 231]) / 255)
     xlabel: str = "Binned Mahalanobis distance"
     ylabel: str = "Binned percent correct"
-    yticks: np.ndarray = field(
-        default_factory=lambda: np.round(np.linspace(0.333, 1, 3), 3)
-    )
+    yticks: np.ndarray = field(default_factory=lambda: np.round(np.linspace(0.333, 1, 3), 3))
     xticks: np.ndarray = field(default_factory=lambda: np.linspace(0, 20, 6))
     ylim: list[float] = field(default_factory=lambda: [0.2, 1.05])
     xlim: list[float] | None = None
     marker: list[str] = field(default_factory=lambda: ["s", "o"])
-    label: list[str] = field(
-        default_factory=lambda: ["Strategy: Sobol", "Strategy: EAVC"]
-    )
+    label: list[str] = field(default_factory=lambda: ["Strategy: Sobol", "Strategy: EAVC"])
     # Error bar styling
     err_capsize: float = 3
     err_capthick: float = 1
@@ -238,11 +202,7 @@ class PlotMahaSettings(PlotSettingsBase):
     # Custom labels
     PMF_label: str = "Simulated psychometric function"
     SE_label: str = "SE for a Bernoulli random variable"
-    fig_name: str = field(
-        default_factory=lambda: (
-            f"Model_predictions_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
-    )
+    fig_name: str = field(default_factory=lambda: f"Model_predictions_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
@@ -250,9 +210,7 @@ class PlotMCGeoSettings(PlotSettingsBase):
     fig_size: tuple[float, float] = (4, 4)
     xlabel: str | None = None
     ylabel: str | None = None
-    path_lc: np.ndarray = field(
-        default_factory=lambda: np.array([0.6, 0.6, 0.6], dtype=float)
-    )
+    path_lc: np.ndarray = field(default_factory=lambda: np.array([0.6, 0.6, 0.6], dtype=float))
     path_lw: float = 0.2
     path_alpha: float = 0.5
     samples_size: float = 2.0
@@ -264,9 +222,7 @@ class PlotMCGeoSettings(PlotSettingsBase):
     anchor_legend_box: list | None = None
     legend_loc: str = "lower left"
     flag_show_cond_title: bool = True
-    fig_name: str = field(
-        default_factory=lambda: f"Geopath_varyingComp2_{datetime.now():%Y%m%d_%H%M%S}"
-    )
+    fig_name: str = field(default_factory=lambda: f"Geopath_varyingComp2_{datetime.now():%Y%m%d_%H%M%S}")
 
 
 # %%
@@ -293,9 +249,7 @@ class WishartPredictionsVisualization(PlottingTools):
         self.model_pred = model_pred
         self.color_thres = color_thres
 
-    def _find_idx_corresponding_xref(
-        self, ref_all, x1_all, ref_slc, tol=5e-2, y_all=None, further_sort_by_resp=False
-    ):
+    def _find_idx_corresponding_xref(self, ref_all, x1_all, ref_slc, tol=5e-2, y_all=None, further_sort_by_resp=False):
         """
         Finds the indices of rows in 'ref_all' that match the reference slice 'ref_slc'
         within a specified tolerance. Extracts the corresponding rows from 'x1_all'
@@ -416,28 +370,18 @@ class WishartPredictionsVisualization(PlottingTools):
             resp_selected_i = resp[idx_slc]
 
             # Sort by Mahalanobis distances
-            sorted_indices = np.argsort(
-                M_D_selected_i
-            )  # Indices to sort Mahalanobis distances
-            M_D_sorted_i = M_D_selected_i[
-                sorted_indices
-            ]  # Sorted Mahalanobis distances
-            resp_sorted_i = resp_selected_i[
-                sorted_indices
-            ]  # Responses sorted accordingly
+            sorted_indices = np.argsort(M_D_selected_i)  # Indices to sort Mahalanobis distances
+            M_D_sorted_i = M_D_selected_i[sorted_indices]  # Sorted Mahalanobis distances
+            resp_sorted_i = resp_selected_i[sorted_indices]  # Responses sorted accordingly
 
             # Ideally, we want to ensure data size is divisible by the bin size,
             # but if the total trial number is a prime number, then there is no
             # way to do divide them evenly, so for the last bin we can just pad nan
             if len(M_D_sorted_i) % nTrials_bin_i != 0:
-                print(
-                    f"Data size {len(M_D_sorted_i)} is not divisible by the bin size {nTrials_bin_i}."
-                )
+                print(f"Data size {len(M_D_sorted_i)} is not divisible by the bin size {nTrials_bin_i}.")
                 # Pad with NaNs to make the length divisible by the bin size
                 num_pad_nan = nTrials_bin_i - (len(M_D_sorted_i) % nTrials_bin_i)
-                M_D_sorted_i = np.pad(
-                    M_D_sorted_i, (0, num_pad_nan), constant_values=np.nan
-                )
+                M_D_sorted_i = np.pad(M_D_sorted_i, (0, num_pad_nan), constant_values=np.nan)
                 resp_sorted_i = np.pad(
                     resp_sorted_i.astype(float),
                     (0, num_pad_nan),
@@ -447,12 +391,8 @@ class WishartPredictionsVisualization(PlottingTools):
             D_M_reshaped = M_D_sorted_i.reshape(-1, nTrials_bin_i)
             resp_reshaped = resp_sorted_i.reshape(-1, nTrials_bin_i)
 
-            M_D_binned_i = np.nanmean(
-                D_M_reshaped, axis=1
-            )  # Compute mean Mahalanobis distance for each bin
-            resp_binned_i = np.nanmean(
-                resp_reshaped, axis=1
-            )  # Compute mean response for each bin
+            M_D_binned_i = np.nanmean(D_M_reshaped, axis=1)  # Compute mean Mahalanobis distance for each bin
+            resp_binned_i = np.nanmean(resp_reshaped, axis=1)  # Compute mean response for each bin
 
             # Store binned data for later use in plotting
             M_D_unsorted.append(M_D_selected_i)
@@ -501,9 +441,7 @@ class WishartPredictionsVisualization(PlottingTools):
                 raise ValueError("All elements in nTrials_bin list must be integers.")
             if len(nTrials_bin) < num_trial_types:
                 # Pad with the last value
-                nTrials_bin_list = nTrials_bin + [nTrials_bin[-1]] * (
-                    num_trial_types - len(nTrials_bin)
-                )
+                nTrials_bin_list = nTrials_bin + [nTrials_bin[-1]] * (num_trial_types - len(nTrials_bin))
             else:
                 # Truncate to match number of trial types
                 nTrials_bin_list = nTrials_bin[:num_trial_types]
@@ -533,9 +471,7 @@ class WishartPredictionsVisualization(PlottingTools):
             cm = self.color_thres.W_unit_to_N_unit(grid_point)
             # Insert or append the fixed value depending on index
             if self.color_thres.fixed_color_dim != len(cm):
-                cm = np.insert(
-                    cm, self.color_thres.fixed_color_dim, self.color_thres.fixed_value
-                )
+                cm = np.insert(cm, self.color_thres.fixed_color_dim, self.color_thres.fixed_value)
             else:
                 cm = np.append(cm, self.color_thres.fixed_value)
 
@@ -647,9 +583,7 @@ class WishartPredictionsVisualization(PlottingTools):
         return ax, fig
 
     @staticmethod
-    def add_CI_ellipses(
-        ell_min, ell_max, ax=None, cm="k", alpha=0.9, label=None, lw_outer=0, lw_inner=0
-    ):
+    def add_CI_ellipses(ell_min, ell_max, ax=None, cm="k", alpha=0.9, label=None, lw_outer=0, lw_inner=0):
         """
         Plots the confidence interval (CI) region of an ellipse on the given axis.
 
@@ -690,9 +624,7 @@ class WishartPredictionsVisualization(PlottingTools):
         )
 
     # %%
-    def plot_2D(
-        self, grid_est, settings: Plot2DPredSettings, gt_ellipses=None, ax=None
-    ):
+    def plot_2D(self, grid_est, settings: Plot2DPredSettings, gt_ellipses=None, ax=None):
         """
         Visualizes the Wishart model predictions, ground truth ellipses, and optionally
         simulated/experimentally tested trials.
@@ -733,9 +665,7 @@ class WishartPredictionsVisualization(PlottingTools):
             # define the color map, which is the RGB value of the reference stimulus
             cm = self._get_colormap(grid_est[ij])
             # Set labels for different plot elements, ensuring they only appear once in the legend.
-            scatter_label, ellipse_label, prediction_label, gt_label = (
-                self._get_legend_labels_2D(*ij, settings)
-            )
+            scatter_label, ellipse_label, prediction_label, gt_label = self._get_legend_labels_2D(*ij, settings)
 
             # If visualizing sample data, scatter the points from the simulation trials.
             if settings.visualize_samples and (self.trial_data.x1_all.shape[0] != 0):
@@ -752,9 +682,7 @@ class WishartPredictionsVisualization(PlottingTools):
                             lbl_kk = scatter_label + " (correct resp)"
                         else:
                             lbl_kk = None
-                        c_kk = (
-                            settings.samples_c_yes if kk == 1 else settings.samples_c_no
-                        )
+                        c_kk = settings.samples_c_yes if kk == 1 else settings.samples_c_no
                         ax.scatter(
                             x1_slc[kk][:, 0],
                             x1_slc[kk][:, 1],
@@ -825,9 +753,7 @@ class WishartPredictionsVisualization(PlottingTools):
                     lw=settings.gt_lw,
                     label=gt_label,
                 )
-        tickmarks = (
-            settings.ticks if settings.ticks is not None else np.unique(grid_est)
-        )
+        tickmarks = settings.ticks if settings.ticks is not None else np.unique(grid_est)
         if settings.flag_rescale_axes_label:
             tickmarks_show = self.color_thres.W_unit_to_N_unit(tickmarks)
         else:
@@ -866,24 +792,18 @@ class WishartPredictionsVisualization(PlottingTools):
             if hasattr(self.model_pred, "Sigmas_noise_grid_slice_2d"):
                 model_pred_cov_2d_slice = self.model_pred.Sigmas_noise_grid_slice_2d
             else:
-                temp = model_predictions.covMat3D_to_2DsurfaceSlice(
-                    self.model_pred.Sigmas_noise_grid
-                )
+                temp = model_predictions.covMat3D_to_2DsurfaceSlice(self.model_pred.Sigmas_noise_grid)
                 model_pred_cov_2d_slice = np.transpose(temp, (1, 0, 2, 3, 4, 5))
 
         NUM_GRID_PTS = grid_est.shape[0]
-        for k, fixedRGB_val_scaled_k in zip(
-            list(range(NUM_GRID_PTS)), settings.fixedRGB_val_scaled
-        ):
+        for k, fixedRGB_val_scaled_k in zip(list(range(NUM_GRID_PTS)), settings.fixedRGB_val_scaled):
             for _idx, fixedPlane, _idx_varying, varyingPlanes in zip(
                 settings.dim_indices,
                 settings.dim_labels,
                 settings.orthogonal_pairs,
                 settings.plane_labels,
             ):
-                fig, axes = plt.subplots(
-                    1, 2, dpi=settings.dpi, figsize=settings.fig_size
-                )
+                fig, axes = plt.subplots(1, 2, dpi=settings.dpi, figsize=settings.fig_size)
                 idx = jnp.array(_idx_varying)
 
                 # plot model prediction 95% confidence interval
@@ -912,9 +832,7 @@ class WishartPredictionsVisualization(PlottingTools):
                             CI_3D_label,
                             CI_2D_label,
                             fixedRGB_val_temp,
-                        ) = self._get_legend_labels_3D(
-                            i, j, fixedRGB_val_scaled_k, fixedPlane, settings
-                        )
+                        ) = self._get_legend_labels_3D(i, j, fixedRGB_val_scaled_k, fixedPlane, settings)
                         # colormap
                         cm = self.color_thres.W_unit_to_N_unit(grid_est[ii, jj, kk])
 
@@ -930,13 +848,8 @@ class WishartPredictionsVisualization(PlottingTools):
                             )
                             axes[0].add_patch(polygon)
                         else:
-                            if (
-                                settings.visualize_modelpred_CI
-                                and settings.modelpred_projection_CI is not None
-                            ):
-                                idx_max_nonan = ~np.isnan(
-                                    fitEll_max[ii, jj, kk, _idx, 0, :]
-                                )
+                            if settings.visualize_modelpred_CI and settings.modelpred_projection_CI is not None:
+                                idx_max_nonan = ~np.isnan(fitEll_max[ii, jj, kk, _idx, 0, :])
                                 axes[0].fill(
                                     fitEll_max[ii, jj, kk, _idx, 0, idx_max_nonan],
                                     fitEll_max[ii, jj, kk, _idx, 1, idx_max_nonan],
@@ -945,9 +858,7 @@ class WishartPredictionsVisualization(PlottingTools):
                                     alpha=settings.modelpred_CI_alpha,
                                     lw=0,
                                 )
-                                idx_min_nonan = ~np.isnan(
-                                    fitEll_min[ii, jj, kk, _idx, 0, :]
-                                )
+                                idx_min_nonan = ~np.isnan(fitEll_min[ii, jj, kk, _idx, 0, :])
                                 axes[0].fill(
                                     fitEll_min[ii, jj, kk, _idx, 0, idx_min_nonan],
                                     fitEll_min[ii, jj, kk, _idx, 1, idx_min_nonan],
@@ -1037,13 +948,8 @@ class WishartPredictionsVisualization(PlottingTools):
                             )
 
                         else:
-                            if (
-                                settings.visualize_modelpred_CI
-                                and settings.modelpred_slice_CI is not None
-                            ):
-                                idx_max_nonan = ~np.isnan(
-                                    fitEll_s_max[ii, jj, kk, _idx, 0, :]
-                                )
+                            if settings.visualize_modelpred_CI and settings.modelpred_slice_CI is not None:
+                                idx_max_nonan = ~np.isnan(fitEll_s_max[ii, jj, kk, _idx, 0, :])
                                 axes[1].fill(
                                     fitEll_s_max[ii, jj, kk, _idx, 0, idx_max_nonan],
                                     fitEll_s_max[ii, jj, kk, _idx, 1, idx_max_nonan],
@@ -1052,9 +958,7 @@ class WishartPredictionsVisualization(PlottingTools):
                                     alpha=settings.modelpred_CI_alpha,
                                     lw=0,
                                 )
-                                idx_min_nonan = ~np.isnan(
-                                    fitEll_s_min[ii, jj, kk, _idx, 0, :]
-                                )
+                                idx_min_nonan = ~np.isnan(fitEll_s_min[ii, jj, kk, _idx, 0, :])
                                 axes[1].fill(
                                     fitEll_s_min[ii, jj, kk, _idx, 0, idx_min_nonan],
                                     fitEll_s_min[ii, jj, kk, _idx, 1, idx_min_nonan],
@@ -1065,10 +969,7 @@ class WishartPredictionsVisualization(PlottingTools):
                 # plot xref
                 if settings.visualize_samples:
                     slc_idx_samples = np.where(
-                        np.abs(
-                            self.trial_data.xref_all[:, _idx] - (fixedRGB_val_scaled_k)
-                        )
-                        < 1e-4
+                        np.abs(self.trial_data.xref_all[:, _idx] - (fixedRGB_val_scaled_k)) < 1e-4
                     )
                     xref_jnp_slc_temp = self.trial_data.xref_all[slc_idx_samples]
                     x1_jnp_slc_temp = self.trial_data.x1_all[slc_idx_samples]
@@ -1101,9 +1002,7 @@ class WishartPredictionsVisualization(PlottingTools):
                         ttl_part1 = "Projections onto "
                     else:
                         ttl_part1 = "Slices by "
-                    self._configure_labels_and_title(
-                        axes[n], title=ttl_part1 + ttl_part2
-                    )
+                    self._configure_labels_and_title(axes[n], title=ttl_part1 + ttl_part2)
                     axes[n].legend(
                         loc="lower center",
                         bbox_to_anchor=(0.5, -0.45),
@@ -1193,9 +1092,7 @@ class WishartPredictionsVisualization(PlottingTools):
         nTrials_bin_list = self._check_nTrials_bin(nTrials_bin, len(trial_type))
         print(nTrials_bin_list)
 
-        Maha_data = self._org_Mahalanobis_distance_trial_ID(
-            trial_ID, resp, nTrials_bin_list
-        )
+        Maha_data = self._org_Mahalanobis_distance_trial_ID(trial_ID, resp, nTrials_bin_list)
 
         ax, fig = self._initialize_axes(ax, Maha_data, settings)
 
@@ -1218,9 +1115,7 @@ class WishartPredictionsVisualization(PlottingTools):
             CI_bounds_values = list(CI_bounds.values())
             # append
             CI_bounds_all.append(CI_bounds)
-            for c, alpha, k, (lb_idx, ub_idx) in zip(
-                list(range(2)), [0.4, 0.2], key_list, CI_bounds_values
-            ):
+            for c, alpha, k, (lb_idx, ub_idx) in zip(list(range(2)), [0.4, 0.2], key_list, CI_bounds_values):
                 if settings.visualize_68CI_95CI[c]:
                     x_CI_lb = (Maha_data["M_D_sorted"][i][lb_idx],)
                     x_CI_ub = Maha_data["M_D_sorted"][i][ub_idx]
@@ -1298,9 +1193,7 @@ class WishartPredictionsVisualization(PlottingTools):
             for i in range(len(Maha_data["trial_type"])):
                 normalized_D_M = np.full(Maha_data["M_D_binned"][i].shape, np.nan)
                 for n in range(len(Maha_data["resp_binned"][i])):
-                    idx_match_D_M = np.argmin(
-                        np.abs(sim_PMF["x"] - Maha_data["M_D_binned"][i][n])
-                    )
+                    idx_match_D_M = np.argmin(np.abs(sim_PMF["x"] - Maha_data["M_D_binned"][i][n]))
                     match_p = sim_PMF["y"][idx_match_D_M]
                     normalized_D_M[n] = Maha_data["resp_binned"][i][n] - match_p
                 # Plot data in the inset
@@ -1313,9 +1206,7 @@ class WishartPredictionsVisualization(PlottingTools):
                 )
                 ax1[i].set_yticks([])
                 ax1[i].set_xticks(np.linspace(-0.2, 0.2, 5))
-                ax1[i].tick_params(
-                    labelsize=settings.font * 2
-                )  # this figure will be reduced
+                ax1[i].tick_params(labelsize=settings.font * 2)  # this figure will be reduced
                 # Remove specific spines
                 # ax1[i].spines['top'].set_visible(False)
                 # ax1[i].spines['left'].set_visible(False)
@@ -1333,15 +1224,11 @@ class WishartPredictionsVisualization(PlottingTools):
                 # Plot data in the inset
                 xx = np.arange(1, Maha_data["M_D_unsorted"][i].shape[0] + 1)
                 xx_range = xx[-1] - xx[0]
-                ax2[i].plot(
-                    xx, Maha_data["M_D_unsorted"][i], color=settings.markercolor, lw=0.2
-                )
+                ax2[i].plot(xx, Maha_data["M_D_unsorted"][i], color=settings.markercolor, lw=0.2)
                 key_list = list(CI_bounds_all[i].keys())
                 CI_bounds_values = list(CI_bounds_all[i].values())
 
-                for c, alpha, k, (lb_idx, ub_idx) in zip(
-                    list(range(2)), [0.9, 0.9], key_list, CI_bounds_values
-                ):
+                for c, alpha, k, (lb_idx, ub_idx) in zip(list(range(2)), [0.9, 0.9], key_list, CI_bounds_values):
                     if settings.visualize_68CI_95CI[c]:
                         x_CI_lb = Maha_data["M_D_sorted"][i][lb_idx]
                         x_CI_ub = Maha_data["M_D_sorted"][i][ub_idx]
@@ -1492,9 +1379,7 @@ class WishartPredictionsVisualization_html:
         color = self.to_rgb_str(self.st.isoluminant_plane_color)
         edge = self.to_rgb_str(self.st.isoluminant_edge_color)
         alpha = self.st.isoluminant_plane_alpha
-        P = np.asarray(
-            corners_3x4_sorted, float
-        ).T  # (4,3), assume order 0-1-2-3 around the loop
+        P = np.asarray(corners_3x4_sorted, float).T  # (4,3), assume order 0-1-2-3 around the loop
 
         # Fill (two triangles) using vertex indices (i, j, k)
         fig.add_trace(
@@ -1535,9 +1420,7 @@ class WishartPredictionsVisualization_html:
         """
         xyz = np.asarray(xyz, float).ravel()
         if xyz.size != 3:
-            raise ValueError(
-                f"xyz must have 3 elements (X, Y, Z), got shape {xyz.shape}"
-            )
+            raise ValueError(f"xyz must have 3 elements (X, Y, Z), got shape {xyz.shape}")
 
         # Defaults from settings if available, otherwise hard-coded
         if color is None:
@@ -1663,9 +1546,7 @@ class WishartPredictionsVisualization_html:
                     if center_rgb is not None:
                         center_for_color = center_rgb[i, j, k]
                     else:
-                        center_for_color = color_thresholds.W_unit_to_N_unit(
-                            np.asarray(center_rgb, float).ravel()
-                        )
+                        center_for_color = color_thresholds.W_unit_to_N_unit(np.asarray(center_rgb, float).ravel())
 
                     color_str = self.to_rgb_str(center_for_color)
 
@@ -1690,9 +1571,7 @@ class WishartPredictionsVisualization_html:
             eigenvalues, evecs, radii, *_ = covMat_to_ellParamsQ(cov_ijk)
 
             # Map center (W-unit) -> display color (e.g., normalized RGB) -> CSS rgb()
-            center_rgb01 = color_thresholds.W_unit_to_N_unit(
-                center
-            )  # ensure returns in [0,1]
+            center_rgb01 = color_thresholds.W_unit_to_N_unit(center)  # ensure returns in [0,1]
             color_str = self.to_rgb_str(center_rgb01)
 
             X, Y, Z = EllipsoidSurfaceMesh(
@@ -1766,9 +1645,7 @@ class WishartPredictionsVisualization_html:
         return fig
 
     # optional
-    def add_dashed_line3d(
-        self, fig, p0, p1, n_dashes=50, color="#111", width=5, hover=False
-    ):
+    def add_dashed_line3d(self, fig, p0, p1, n_dashes=50, color="#111", width=5, hover=False):
         """
         Add a dashed 3D line between points p0 and p1.
 
@@ -1870,11 +1747,7 @@ class WishartPredictionsGeoVisualization(PlottingTools):
             Shape (3, 3) RGB values in [0, 1] for [ref, comp1, comp2].
             If no color_thres is provided, falls back to 3 colors from Pastel1.
         """
-        stims = [
-            s
-            for s in (self.ref_W, self.comp1_W, self.comp2_W_varying[idx_comp2])
-            if s is not None
-        ]
+        stims = [s for s in (self.ref_W, self.comp1_W, self.comp2_W_varying[idx_comp2]) if s is not None]
         k = len(stims)
 
         if self.color_thres is not None:
@@ -2100,9 +1973,7 @@ class WishartPredictionsGeoVisualization(PlottingTools):
                 # ellipses
                 ax.plot(*ell[ell_idx[b]], c=np.clip(cmap3[b], 0, 1))
                 # Sample clouds (z0, z1, z2) for the current level
-                self._scatter(
-                    ax, z_all[b], cmap3[b], settings.samples_labels[b], settings
-                )
+                self._scatter(ax, z_all[b], cmap3[b], settings.samples_labels[b], settings)
 
             # Geodesic paths for all draws: z0→z1 and z0→z2
             if z1 is not None:
@@ -2204,9 +2075,7 @@ class WishartPredictionsGeoVisualization(PlottingTools):
                 # ellipsoid
                 self._plot_surface3d(ax, ell[ell_idx[b]], cmap3[b], settings)
                 # Sample clouds (z0, z1, z2) for the current level
-                self._scatter(
-                    ax, z_all[b], cmap3[b], settings.samples_labels[b], settings
-                )
+                self._scatter(ax, z_all[b], cmap3[b], settings.samples_labels[b], settings)
 
             # Geodesic paths for all draws: z0→z1 and z0→z2
             if z1 is not None:
@@ -2215,9 +2084,7 @@ class WishartPredictionsGeoVisualization(PlottingTools):
 
             # Pad limits so all three axes share the same range (cube)
             # and place 4 major ticks on each axis.
-            new_lims, _, _, _ = self._pad_limits_to_square(
-                np.vstack((x_bds, y_bds, z_bds))
-            )
+            new_lims, _, _, _ = self._pad_limits_to_square(np.vstack((x_bds, y_bds, z_bds)))
             ax.set_xlim(*new_lims[0])
             ax.set_ylim(*new_lims[1])
             ax.set_zlim(*new_lims[2])
@@ -2298,13 +2165,9 @@ class WishartPredictionsGeoVisualization(PlottingTools):
 
         """
         if self.ndims == 2:
-            self._plot_2D_predicted_geodesic_paths(
-                z0, z2, paths_z0z2, ell, settings, z1, paths_z0z1
-            )
+            self._plot_2D_predicted_geodesic_paths(z0, z2, paths_z0z2, ell, settings, z1, paths_z0z1)
         elif self.ndims == 3:
-            self._plot_3D_predicted_geodesic_paths(
-                z0, z2, paths_z0z2, ell, settings, z1, paths_z0z1
-            )
+            self._plot_3D_predicted_geodesic_paths(z0, z2, paths_z0z2, ell, settings, z1, paths_z0z1)
         else:
             raise ValueError(f"Unidentified number of dimensions: {self.ndims}")
 
@@ -2339,6 +2202,4 @@ class WishartPredictionsGeoVisualization(PlottingTools):
             fig.tight_layout()
             # Save the figure if the directory is set and saving is enabled.
             if settings.fig_dir and self.save_fig:
-                self._save_figure(
-                    fig, "Hist_" + settings.fig_name + f"_comp2_idx{a:02}"
-                )
+                self._save_figure(fig, "Hist_" + settings.fig_name + f"_comp2_idx{a:02}")

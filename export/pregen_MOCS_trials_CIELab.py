@@ -49,9 +49,7 @@ if stim_dims == 2:
     else:
         SUBJ_gt_Wishart = 4
         # Create an instance of the class
-        color_thres_data = color_thresholds(
-            stim_dims, baseDir, plane_2D=plane_2D, manual_input=True
-        )
+        color_thres_data = color_thresholds(stim_dims, baseDir, plane_2D=plane_2D, manual_input=True)
         # Load Wishart model fits
         color_thres_data.load_model_fits()
         color_thres_data.load_CIE_data(CIE_version="CIE1994")
@@ -105,9 +103,7 @@ for directory in directories:
 # Retrieve specific data from Wishart_data
 # GROUND TRUTH
 try:
-    model_pred_Wishart = color_thres_data.get_data(
-        "model_pred_Wishart", dataset="Wishart_data"
-    )
+    model_pred_Wishart = color_thres_data.get_data("model_pred_Wishart", dataset="Wishart_data")
     grid_stim = color_thres_data.get_data("grid_stim", dataset="Wishart_data")
 except KeyError as e:
     print(f"Data not found: {e}")
@@ -154,9 +150,7 @@ if stim_dims == 2:
     # Convert angle to a unit direction vector in the plane:
     #   d = [cos(theta), sin(theta)]
     theta_rad = np.radians(theta_deg)
-    chromatic_directions = np.column_stack(
-        [np.cos(theta_rad), np.sin(theta_rad)]
-    )  # (nRefs, 2)
+    chromatic_directions = np.column_stack([np.cos(theta_rad), np.sin(theta_rad)])  # (nRefs, 2)
 
 
 elif stim_dims == 3:
@@ -233,26 +227,14 @@ flag_debugplots = True
 """
 Initialize data storage arrays
 """
-vecLen_t_pC = np.full(
-    (nRefs, 1), np.nan
-)  # Stores vector lengths at which performance reaches t_pC
+vecLen_t_pC = np.full((nRefs, 1), np.nan)  # Stores vector lengths at which performance reaches t_pC
 vecLen_easy = np.full((nRefs, 1), np.nan)  # Stores vector lengths for easier trials
 sim_pX1 = np.full((nRefs, nLevels), np.nan)  # Stores simulated percent correct (pX1)
-pX1_Wishart = np.full(
-    (nRefs, nVec_len), np.nan
-)  # Stores Wishart-predicted pX1 for finer stimulus sampling
-pX1_Wishart_stim = np.full(
-    (nRefs, nLevels), np.nan
-)  # Stores Wishart-predicted pX1 for MOCS stimulus levels
-comp_unique_origin = np.full(
-    (nRefs, nLevels, stim_dims), np.nan
-)  # Stores unique comparison stimuli
-comp_unique = np.full(
-    (nRefs, nLevels, stim_dims), np.nan
-)  # Stores unique comparison stimuli
-refStimulus = np.full(
-    (nRefs, num_trials, stim_dims), np.nan
-)  # Stores reference stimuli per trial
+pX1_Wishart = np.full((nRefs, nVec_len), np.nan)  # Stores Wishart-predicted pX1 for finer stimulus sampling
+pX1_Wishart_stim = np.full((nRefs, nLevels), np.nan)  # Stores Wishart-predicted pX1 for MOCS stimulus levels
+comp_unique_origin = np.full((nRefs, nLevels, stim_dims), np.nan)  # Stores unique comparison stimuli
+comp_unique = np.full((nRefs, nLevels, stim_dims), np.nan)  # Stores unique comparison stimuli
+refStimulus = np.full((nRefs, num_trials, stim_dims), np.nan)  # Stores reference stimuli per trial
 compStimulus = np.full(refStimulus.shape, np.nan)  # Stores comparison stimuli per trial
 responses = np.full((nRefs, num_trials), np.nan)  # Stores simulated binary responses
 
@@ -306,8 +288,7 @@ for idx_slc in range(nRefs):
     # Check if values exceed bounds [-1, 1]
     if np.min(comp_unique) < -1 or np.max(comp_unique) > 1:
         raise ValueError(
-            "easyTrial_stim contains out-of-bounds values: "
-            + f"min {np.min(comp_unique)}, max {np.max(comp_unique)}"
+            "easyTrial_stim contains out-of-bounds values: " + f"min {np.min(comp_unique)}, max {np.max(comp_unique)}"
         )
 
     # Compute the Wishart-predicted performance at selected MOCS stimulus levels
@@ -321,9 +302,7 @@ for idx_slc in range(nRefs):
     """
     for n in range(nLevels):
         # Simulate binary responses based on the predicted probability of choosing x1
-        sim_resp_n, pC_mean_n = sim_MOCS_trials.sim_binary_trials(
-            pX1_Wishart_stim[idx_slc][n], trials_per_level
-        )
+        sim_resp_n, pC_mean_n = sim_MOCS_trials.sim_binary_trials(pX1_Wishart_stim[idx_slc][n], trials_per_level)
 
         # Store the simulated responses
         idx_lb = n * trials_per_level  # Lower index for this level
@@ -334,14 +313,10 @@ for idx_slc in range(nRefs):
         sim_pX1[idx_slc, n] = pC_mean_n
 
         # Repeat reference stimuli for the given number of trials
-        refStimulus[idx_slc, idx_lb:idx_ub] = np.tile(
-            xref_unique[idx_slc], (trials_per_level, 1)
-        )
+        refStimulus[idx_slc, idx_lb:idx_ub] = np.tile(xref_unique[idx_slc], (trials_per_level, 1))
 
         # Compute and store the comparison stimuli, ensuring correct shifts
-        compStimulus[idx_slc, idx_lb:idx_ub] = np.tile(
-            comp_unique[idx_slc][n], (trials_per_level, 1)
-        )
+        compStimulus[idx_slc, idx_lb:idx_ub] = np.tile(comp_unique[idx_slc][n], (trials_per_level, 1))
 
     """
     Debugging: Plot the Wishart-predicted pX1 and the simulated responses
@@ -424,14 +399,10 @@ rng = np.random.default_rng(sobol_seed)  # Create a random number generator with
 shuffled_list = []
 for n in range(nRefs):
     #  Create a 2D array of levels (nLevels x trials_per_level)
-    shuffled_array_n = np.tile(
-        np.arange(nLevels).reshape(nLevels, 1), (1, trials_per_level)
-    )
+    shuffled_array_n = np.tile(np.arange(nLevels).reshape(nLevels, 1), (1, trials_per_level))
     # Shuffle each column independently using rng.permutation()
     for col in range(shuffled_array_n.shape[1]):
-        shuffled_array_n[:, col] = rng.permutation(
-            shuffled_array_n[:, col]
-        )  # Shuffle while ensuring reproducibility
+        shuffled_array_n[:, col] = rng.permutation(shuffled_array_n[:, col])  # Shuffle while ensuring reproducibility
     # Flatten the shuffled array and store it in the list
     shuffled_list.append(shuffled_array_n.ravel())
 # Concatenate all shuffled arrays from different references into a single 1D array
@@ -440,14 +411,9 @@ shuffled_array = np.concatenate(shuffled_list)
 # Create a DataFrame containing trial information
 pregenerated_trials = pd.DataFrame(
     {
-        "condition": np.repeat(
-            np.arange(nRefs), nLevels * trials_per_level
-        ).tolist(),  # Reference condition index
-        "level": np.tile(
-            np.repeat(np.arange(nLevels), trials_per_level), nRefs
-        ).tolist(),  # Original level index
-        "trial": list(range(trials_per_level))
-        * (nRefs * nLevels),  # Trial index within each level
+        "condition": np.repeat(np.arange(nRefs), nLevels * trials_per_level).tolist(),  # Reference condition index
+        "level": np.tile(np.repeat(np.arange(nLevels), trials_per_level), nRefs).tolist(),  # Original level index
+        "trial": list(range(trials_per_level)) * (nRefs * nLevels),  # Trial index within each level
         "shuffled_level": shuffled_array,  # The shuffled levels for each trial
     }
 )
@@ -464,9 +430,7 @@ if flag_debugplots:
     # visualize shuffled MOCS trials over time
     for t in range(trials_per_level):
         t_ub = nRefs * nLevels * (t + 1)
-        plt.scatter(
-            MOCS_xref_shuffled[:t_ub, 0], MOCS_xref_shuffled[:t_ub, 1], alpha=0.03
-        )
+        plt.scatter(MOCS_xref_shuffled[:t_ub, 0], MOCS_xref_shuffled[:t_ub, 1], alpha=0.03)
         plt.scatter(MOCS_x1_shuffled[:t_ub, 0], MOCS_x1_shuffled[:t_ub, 1], alpha=0.03)
         plt.xlim([-1, 1])
         plt.ylim([-1, 1])
@@ -542,9 +506,7 @@ for n in range(nSessions):
 
     # Shuffle the scaling factors with a session-specific random seed for reproducibility
     np.random.seed(seed_session_n)
-    sobol_scaler_n = np.concatenate(
-        [np.random.permutation(sobol_scaler) for _ in range(num_repeats)]
-    )
+    sobol_scaler_n = np.concatenate([np.random.permutation(sobol_scaler) for _ in range(num_repeats)])
 
     # Assign reference (`xref`) and comparison (`x1`) values
     Sobol_xref[n] = Sobol_samples[:, :2]  # First two dimensions for `xref`

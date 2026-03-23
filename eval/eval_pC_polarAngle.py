@@ -58,9 +58,7 @@ nSessions = 12  # selected session
 
 # Base directory where data lives. On HPC, prefer paths relative to the script.
 base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
-path_str = os.path.join(
-    base_dir, "ELPS_analysis", "Experiment_DataFiles", "pilot2", f"sub{subN}"
-)
+path_str = os.path.join(base_dir, "ELPS_analysis", "Experiment_DataFiles", "pilot2", f"sub{subN}")
 # 4D_Expt_varyingBackground,
 # 4D_Expt_dichromats
 # pilot2
@@ -82,8 +80,8 @@ data_allSessions = load_expt_data.load_data_all_sessions(session_files)
 
 try:
     # Concatenate MOCS trials across sessions (if present)
-    xref_MOCS_list, x1_MOCS_list, y_MOCS_list, xref_MOCS, x1_MOCS, y_MOCS = (
-        load_expt_data.load_MOCS_data(data_allSessions)
+    xref_MOCS_list, x1_MOCS_list, y_MOCS_list, xref_MOCS, x1_MOCS, y_MOCS = load_expt_data.load_MOCS_data(
+        data_allSessions
     )
 
     # Group MOCS trials by unique reference stimulus condition
@@ -103,9 +101,7 @@ except:
     print("MOCS trials not found in this dataset.")
 
 # Concatenate AEPsych trials across sessions, and also load any pre-generated Sobol block
-aepsych_data, sobol_data, combined_data = load_expt_data.load_combine_AEPsych_pregSobol(
-    data_allSessions
-)
+aepsych_data, sobol_data, combined_data = load_expt_data.load_combine_AEPsych_pregSobol(data_allSessions)
 
 (
     xref_AEPsych_list,
@@ -188,9 +184,7 @@ y_for_tests = [y_aeSobol, y_aeEAVC, y_pregenSobol]
 
 # Create one BinnedPC object per subset and run theta-binning
 binner_list = []
-for ii, (xref_ii, x1_ii, y_ii) in enumerate(
-    zip(xref_for_tests, x1_for_tests, y_for_tests)
-):
+for ii, (xref_ii, x1_ii, y_ii) in enumerate(zip(xref_for_tests, x1_for_tests, y_for_tests)):
     # Some datasets may not include the pre-generated Sobol block; skip if missing
     if xref_ii is None:
         continue
@@ -206,9 +200,7 @@ for ii, (xref_ii, x1_ii, y_ii) in enumerate(
     binner_list.append(binner)
 
 # %% visualizse
-output_fig_path = os.path.join(
-    path_str.replace("Experiment_DataFiles", "Experiment_FigFiles"), "binnedPC"
-)
+output_fig_path = os.path.join(path_str.replace("Experiment_DataFiles", "Experiment_FigFiles"), "binnedPC")
 os.makedirs(output_fig_path, exist_ok=True)
 
 for ii in range(len(xref_for_tests)):
@@ -226,9 +218,7 @@ for ii in range(len(xref_for_tests)):
 
     # Use a truncated range of a base colormap to keep colors subtle
     base_cmap = plt.cm.PiYG_r
-    cmap_trunc = mpl.colors.LinearSegmentedColormap.from_list(
-        "bone_trunc", base_cmap(np.linspace(0.3, 0.5, 256))
-    )
+    cmap_trunc = mpl.colors.LinearSegmentedColormap.from_list("bone_trunc", base_cmap(np.linspace(0.3, 0.5, 256)))
 
     # Map trial counts to RGBA colors, one per theta bin
     colors = cmap_trunc(norm(nTrials_bin))

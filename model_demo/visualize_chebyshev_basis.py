@@ -74,17 +74,13 @@ basis_coeffs = chebyshev.chebyshev_basis(degree)
 lg = chebyshev.evaluate(basis_coeffs, grid)
 
 # Create settings instance with custom fig_dir
-fig_basis_dir = os.path.join(
-    baseDir, "WishartPractice_FigFiles", "Chebyshev_basis_functions"
-)
+fig_basis_dir = os.path.join(baseDir, "WishartPractice_FigFiles", "Chebyshev_basis_functions")
 pltSettings_base = PlotSettingsBase(fig_dir=fig_basis_dir)
 os.makedirs(fig_basis_dir, exist_ok=True)
 
 # Specialize per plot type
 pltSettings_1D = replace(PlotBasis1DSettings(), **pltSettings_base.__dict__)
-visualize_basis = WishartModelBasicsVisualization(
-    settings=pltSettings_base, save_format="pdf", save_fig=True
-)
+visualize_basis = WishartModelBasicsVisualization(settings=pltSettings_base, save_format="pdf", save_fig=True)
 # 1D Chebyshev basis functions
 visualize_basis.plot_basis_function_1d(degree, grid, lg, settings=pltSettings_1D)
 
@@ -100,9 +96,7 @@ visualize_basis.plot_basis_function_2D(degree, grid, settings=pltSettings_2D)
 X_mesh, Y_mesh, Z_mesh = np.meshgrid(grid, grid, grid)
 # Stack the flattened x, y, and z arrays into a single matrix and then transpose it,
 # resulting in a matrix where each row represents a point (x, y, z) in the 3D space.
-XYZ_mesh = np.transpose(
-    np.stack((X_mesh.flatten(), Y_mesh.flatten(), Z_mesh.flatten())), (1, 0)
-)
+XYZ_mesh = np.transpose(np.stack((X_mesh.flatten(), Y_mesh.flatten(), Z_mesh.flatten())), (1, 0))
 
 # Evaluate Chebyshev polynomials for each coordinate (x, y, z) and compute their outer product.
 # This results in a high-dimensional array where each element represents the product of
@@ -122,14 +116,10 @@ pltSettings_3D = replace(PlotBasis3DSettings(), **pltSettings_base.__dict__)
 
 # Loop through each degree of the Chebyshev polynomials.
 for i in range(degree):
-    current_settings = replace(
-        pltSettings_3D, fig_name=f"Chebyshev_3D_basis_function_degree{i + 1}"
-    )
+    current_settings = replace(pltSettings_3D, fig_name=f"Chebyshev_3D_basis_function_degree{i + 1}")
     # Plot 3D basis functions for each degree using the calculated values in `phi_org`,
     # and save the plots and GIFs to a specified directory.
-    visualize_basis.plot_basis_functions_3D(
-        X_mesh, Y_mesh, Z_mesh, phi_org[..., i], settings=pltSettings_3D
-    )
+    visualize_basis.plot_basis_functions_3D(X_mesh, Y_mesh, Z_mesh, phi_org[..., i], settings=pltSettings_3D)
 
 # %%
 # ---------------------------------------------------------------------
@@ -159,11 +149,7 @@ OPT_KEY = jax.random.PRNGKey(seed)
 W_init = model.sample_W_prior(W_INIT_KEY)
 
 # basis_orders[d1, d2, d3] = total polynomial order at that grid location
-basis_orders = (
-    jnp.arange(degree)[:, None, None]
-    + jnp.arange(degree)[None, :, None]
-    + jnp.arange(degree)[None, None, :]
-)
+basis_orders = jnp.arange(degree)[:, None, None] + jnp.arange(degree)[None, :, None] + jnp.arange(degree)[None, None, :]
 
 # Set up output directory and plotting settings for W slices
 fig_W_dir = os.path.join(baseDir, "WishartPractice_FigFiles", "Estimated_W_matrix")
@@ -171,9 +157,7 @@ pltSettings_base_W = PlotSettingsBase(fig_dir=fig_W_dir, fontsize=9)
 pltSettings_W = replace(PlotWSettings(), **pltSettings_base_W.__dict__)
 
 # Visualize one slice of the weight tensor W_init
-visualize_basis.plot_W_selected_slice(
-    W_init, settings=pltSettings_W, basis_orders=basis_orders, slc_slice=[3]
-)
+visualize_basis.plot_W_selected_slice(W_init, settings=pltSettings_W, basis_orders=basis_orders, slc_slice=[3])
 
 # Expand basis_orders to match the last two dimensions of W:
 # shape → (degree, degree, degree, num_dims_cov, num_dims_cov + extra_dims)
@@ -184,9 +168,7 @@ basis_orders_full = np.tile(
 
 # max polynomial order
 max_order = np.max(basis_orders)
-prior_weight_sd = 2 * np.sqrt(
-    model.variance_scale * (model.decay_rate ** np.arange(0, max_order + 1))
-)
+prior_weight_sd = 2 * np.sqrt(model.variance_scale * (model.decay_rate ** np.arange(0, max_order + 1)))
 
 # Plot settings for the “weights vs polynomial order” summary figure
 pltSettings_W_all = replace(PlotWAllSettings(), **pltSettings_base_W.__dict__)
@@ -196,9 +178,7 @@ pltSettings_W_all = replace(
     ybds=[-0.04, 0.04],
     yticks=np.linspace(-0.04, 0.04, 5),
 )
-fig, ax = plt.subplots(
-    1, 1, figsize=pltSettings_W_all.fig_size, dpi=pltSettings_W_all.dpi
-)
+fig, ax = plt.subplots(1, 1, figsize=pltSettings_W_all.fig_size, dpi=pltSettings_W_all.dpi)
 
 # Plot prior ±1 SD envelope for comparison
 ax.plot(
@@ -211,6 +191,4 @@ ax.plot(
 ax.plot(np.arange(0, max_order + 1), -prior_weight_sd, color="k", ls="--")
 
 # Overlay empirical weights (W_init) aggregated by maximum polynomial order
-visualize_basis.plot_W_all(
-    W_init, basis_orders=basis_orders_full, settings=pltSettings_W_all, ax=ax
-)
+visualize_basis.plot_W_all(W_init, basis_orders=basis_orders_full, settings=pltSettings_W_all, ax=ax)

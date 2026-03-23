@@ -137,9 +137,7 @@ def PointsOnEllipsoid(radii, center, eigenVectors, unitEllipsoid):
 
     # Stack the stretched coordinates and flatten them to create a 2D array of size (3, N),
     # where N = Theta * Phi. This step prepares the coordinates for rotation.
-    xyz = np.vstack(
-        (x_stretched.flatten(), y_stretched.flatten(), z_stretched.flatten())
-    )
+    xyz = np.vstack((x_stretched.flatten(), y_stretched.flatten(), z_stretched.flatten()))
 
     # Rotate the stretched ellipsoid points to align with the ellipsoid's actual
     # orientation in 3D space using the eigenVectors rotation matrix.
@@ -178,9 +176,7 @@ def EllipsoidSurfaceMesh(radii, center, eigenVectors, nu=120, nv=240):
     """
     # Affine map: unit-sphere → axis-aligned ellipsoid (scale) → world frame (rotate)
     # p_world = eigenVectors @ diag(radii) @ p_sphere + center
-    sphere_to_ellipsoid = np.asarray(eigenVectors, float) @ np.diag(
-        np.asarray(radii, float)
-    )
+    sphere_to_ellipsoid = np.asarray(eigenVectors, float) @ np.diag(np.asarray(radii, float))
 
     # Angular parameterization of the unit sphere
     theta = np.linspace(0.0, np.pi, int(nu))  # polar angle
@@ -188,9 +184,7 @@ def EllipsoidSurfaceMesh(radii, center, eigenVectors, nu=120, nv=240):
     th, ph = np.meshgrid(theta, phi, indexing="ij")  # (nu, nv)
 
     # Unit-sphere coordinates s(θ, φ) = (sinθ cosφ, sinθ sinφ, cosθ)
-    sphere_pts = np.stack(
-        [np.sin(th) * np.cos(ph), np.sin(th) * np.sin(ph), np.cos(th)], axis=-1
-    )  # (nu, nv, 3)
+    sphere_pts = np.stack([np.sin(th) * np.cos(ph), np.sin(th) * np.sin(ph), np.cos(th)], axis=-1)  # (nu, nv, 3)
 
     # Map to world frame and translate by center
     center = np.asarray(center, float).ravel()
@@ -215,14 +209,10 @@ def ellipsoid_fit(X, lambda_reg=0):
     x = X[:, 0]
     y = X[:, 1]
     z = X[:, 2]
-    D = np.array(
-        [x * x, y * y, z * z, 2 * x * y, 2 * x * z, 2 * y * z, 2 * x, 2 * y, 2 * z]
-    )
+    D = np.array([x * x, y * y, z * z, 2 * x * y, 2 * x * z, 2 * y * z, 2 * x, 2 * y, 2 * z])
     DT = D.conj().T
 
-    v = np.linalg.solve(
-        D.dot(DT) + lambda_reg * np.eye(D.shape[0]), D.dot(np.ones(np.size(x)))
-    )
+    v = np.linalg.solve(D.dot(DT) + lambda_reg * np.eye(D.shape[0]), D.dot(np.ones(np.size(x))))
     A = np.array(
         [
             [v[0], v[3], v[4], v[6]],
@@ -243,12 +233,8 @@ def ellipsoid_fit(X, lambda_reg=0):
     sgns = np.sign(evals)
     radii = radii * sgns
     d = np.array([x - center[0], y - center[1], z - center[2]])  # shift data to origin
-    d = np.asarray(
-        np.matrix(d.T) * np.matrix(evecs)
-    )  # rotate to cardinal axes of the conic;
-    d = np.array(
-        [d[:, 0] / radii[0], d[:, 1] / radii[1], d[:, 2] / radii[2]]
-    ).T  # normalize to the conic radii
+    d = np.asarray(np.matrix(d.T) * np.matrix(evecs))  # rotate to cardinal axes of the conic;
+    d = np.array([d[:, 0] / radii[0], d[:, 1] / radii[1], d[:, 2] / radii[2]]).T  # normalize to the conic radii
     chi2 = np.sum(np.abs(1 - np.sum(d**2 * np.tile(sgns, (d.shape[0], 1)), axis=1)))
 
     return center, radii, evecs, v, chi2
@@ -277,9 +263,7 @@ def ellipsoid_fit_fixed_center(X, center0, lambda_reg=0.0):
     x, y, z = U[:, 0], U[:, 1], U[:, 2]
 
     # Design for symmetric Q (6 params): [xx, yy, zz, 2xy, 2xz, 2yz]
-    D = np.vstack(
-        [x * x, y * y, z * z, 2 * x * y, 2 * x * z, 2 * y * z]
-    )  # shape (6, N)
+    D = np.vstack([x * x, y * y, z * z, 2 * x * y, 2 * x * z, 2 * y * z])  # shape (6, N)
 
     # Solve: minimize || D^T p - 1 ||^2 + lambda||p||^2
     # Normal equations in your style: (D D^T + λI) p = D 1
@@ -288,9 +272,7 @@ def ellipsoid_fit_fixed_center(X, center0, lambda_reg=0.0):
     p = np.linalg.solve(A, b)
 
     # Build Q from p
-    Q = np.array(
-        [[p[0], p[3], p[4]], [p[3], p[1], p[5]], [p[4], p[5], p[2]]], dtype=float
-    )
+    Q = np.array([[p[0], p[3], p[4]], [p[3], p[1], p[5]], [p[4], p[5], p[2]]], dtype=float)
 
     # Eigen-decompose: Q = V diag(evals) V^T
     evals, evecs = np.linalg.eigh(Q)
@@ -305,9 +287,7 @@ def ellipsoid_fit_fixed_center(X, center0, lambda_reg=0.0):
     return center0, radii, evecs, Q, chi2
 
 
-def fit_3d_isothreshold_ellipsoid(
-    ref, comp, nTheta=200, nPhi=100, ellipsoid_scaler=1, flag_force_centered_ref=False
-):
+def fit_3d_isothreshold_ellipsoid(ref, comp, nTheta=200, nPhi=100, ellipsoid_scaler=1, flag_force_centered_ref=False):
     """
     Fit a 3D ellipsoid to a set of comparison stimuli around a reference stimulus,
     then optionally scale the fitted ellipsoid and the discrete comparison points
@@ -349,9 +329,7 @@ def fit_3d_isothreshold_ellipsoid(
 
     # Accept either a flat list of points (N,3) or a grid (nPhi,nTheta,3).
     if comp.ndim not in (2, 3) or comp.shape[-1] != 3:
-        raise ValueError(
-            f"`comp` must have shape (N, 3) or (nPhi, nTheta, 3). Got {comp.shape}."
-        )
+        raise ValueError(f"`comp` must have shape (N, 3) or (nPhi, nTheta, 3). Got {comp.shape}.")
 
     # Flatten to (N, 3) for fitting
     comp_reshape = comp.reshape(-1, 3)
@@ -385,14 +363,10 @@ def fit_3d_isothreshold_ellipsoid(
     )
 
     # Generate surface points of the fitted ellipsoid (unscaled)
-    fitEllipsoid_unscaled = PointsOnEllipsoid(
-        ellFits["radii"], ellFits["center"], ellFits["evecs"], circleIn3D
-    )
+    fitEllipsoid_unscaled = PointsOnEllipsoid(ellFits["radii"], ellFits["center"], ellFits["evecs"], circleIn3D)
 
     # Radially scale the ellipsoid surface about the reference
-    fitEllipsoid_scaled = (
-        fitEllipsoid_unscaled - ref[:, None]
-    ) * ellipsoid_scaler + ref[:, None]
+    fitEllipsoid_scaled = (fitEllipsoid_unscaled - ref[:, None]) * ellipsoid_scaler + ref[:, None]
 
     # Radially scale the discrete comparison points about the reference
     comp_scaled = (comp_reshape.T - ref[:, None]) * ellipsoid_scaler + ref[:, None]
@@ -425,9 +399,7 @@ def eig_to_covMat(eigval, eigvec):
     return covMat
 
 
-def slice_ellipsoid_byPlane(
-    center, radii, eigenvectors, plane_v1, plane_v2, covMat=None, num_grid_pts=100
-):
+def slice_ellipsoid_byPlane(center, radii, eigenvectors, plane_v1, plane_v2, covMat=None, num_grid_pts=100):
     """
     Computes the intersection of an ellipsoid with a plane, resulting in an elliptical contour.
 
@@ -447,9 +419,7 @@ def slice_ellipsoid_byPlane(
     v2 = plane_v2 / np.linalg.norm(plane_v2)
 
     # Check if the two vectors defining the plane are orthogonal
-    if (
-        np.abs(np.dot(v1, v2)) > 1e-3
-    ):  # Allow a small tolerance for floating-point precision
+    if np.abs(np.dot(v1, v2)) > 1e-3:  # Allow a small tolerance for floating-point precision
         raise ValueError("The two vectors defining the plane should be orthogonal!")
 
     if covMat is None:
@@ -478,9 +448,7 @@ def slice_ellipsoid_byPlane(
     # Parametrize the ellipse in the plane's local coordinate system
     # The ellipse is parameterized using an angle from 0 to 2*pi
     angles = np.linspace(0, 2 * np.pi, num_grid_pts)  # 100 points around the ellipse
-    ellipse_local = np.array(
-        [semi_axes[0] * np.cos(angles), semi_axes[1] * np.sin(angles)]
-    )
+    ellipse_local = np.array([semi_axes[0] * np.cos(angles), semi_axes[1] * np.sin(angles)])
 
     # Rotate the ellipse to align with the correct orientation in the plane
     ellipse_local_rotated = eigvecs @ ellipse_local
@@ -488,9 +456,7 @@ def slice_ellipsoid_byPlane(
     # Transform the ellipse from the plane's local coordinates to global 3D coordinates
     # This step places the ellipse in the global coordinate system by using the plane's basis vectors (v1, v2)
     sliced_ellipse = (
-        center[:, None]
-        + ellipse_local_rotated[0, :] * v1[:, None]
-        + ellipse_local_rotated[1, :] * v2[:, None]
+        center[:, None] + ellipse_local_rotated[0, :] * v1[:, None] + ellipse_local_rotated[1, :] * v2[:, None]
     )
 
     return sliced_ellipse, [M, eigvals, eigvecs, semi_axes, rot_angle]
@@ -615,10 +581,7 @@ def angles_to_3Dchromatic_directions(theta_deg, phi_deg, normalize=True):
     phi_deg = np.asarray(phi_deg, dtype=float).ravel()
 
     if theta_deg.shape != phi_deg.shape:
-        raise ValueError(
-            f"theta_deg and phi_deg must have the same shape; "
-            f"got {theta_deg.shape} vs {phi_deg.shape}."
-        )
+        raise ValueError(f"theta_deg and phi_deg must have the same shape; got {theta_deg.shape} vs {phi_deg.shape}.")
 
     theta_rad = np.deg2rad(theta_deg)
     phi_rad = np.deg2rad(phi_deg)

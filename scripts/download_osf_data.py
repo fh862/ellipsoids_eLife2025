@@ -68,11 +68,7 @@ def _walk_folder(folder_url: str, dest_dir: Path) -> None:
             elif kind == "folder":
                 # Recurse: the folder's own file-listing URL
                 folder_files_url = (
-                    item.get("relationships", {})
-                    .get("files", {})
-                    .get("links", {})
-                    .get("related", {})
-                    .get("href", "")
+                    item.get("relationships", {}).get("files", {}).get("links", {}).get("related", {}).get("href", "")
                 )
                 if folder_files_url:
                     _walk_folder(folder_files_url, dest_dir / name)
@@ -82,9 +78,7 @@ def _walk_folder(folder_url: str, dest_dir: Path) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(
-        description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter
-    )
+    parser = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
     parser.add_argument(
         "--data-dir",
         type=Path,

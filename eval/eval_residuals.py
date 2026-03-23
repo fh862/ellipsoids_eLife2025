@@ -64,16 +64,12 @@ nRefs = 25  # Number of reference stimuli per subject
 input_fileDir_fits_others, file_name_others = select_file_and_get_path()
 
 # Initialize storage arrays for extracted values
-params_ell = np.full(
-    (nDatasets, nRefs, 5), np.nan
-)  # Ellipse params: [x, y, major, minor, angle]
+params_ell = np.full((nDatasets, nRefs, 5), np.nan)  # Ellipse params: [x, y, major, minor, angle]
 diff_rotAngle = np.full((nDatasets, nRefs), np.nan)  # Rotation angle difference (deg)
 thres_est_Wishart = np.full((nDatasets, nRefs), np.nan)  # Thresholds from WPPM
 thres_est_MOCS = np.full((nDatasets, nRefs), np.nan)  # Thresholds from MOCS validation
 diff_thres_est = np.full((nDatasets, nRefs), np.nan)  # Residuals: WPPM - MOCS
-ratio_major_over_minor = np.full(
-    (nDatasets, nRefs), np.nan
-)  # Aspect ratio (major/minor)
+ratio_major_over_minor = np.full((nDatasets, nRefs), np.nan)  # Aspect ratio (major/minor)
 xref_unique = np.full((nDatasets, nRefs, 2), np.nan)  # Reference chromaticity
 
 # % Step 2: Loop through each bootstrap dataset and load data
@@ -85,9 +81,7 @@ for r in range(nDatasets):
         if not match:
             raise ValueError('No "subXXX" pattern found in the file name!')
         old_sub = match.group()
-        input_fileDir_fits_r = input_fileDir_fits_others.replace(
-            old_sub, f"sub{subject_id}"
-        )
+        input_fileDir_fits_r = input_fileDir_fits_others.replace(old_sub, f"sub{subject_id}")
         file_name_r = file_name_others.replace(old_sub, f"sub{subject_id}")
     else:
         input_fileDir_fits_r = input_fileDir_fits_others
@@ -103,9 +97,7 @@ for r in range(nDatasets):
     # Compute chromatic directions (vectors from reference to comparison stimuli)
     xref_unique[r] = MOCS["xref_unique"]
     vec_chromaDir_MOCS = MOCS["stim_at_targetPC_Wishart"] - xref_unique[r]
-    rotAngle_chromaDir_MOCS = np.rad2deg(
-        np.arctan2(vec_chromaDir_MOCS[:, 1], vec_chromaDir_MOCS[:, 0])
-    )  # deg
+    rotAngle_chromaDir_MOCS = np.rad2deg(np.arctan2(vec_chromaDir_MOCS[:, 1], vec_chromaDir_MOCS[:, 0]))  # deg
 
     # Load Wishart model predictions at each validation location
     model_pred_Wishart_MOCS = MOCS["model_pred_Wishart_MOCS"]
@@ -123,9 +115,7 @@ for r in range(nDatasets):
     # Compute absolute angular difference between predicted ellipse orientation and
     # chromatic direction
     rotAngle_Wishart_MOCS = params_ell[r, :, -1]
-    diff_rotAngle[r] = symmetric_angle_difference(
-        rotAngle_Wishart_MOCS, rotAngle_chromaDir_MOCS
-    )
+    diff_rotAngle[r] = symmetric_angle_difference(rotAngle_Wishart_MOCS, rotAngle_chromaDir_MOCS)
 
 # Retrieve the 2D Wishart → RGB transformation matrix (for use in color mapping, etc.)
 color_thres_data = model_pred_Wishart_MOCS.color_thres_data
@@ -177,9 +167,7 @@ for s in range(n_comparisons):
 
     # Define plotting range with ±5% buffer beyond data range
     x_min, x_max = np.min(x_raw), np.max(x_raw)
-    x_plot_ranges[s] = np.array([x_min, x_max]) + 0.05 * (x_max - x_min) * np.array(
-        [-1, 1]
-    )
+    x_plot_ranges[s] = np.array([x_min, x_max]) + 0.05 * (x_max - x_min) * np.array([-1, 1])
 
     # alternative package
     x_with_const = sm.add_constant(x_raw)
@@ -240,9 +228,7 @@ for s in range(n_comparisons):
     ax[s].set_ylim([-y_ub, y_ub])
     ax[s].set_xlim(x_plot_ranges[s])
     ax[s].set_ylabel("Threshold difference\n(WPPM − validation)")
-ax[0].set_xlabel(
-    "Absolute difference of angles (major axis of WPPM-predicted ellipse - validation, deg)"
-)
+ax[0].set_xlabel("Absolute difference of angles (major axis of WPPM-predicted ellipse - validation, deg)")
 ax[0].set_xticks(np.linspace(0, 90, 7))
 ax[1].set_xlabel("Ratio of major to minor axis lengths of WPPM-predicted ellipses")
 ax[2].set_xlabel("Validation thresholds")

@@ -129,18 +129,14 @@ if flag_random_ref:
     grid_new = np.reshape(dots, (ngrid_pts, ngrid_pts, ndims))
 
     # Recompute threshold predictions on the new reference grid using the existing fit
-    modelpred_new, _ = rerun_model_pred_wExisting_model(
-        grid_new, modelpred, color_thres_data
-    )
+    modelpred_new, _ = rerun_model_pred_wExisting_model(grid_new, modelpred, color_thres_data)
 
     modelpred_thres = modelpred_new.fitEll_unscaled
     Sigmas_noise_grid_new = modelpred_new.Sigmas_noise_grid
 else:
     # (B) Structured grid: reuse predictions if the loaded grid already matches
     loaded_grid_matches = (
-        grid_new.shape[0] == ngrid_pts
-        and np.min(grid_new) == grid_1d_bds[0]
-        and np.max(grid_new) == grid_1d_bds[1]
+        grid_new.shape[0] == ngrid_pts and np.min(grid_new) == grid_1d_bds[0] and np.max(grid_new) == grid_1d_bds[1]
     )
 
     if loaded_grid_matches:
@@ -153,9 +149,7 @@ else:
         xgrid_dim1 = jnp.linspace(*grid_1d_bds, ngrid_pts)
         grid_new = jnp.stack(jnp.meshgrid(*[xgrid_dim1 for _ in range(ndims)]), axis=-1)
 
-        modelpred_new, _ = rerun_model_pred_wExisting_model(
-            grid_new, modelpred, color_thres_data
-        )
+        modelpred_new, _ = rerun_model_pred_wExisting_model(grid_new, modelpred, color_thres_data)
 
 # %%
 # -------------------------------------------------------------
@@ -171,9 +165,7 @@ else:
 #       at selected reference locations, illustrating smooth changes in the performance field.
 
 # Create output directory for figures
-fig_outputDir = input_fileDir_fits.replace("DataFiles", "FigFiles").replace(
-    "fits", "CovarianceMatrix_2d"
-)
+fig_outputDir = input_fileDir_fits.replace("DataFiles", "FigFiles").replace("fits", "CovarianceMatrix_2d")
 os.makedirs(fig_outputDir, exist_ok=True)
 
 # Base plotting settings shared across figures
@@ -181,9 +173,7 @@ pltSettings_base = PlotSettingsBase(fig_dir=fig_outputDir, fontsize=11)
 
 # Plot settings specific to covariance-matrix visualization
 pltCovSettings = replace(PlotCovMatSettings(), **pltSettings_base.__dict__)
-visualize_sigma2D = WishartModelBasicsVisualization(
-    save_fig=True, save_format="pdf", settings=pltCovSettings
-)
+visualize_sigma2D = WishartModelBasicsVisualization(save_fig=True, save_format="pdf", settings=pltCovSettings)
 
 # Titles for the heatmap panels (e.g., Σ11, Σ12, Σ21, Σ22)
 ttl_list = pltCovSettings.heatmap_title_list

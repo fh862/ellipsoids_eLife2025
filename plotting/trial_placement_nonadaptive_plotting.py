@@ -24,11 +24,7 @@ class PlotWeibullPMFSettings(PlotSettingsBase):
     xticks: list[float] | np.ndarray = field(default_factory=lambda: [0, 2, 4, 6])
     xlabel: str = r"Perceptual difference ($\Delta E$)"
     ylabel: str = "Proportion correct"
-    fig_name: str = field(
-        default_factory=lambda: (
-            f"Weibull_PMF_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
-    )
+    fig_name: str = field(default_factory=lambda: f"Weibull_PMF_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
@@ -37,12 +33,8 @@ class PlotTransformationSettings(PlotSettingsBase):
     colorcode_resp: bool = False
     visualize_gt: bool = True
     lim_scaler: float = 1.25
-    facecolor: str | np.ndarray | list[float] = field(
-        default_factory=lambda: [0.5, 0.5, 0.5]
-    )
-    edgecolor: str | np.ndarray | list[float] = field(
-        default_factory=lambda: [1.0, 1.0, 1.0]
-    )
+    facecolor: str | np.ndarray | list[float] = field(default_factory=lambda: [0.5, 0.5, 0.5])
+    edgecolor: str | np.ndarray | list[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
     facecolor_yes: str | np.ndarray | list[float] = field(
         default_factory=lambda: (np.array([107, 142, 35]) / 255).tolist()
     )
@@ -55,11 +47,7 @@ class PlotTransformationSettings(PlotSettingsBase):
     ms: float = 25
     xlabel: str = "dimension 1"
     ylabel: str = "dimension 2"
-    fig_name: str = field(
-        default_factory=lambda: (
-            f"samples_transformation_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
-    )
+    fig_name: str = field(default_factory=lambda: f"samples_transformation_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
@@ -73,9 +61,7 @@ class Plot2DSampledCompSettings(PlotSettingsBase):
     xlabel: str = ""
     ylabel: str = ""
     nFinerGrid: int = 50
-    lc: str | np.ndarray | list[float] = field(
-        default_factory=lambda: (np.array([178, 34, 34]) / 255).tolist()
-    )
+    lc: str | np.ndarray | list[float] = field(default_factory=lambda: (np.array([178, 34, 34]) / 255).tolist())
     WishartEllipsesColor: str | np.ndarray | list[float] = field(
         default_factory=lambda: (np.array([76, 153, 0]) / 255).tolist()
     )
@@ -85,16 +71,10 @@ class Plot2DSampledCompSettings(PlotSettingsBase):
     lw: float = 1
     ls: str = "--"
     alpha: float = 0.8
-    mc1: str | np.ndarray | list[float] = field(
-        default_factory=lambda: (np.array([173, 216, 230]) / 255).tolist()
-    )
-    mc0: str | np.ndarray | list[float] = field(
-        default_factory=lambda: (np.array([255, 179, 138]) / 255).tolist()
-    )
+    mc1: str | np.ndarray | list[float] = field(default_factory=lambda: (np.array([173, 216, 230]) / 255).tolist())
+    mc0: str | np.ndarray | list[float] = field(default_factory=lambda: (np.array([255, 179, 138]) / 255).tolist())
     fig_name: str = field(
-        default_factory=lambda: (
-            f"Sampled comparison stimuli_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
+        default_factory=lambda: f"Sampled comparison stimuli_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
 
 
@@ -116,17 +96,13 @@ class Plot3DSampledCompSettings(PlotSettingsBase):
     fig_size: tuple[float, float] = (8, 8)
     title: str = ""
     fig_name: str = field(
-        default_factory=lambda: (
-            f"Sampled_comparison_stimuli_3D_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
+        default_factory=lambda: f"Sampled_comparison_stimuli_3D_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
 
 
 # %%
 class TrialPlacementVisualization(PlottingTools):
-    def __init__(
-        self, sim_trial, settings: PlotSettingsBase, save_fig=False, save_format="pdf"
-    ):
+    def __init__(self, sim_trial, settings: PlotSettingsBase, save_fig=False, save_format="pdf"):
 
         super().__init__(settings, save_fig, save_format)
         self.sim_trial = sim_trial
@@ -213,9 +189,7 @@ class TrialPlacementVisualization(PlottingTools):
             if settings.visualize_gt:
                 ax[i].plot(gt[i][0], gt[i][1], color="k", alpha=0.35, lw=2)
                 # plot the center
-                ax[i].scatter(
-                    mean_val[0], mean_val[1], marker="+", color="k", s=30, lw=1
-                )
+                ax[i].scatter(mean_val[0], mean_val[1], marker="+", color="k", s=30, lw=1)
 
             lim_val = np.max(np.abs(ell[i] - mean_val[:, None])) * settings.lim_scaler
             if len(settings.xlim[i]) == 0 or len(settings.ylim[i]) == 0:
@@ -249,20 +223,14 @@ class TrialPlacementVisualization(PlottingTools):
         vIdx = config.varying_color_dim
 
         # subplot
-        fig, ax = plt.subplots(
-            nGrid_x, nGrid_y, figsize=settings.fig_size, dpi=settings.dpi
-        )
+        fig, ax = plt.subplots(nGrid_x, nGrid_y, figsize=settings.fig_size, dpi=settings.dpi)
         for i in range(nGrid_x):
             for j in range(nGrid_y):
                 # Access the subplot from bottom to top
                 ax_idx = ax[nGrid_x - 1 - i, j]  # Reverse row order
 
-                x_axis = (
-                    np.linspace(*settings.xbds, settings.nFinerGrid) + grid_ref_x[j]
-                )
-                y_axis = (
-                    np.linspace(*settings.ybds, settings.nFinerGrid) + grid_ref_y[i]
-                )
+                x_axis = np.linspace(*settings.xbds, settings.nFinerGrid) + grid_ref_x[j]
+                y_axis = np.linspace(*settings.ybds, settings.nFinerGrid) + grid_ref_y[i]
 
                 # plot the ground truth
                 if settings.ground_truth is not None:
@@ -380,9 +348,7 @@ class TrialPlacementVisualization(PlottingTools):
 
                 # Plot ellipsoid surface
                 if settings.visualize_ellipsoid:
-                    color_v = (
-                        (slc_ref + 1) / 2 if settings.scaled_neg12pos1 else slc_ref
-                    )
+                    color_v = (slc_ref + 1) / 2 if settings.scaled_neg12pos1 else slc_ref
                     ax.plot_surface(
                         slc_gt_x,
                         slc_gt_y,
@@ -418,8 +384,7 @@ class TrialPlacementVisualization(PlottingTools):
                     else:
                         center = slc_ref[dim]
                         ticks = np.round(
-                            center
-                            + np.ceil(settings.bds * 100) / 100 * np.array([-1, 0, 1]),
+                            center + np.ceil(settings.bds * 100) / 100 * np.array([-1, 0, 1]),
                             2,
                         )
 
@@ -445,9 +410,7 @@ class TrialPlacementVisualization(PlottingTools):
 
         fig.suptitle(settings.title)
         plt.tight_layout()
-        plt.subplots_adjust(
-            left=0.05, right=0.95, top=0.95, bottom=0.05, wspace=-0.05, hspace=-0.05
-        )
+        plt.subplots_adjust(left=0.05, right=0.95, top=0.95, bottom=0.05, wspace=-0.05, hspace=-0.05)
         plt.show()
 
         if save_fig and settings.fig_dir:

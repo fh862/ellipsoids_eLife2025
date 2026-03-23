@@ -65,9 +65,7 @@ flag_running_on_hpc = False
 
 # Base directory where data lives. On HPC, prefer paths relative to the script.
 base_dir = (
-    os.path.dirname(__file__)
-    if flag_running_on_hpc
-    else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
+    os.path.dirname(__file__) if flag_running_on_hpc else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
 )
 
 # %%
@@ -113,15 +111,10 @@ subN = 11
 nBtst = 120
 
 # Construct path to the directory containing model fits
-input_fileDir_fits = os.path.join(
-    base_dir, "ELPS_analysis", "Experiment_DataFiles", "pilot2", f"sub{subN}", "fits"
-)
+input_fileDir_fits = os.path.join(base_dir, "ELPS_analysis", "Experiment_DataFiles", "pilot2", f"sub{subN}", "fits")
 
 # Name of the pickle file containing the model fit to the original dataset
-file_name = (
-    f"Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub{subN}_"
-    "decayRate0.4_varScaler0.0003_nBasisDeg5.pkl"
-)
+file_name = f"Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub{subN}_decayRate0.4_varScaler0.0003_nBasisDeg5.pkl"
 
 # Extract decayRate from the filename (used to locate bootstrap fits)
 match = re.search(r"decayRate([0-9.]+)", file_name)
@@ -160,9 +153,7 @@ if flag_running_on_hpc:
         # Generate a custom grid to recompute model predictions
         # Although the file already contains predictions on a 5x5 grid,
         # we regenerate predictions here to maintain flexibility in choosing grid resolution
-        grid_MacAdam = jnp.stack(
-            jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, 5) for _ in range(2)]), axis=-1
-        )
+        grid_MacAdam = jnp.stack(jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, 5) for _ in range(2)]), axis=-1)
 
         model_pred_Wishart_MacAdam, _ = rerun_model_pred_wExisting_model(
             grid_MacAdam, model_pred_Wishart, color_thres_data
@@ -297,9 +288,7 @@ else:
     ell_thres_xyY_btst_list = []
     for i in trange(nBtst):
         file_name_i = f"{file_name[:-4]}_btst_AEPsych[{i}].pkl"
-        full_path_i = os.path.join(
-            input_fileDir_fits, "AEPsych_btst", f"decayRate{decay_rate}", file_name_i
-        )
+        full_path_i = os.path.join(input_fileDir_fits, "AEPsych_btst", f"decayRate{decay_rate}", file_name_i)
 
         # Load the pickled data file
         with open(full_path_i, "rb") as f:
@@ -308,14 +297,10 @@ else:
         NBS_sum_i = np.sum(vars_dict_load_i["NBS_fine_grid"])
         NBS_sum.append(NBS_sum_i)
 
-        ell_thres_xyY_btst_list.append(
-            vars_dict_load_i["comp_MacAdam"]["ell_thres_xyY"]
-        )
+        ell_thres_xyY_btst_list.append(vars_dict_load_i["comp_MacAdam"]["ell_thres_xyY"])
 
     # Keep the top 95% of bootstraps by NBS score
-    ell_thres_xyY_btst_keep, *_ = find_btst_dataset_within_CI(
-        NBS_sum, ell_thres_xyY_btst_list, CI_percent=0.95
-    )
+    ell_thres_xyY_btst_keep, *_ = find_btst_dataset_within_CI(NBS_sum, ell_thres_xyY_btst_list, CI_percent=0.95)
 
     # ------------------------------------------------------------
     # Compute outer (union) and inner (intersection) contours
@@ -327,9 +312,7 @@ else:
         ell_thres_xyY_1ref_j = [E[j, :2].T for E in ell_thres_xyY_btst_keep]
         # note that central_fraction is set to 1 because the passed in array is
         # already 95% kept bootstrapped datasets
-        xu_j, yu_j, xi_j, yi_j = find_inner_outer_contours_nonellipse(
-            ell_thres_xyY_1ref_j, central_fraction=1
-        )
+        xu_j, yu_j, xi_j, yi_j = find_inner_outer_contours_nonellipse(ell_thres_xyY_1ref_j, central_fraction=1)
         ell_min_xy[j, : len(xi_j)] = np.vstack((xi_j, yi_j)).T
         ell_max_xy[j, : len(xu_j)] = np.vstack((xu_j, yu_j)).T
 
@@ -364,9 +347,7 @@ if not flag_running_on_hpc:
     flag_show_CI = True
 
     # Plot the CIE 1931 chromaticity diagram (without rendering immediately)
-    cie_fig, cie_ax = plot_chromaticity_diagram_CIE1931(
-        standalone=False, show_diagram_colours=flag_diagram_color
-    )
+    cie_fig, cie_ax = plot_chromaticity_diagram_CIE1931(standalone=False, show_diagram_colours=flag_diagram_color)
     # Set figure size in inches (width, height)
     cie_fig.set_size_inches(5.6, 6)
     # Slightly grey background
@@ -400,12 +381,8 @@ if not flag_running_on_hpc:
     # plot the major axis
     if flag_plot_major:
         for n in range(nRefs):
-            eigvec_n = rotAngle_to_eigenvectors(angles_deg[n]) @ np.array(
-                [[1, -1], [0, 0]]
-            )
-            major_coord_n = (
-                eigvec_n * semi_major[n]
-            )  # + np.array([xc_array[n], yc_array[n]])
+            eigvec_n = rotAngle_to_eigenvectors(angles_deg[n]) @ np.array([[1, -1], [0, 0]])
+            major_coord_n = eigvec_n * semi_major[n]  # + np.array([xc_array[n], yc_array[n]])
             cie_ax.plot(
                 major_coord_n[0] + xc_array[n],
                 major_coord_n[1] + yc_array[n],

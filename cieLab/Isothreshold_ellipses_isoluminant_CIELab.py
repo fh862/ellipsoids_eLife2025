@@ -172,9 +172,7 @@ for idx in np.ndindex(*base_size):
             coloralg=color_diff_algorithm,
         )
 
-    rgb_comp_contour_scaled[idx] = (
-        rgb_comp_contour_unscaled[idx] * opt_vecLen[idx][None] + rgb_ref_idx[:, None]
-    )
+    rgb_comp_contour_scaled[idx] = rgb_comp_contour_unscaled[idx] * opt_vecLen[idx][None] + rgb_ref_idx[:, None]
 
     # Fit an isothreshold ellipse in the model space
     (
@@ -192,12 +190,8 @@ for idx in np.ndindex(*base_size):
 
 # %%
 # output directories
-output_figDir = os.path.join(
-    base_dir, "ELPS_analysis", "Simulation_FigFiles", "2D", f"{color_diff_algorithm}"
-)
-output_fileDir = os.path.join(
-    base_dir, "ELPS_analysis", "Simulation_DataFiles", "2D", f"{color_diff_algorithm}"
-)
+output_figDir = os.path.join(base_dir, "ELPS_analysis", "Simulation_FigFiles", "2D", f"{color_diff_algorithm}")
+output_fileDir = os.path.join(base_dir, "ELPS_analysis", "Simulation_DataFiles", "2D", f"{color_diff_algorithm}")
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=15)
 
 # -----------------------------------------------------------
@@ -208,9 +202,7 @@ rgb_ref_points = color_thres_data.W2D_to_rgb(ref_points_W_flat)
 cmap = np.reshape(rgb_ref_points, base_size + (3,))
 
 # Initialize visualization object
-sim_CIE_vis = CIELabVisualization(
-    sim_thres_CIELab, settings=pltSettings_base, save_fig=False
-)
+sim_CIE_vis = CIELabVisualization(sim_thres_CIELab, settings=pltSettings_base, save_fig=False)
 
 pred2D_settings = replace(Plot2DSinglePlaneSettings(), **pltSettings_base.__dict__)
 pred2D_settings = replace(
@@ -243,8 +235,7 @@ plt.show()
 fig1.savefig(
     os.path.join(
         output_figDir,
-        f"{color_diff_algorithm}_derived_threshold"
-        + f"_contours_isoluminant_plane_Wspace_grid{nGridPts_ref}.pdf",
+        f"{color_diff_algorithm}_derived_threshold" + f"_contours_isoluminant_plane_Wspace_grid{nGridPts_ref}.pdf",
     )
 )
 
@@ -255,9 +246,7 @@ fig1.savefig(
 fE_u_1 = np.moveaxis(fitEllipse_unscaled, 2, -1)
 fE_u_2 = np.reshape(fE_u_1, (-1, 2))
 fE_u_3 = color_thres_data.W2D_to_rgb(fE_u_2)
-fitEllipse_unscaled_RGB = np.moveaxis(
-    np.reshape(fE_u_3, fE_u_1.shape[:-1] + (3,)), -1, 2
-)
+fitEllipse_unscaled_RGB = np.moveaxis(np.reshape(fE_u_3, fE_u_1.shape[:-1] + (3,)), -1, 2)
 
 fE_s_1 = np.moveaxis(fitEllipse_scaled, 2, -1)
 fE_s_2 = np.reshape(fE_s_1, (-1, 2))
@@ -306,8 +295,7 @@ plt.show()
 fig2.savefig(
     os.path.join(
         output_figDir,
-        f"{color_diff_algorithm}_derived_threshold"
-        + f"_contours_isoluminant_plane_RGBspace_grid{nGridPts_ref}.pdf",
+        f"{color_diff_algorithm}_derived_threshold" + f"_contours_isoluminant_plane_RGBspace_grid{nGridPts_ref}.pdf",
     )
 )
 
@@ -334,9 +322,7 @@ num_repeats = 3
 #   ref_points: (num_repeats, nGridPts_ref, nGridPts_ref, 3)
 # - repeat along the slice axis to make the shape compatible with the 3-slice pipeline
 fixed_RGBvec = 1  # filler value for w
-W_ref = np.concatenate(
-    [ref_points_W, np.full((nGridPts_ref, nGridPts_ref, 1), fixed_RGBvec)], axis=-1
-)
+W_ref = np.concatenate([ref_points_W, np.full((nGridPts_ref, nGridPts_ref, 1), fixed_RGBvec)], axis=-1)
 ref_points = np.repeat(W_ref[None], num_repeats, axis=0)
 stim_keys = [
     "fixed_RGBvec",
@@ -394,9 +380,7 @@ if os.path.exists(full_path):
     flag_match_grid_pts = f"stim{ext_str}" in existing_dict
 
     if flag_match_grid_pts:
-        flag_overwrite = input(
-            f"The file '{file_name}' already exists. Enter 'y' to overwrite: "
-        )
+        flag_overwrite = input(f"The file '{file_name}' already exists. Enter 'y' to overwrite: ")
 
         if flag_overwrite.lower() == "y":
             with open(full_path, "wb") as f:

@@ -133,16 +133,12 @@ else:
     else:
         # Recompute everything if the desired grid size is not available
         grid = jnp.stack(
-            jnp.meshgrid(
-                *[jnp.linspace(-0.7, 0.7, num_grid_pts_desired) for _ in range(ndims)]
-            ),
+            jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, num_grid_pts_desired) for _ in range(ndims)]),
             axis=-1,
         )
 
         # Use the helper function to recompute model predictions and transformed grid
-        model_pred, _ = rerun_model_pred_wExisting_model(
-            grid, model_pred, color_thres_data
-        )
+        model_pred, _ = rerun_model_pred_wExisting_model(grid, model_pred, color_thres_data)
 
         # Optionally append results to the pickle
         if flag_append_data:
@@ -210,9 +206,7 @@ for r in trange(nDatasets):
             raise ValueError('No "subXXX" pattern found in the file name!')
 
         old_sub = match.group()
-        input_fileDir_fits_others_r = input_fileDir_fits_others.replace(
-            old_sub, f"sub{subject_id}"
-        )
+        input_fileDir_fits_others_r = input_fileDir_fits_others.replace(old_sub, f"sub{subject_id}")
         file_name_r = file_name_others.replace(old_sub, f"sub{subject_id}")
 
     else:
@@ -244,9 +238,7 @@ for r in trange(nDatasets):
             param_ell_r = vars_dict_others["model_pred_Wishart"].params_ell
         else:
             # Recompute predictions on the desired grid
-            model_pred_r, _ = rerun_model_pred_wExisting_model(
-                grid, model_pred_r, color_thres_data
-            )
+            model_pred_r, _ = rerun_model_pred_wExisting_model(grid, model_pred_r, color_thres_data)
             param_ell_r = model_pred_r.params_ell
 
             # Optionally cache the new results back into the pickle
@@ -280,9 +272,7 @@ if not flag_load_other_subjects:
         # Define the fine prediction grid
         num_grid_pts_fine = 103
         grid_fine = jnp.stack(
-            jnp.meshgrid(
-                *[jnp.linspace(-0.85, 0.85, num_grid_pts_fine) for _ in range(ndims)]
-            ),
+            jnp.meshgrid(*[jnp.linspace(-0.85, 0.85, num_grid_pts_fine) for _ in range(ndims)]),
             axis=-1,
         )
 
@@ -303,9 +293,7 @@ if not flag_load_other_subjects:
     # NBS is computed per grid point between the original-fit covariance matrix
     # and the bootstrap-fit covariance matrix. Results are cached per bootstrap
     # pickle to avoid repeating expensive matrix operations.
-    NBS_fine_grid_btst = np.full(
-        (nDatasets, num_grid_pts_fine, num_grid_pts_fine), np.nan
-    )
+    NBS_fine_grid_btst = np.full((nDatasets, num_grid_pts_fine, num_grid_pts_fine), np.nan)
 
     for r in trange(nDatasets):
         # Load bootstrap pickle for dataset r
@@ -320,17 +308,13 @@ if not flag_load_other_subjects:
             model_pred_btst = deepcopy(vars_dict_others["model_pred_Wishart"])
             model_btst = model_pred_btst.model
             W_btst = model_pred_btst.W_est
-            Sigmas_noise_grid_btst = model_btst.compute_Sigmas(
-                model_btst.compute_U(W_btst, grid_fine)
-            )
+            Sigmas_noise_grid_btst = model_btst.compute_Sigmas(model_btst.compute_U(W_btst, grid_fine))
 
             # Compute NBS at each grid location
             for idx in np.ndindex(grid_fine.shape[:-1]):
-                NBS_fine_grid_btst[r, *idx] = (
-                    ModelPerformance.compute_normalized_Bures_similarity(
-                        Sigmas_noise_grid_org[*idx],
-                        Sigmas_noise_grid_btst[*idx],
-                    )
+                NBS_fine_grid_btst[r, *idx] = ModelPerformance.compute_normalized_Bures_similarity(
+                    Sigmas_noise_grid_org[*idx],
+                    Sigmas_noise_grid_btst[*idx],
                 )
 
             # Cache grid, covariance matrices, and NBS back to the bootstrap pickle
@@ -419,9 +403,7 @@ else:
 # ---------------------------------------------------------------------------
 # SECTION 5: visualize the model predictions with confidence intervals
 # --------------------------------------------------------------------------
-output_figDir_fits = os.path.join(
-    os.path.dirname(input_fileDir_fits.replace("DataFiles", "FigFiles")), "AEPsych_btst"
-)
+output_figDir_fits = os.path.join(os.path.dirname(input_fileDir_fits.replace("DataFiles", "FigFiles")), "AEPsych_btst")
 if flag_load_other_subjects:
     output_figDir_fits = re.sub(r"sub\d+", "groupData", output_figDir_fits)
     fig_name = re.sub(r"sub\d+", "groupData", file_name[:-4])
@@ -447,9 +429,7 @@ pred2D_settings = replace(
     modelpred_ls="-",
     gt_lw=0.5,
     gt_lc="k",
-    gt_label="Model predictions (original dataset)"
-    if not flag_load_gt
-    else "Ground truths",
+    gt_label="Model predictions (original dataset)" if not flag_load_gt else "Ground truths",
     gt_ls="--",
     title=f"decay rate = {model_pred.model.decay_rate}",
     fig_name=fig_name,
@@ -492,6 +472,4 @@ for idx in np.ndindex(grid.shape[:-1]):
     )
 
 # Overlay model predictions (joint fits) onto the same axes
-wishart_pred_vis_wCI.plot_2D(
-    grid, gt_ellipses=reference_ell_vis, ax=ax, settings=pred2D_settings
-)
+wishart_pred_vis_wCI.plot_2D(grid, gt_ellipses=reference_ell_vis, ax=ax, settings=pred2D_settings)

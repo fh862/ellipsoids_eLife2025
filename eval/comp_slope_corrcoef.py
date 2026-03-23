@@ -88,9 +88,7 @@ for r in range(nDatasets):
     if not match:
         raise ValueError('No "subXXX" pattern found in the file name!')
     old_sub = match.group()
-    input_fileDir_fits_others_r = input_fileDir_fits_others.replace(
-        old_sub, f"sub{subject_id}"
-    )
+    input_fileDir_fits_others_r = input_fileDir_fits_others.replace(old_sub, f"sub{subject_id}")
     file_name_r = file_name_others.replace(old_sub, f"sub{subject_id}")
 
     full_path_btst_r = f"{input_fileDir_fits_others_r}/{file_name_r}"
@@ -112,13 +110,9 @@ slope_CI_all = np.vstack((slope_CI_sim, slope_CI_data))
 corr_coef_CI_all = np.vstack((corr_coef_CI_sim, corr_coef_CI_data))
 
 # Compute error bars (upper and lower deviations)
-slope_CI_err = np.vstack(
-    (slope_all - slope_CI_all[:, 0], slope_CI_all[:, 1] - slope_all)
-)
+slope_CI_err = np.vstack((slope_all - slope_CI_all[:, 0], slope_CI_all[:, 1] - slope_all))
 corr_coef_CI_err = np.clip(
-    np.vstack(
-        (corr_coef_all - corr_coef_CI_all[:, 0], corr_coef_CI_all[:, 1] - corr_coef_all)
-    ),
+    np.vstack((corr_coef_all - corr_coef_CI_all[:, 0], corr_coef_CI_all[:, 1] - corr_coef_all)),
     0,
     np.inf,
 )
@@ -139,9 +133,7 @@ colors = np.vstack(
     )
 )
 axs[0].plot([0, nDatasets + 0.5], [1, 1], lw=2, ls="--", c="k")
-axs[0].bar(
-    x, slope_all, yerr=slope_CI_err, capsize=10, color=colors, edgecolor="grey", lw=2
-)
+axs[0].bar(x, slope_all, yerr=slope_CI_err, capsize=10, color=colors, edgecolor="grey", lw=2)
 axs[0].set_ylabel("Slope")
 axs[0].set_ylim([0, 1.3])
 axs[0].set_yticks(np.linspace(0, 1, 3))

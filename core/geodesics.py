@@ -82,21 +82,13 @@ def estimate_geodesic(P, x0, x1, key, dt0=0.1, num_restarts=10, tol=1e-3):
     term = ODETerm(geodesic_vector_field(P))
     ode_solver = Dopri5()
     optimizer = LevenbergMarquardt(tol * 0.1, tol * 0.1)
-    resids = jax.jit(
-        lambda v0, args: (
-            x1 - exponential_map(x0, v0, term, ode_solver, dt0=dt0)
-        ).ravel()
-    )
+    resids = jax.jit(lambda v0, args: (x1 - exponential_map(x0, v0, term, ode_solver, dt0=dt0)).ravel())
     z = (x1 - x0) / jnp.linalg.norm(x1 - x0)
     min_speed = jnp.inf
     best_v0 = None
     for k in tqdm(jax.random.split(key, num_restarts)):
-        v0_init = (x1 - x0) + (
-            0.0 * jnp.linalg.norm(x1 - x0) * jax.random.normal(k, shape=x0.shape)
-        )
-        result = optimistix.least_squares(
-            resids, optimizer, v0_init, options=dict(jac="bwd")
-        )
+        v0_init = (x1 - x0) + (0.0 * jnp.linalg.norm(x1 - x0) * jax.random.normal(k, shape=x0.shape))
+        result = optimistix.least_squares(resids, optimizer, v0_init, options=dict(jac="bwd"))
         converged = jnp.linalg.norm(result.state.f_info.residual) < tol
         speed = jnp.linalg.norm(result.value)
         if converged and (speed < min_speed):
@@ -106,9 +98,7 @@ def estimate_geodesic(P, x0, x1, key, dt0=0.1, num_restarts=10, tol=1e-3):
         raise RuntimeError("Shooting method did not converge.")
 
     def geodesic_simulator(dt0, saveat):
-        return diffrax.diffeqsolve(
-            term, ode_solver, t0=0, t1=1, dt0=dt0, y0=(x0, best_v0), saveat=saveat
-        ).ys[0]
+        return diffrax.diffeqsolve(term, ode_solver, t0=0, t1=1, dt0=dt0, y0=(x0, best_v0), saveat=saveat).ys[0]
 
     return best_v0, geodesic_simulator
 
@@ -207,9 +197,7 @@ def make_shooting_geodesic_fixed(P):
 
     @jax.jit
     def shooting(x0, v0):
-        sol = diffrax.diffeqsolve(
-            term, ODESOLVER, t0=0.0, t1=1.0, dt0=DT, y0=(x0, v0), saveat=SaveAt(ts=TS)
-        )
+        sol = diffrax.diffeqsolve(term, ODESOLVER, t0=0.0, t1=1.0, dt0=DT, y0=(x0, v0), saveat=SaveAt(ts=TS))
         return sol.ys[0]  # (T, D)
 
     return shooting

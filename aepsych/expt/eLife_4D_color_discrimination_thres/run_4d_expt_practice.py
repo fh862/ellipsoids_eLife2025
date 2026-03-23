@@ -113,9 +113,7 @@ try:
     expt_file_manager = ExperimentFileManager.load_state(path_metadata)
 except:
     # If no prior session exists, initialize a new experiment file manager
-    expt_file_manager = ExperimentFileManager(
-        subject_id, subject_init, networkDisk_path, is_practice=True
-    )
+    expt_file_manager = ExperimentFileManager(subject_id, subject_init, networkDisk_path, is_practice=True)
 
 # Create a new session file for the current session
 _, communicator_file_name = expt_file_manager.create_session_file(session_today)
@@ -181,9 +179,7 @@ file_name_pregenerated_trials = (
     "Sim2dTask_colorDiscrimination_Isoluminant plane_"
     + f"MOCSTrials_25refs_12levels_25trialsPerLevel_sub4_Sobol_seed{subject_seed_MOCS}.pkl"
 )
-fullpath_pregenerated_MOCS_trials = os.path.join(
-    path_pregenerated_trials, file_name_pregenerated_trials
-)
+fullpath_pregenerated_MOCS_trials = os.path.join(path_pregenerated_trials, file_name_pregenerated_trials)
 
 # Define the number of trials per session.
 # Once set in the first session, this value remains unchanged for subsequent sessions.
@@ -263,17 +259,13 @@ sim_interleaved_trial_sequence = ExperimentTrialSequence(
 
 # Generate the initial interleaved trial sequence using the defined random seed.
 subject_seed_interleaveTrials = subject_seed_MOCS + session_today
-sim_interleaved_trial_sequence.generate_init_sequence(
-    seed=subject_seed_interleaveTrials
-)
+sim_interleaved_trial_sequence.generate_init_sequence(seed=subject_seed_interleaveTrials)
 
 # --------------------------------------------------
 # SECTION 5: Use AEPsych for Trial Placement
 # --------------------------------------------------
 # Define the database file for storing experiment data specific to the subject.
-db_file_name = (
-    f"ColorDiscrimination_{COLOR_DIMENSION}dTask_{plane_2D}_sub{subject_id}_practice.db"
-)
+db_file_name = f"ColorDiscrimination_{COLOR_DIMENSION}dTask_{plane_2D}_sub{subject_id}_practice.db"
 server = AEPsychServer(database_path=os.path.join(path_sub, db_file_name))
 client = AEPsychClient(server=server)
 
@@ -330,10 +322,8 @@ else:
         path_sub,
         f"ColorDiscrimination_{COLOR_DIMENSION}dExpt_{plane_2D}_sub{subject_id}_session1_practice.pkl",
     )
-    customized_sobol_scaler, idxTrial_AEPsych, _ = (
-        LoadExptInfo.load_pregenerated_val_scaler(
-            file_path_session1, session_today, NTRIALS_AEPSYCH_PERSESSION
-        )
+    customized_sobol_scaler, idxTrial_AEPsych, _ = LoadExptInfo.load_pregenerated_val_scaler(
+        file_path_session1, session_today, NTRIALS_AEPSYCH_PERSESSION
     )
 
 # %%
@@ -396,8 +386,7 @@ expt_file_manager.export_expt_log_txt(output_txt, sim_interleaved_trial_sequence
 # SECTION 7: Save data
 # --------------------------------------------------
 output_file = (
-    f"ColorDiscrimination_{COLOR_DIMENSION}dExpt_{plane_2D}_"
-    + f"sub{subject_id}_session{session_today}_practice.pkl"
+    f"ColorDiscrimination_{COLOR_DIMENSION}dExpt_{plane_2D}_" + f"sub{subject_id}_session{session_today}_practice.pkl"
 )
 full_path2 = os.path.join(path_sub, output_file)
 

@@ -66,9 +66,7 @@ pltSettings_base = PlotSettingsBase(fig_dir=output_figDir)
 pltSettings_1D = replace(PlotBasis1DSettings(), **pltSettings_base.__dict__)
 
 # Visualization helper (figure saving handled manually below)
-visualize_basis = WishartModelBasicsVisualization(
-    save_fig=False, settings=pltSettings_base
-)
+visualize_basis = WishartModelBasicsVisualization(save_fig=False, settings=pltSettings_base)
 
 # %%
 # ---------------------------------------------------------------------
@@ -143,6 +141,4 @@ ax.legend(loc="lower right", fontsize=10)
 visualize_basis.plot_W_all(W_est, basis_orders_rep, settings=pltSettings_W_all, ax=ax)
 
 # Save figure
-fig.savefig(
-    os.path.join(output_figDir, f"Bestfit_W_{file_name[:-4]}.pdf"), bbox_inches="tight"
-)
+fig.savefig(os.path.join(output_figDir, f"Bestfit_W_{file_name[:-4]}.pdf"), bbox_inches="tight")

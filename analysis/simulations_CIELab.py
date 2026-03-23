@@ -34,9 +34,7 @@ def patch_asscalar(a):
 
 np.asscalar = patch_asscalar
 
-required_file_dir = (
-    "/Users/fangfang/Documents/MATLAB/projects/ColorEllipsoids/FilesFromPsychtoolbox/"
-)
+required_file_dir = "/Users/fangfang/Documents/MATLAB/projects/ColorEllipsoids/FilesFromPsychtoolbox/"
 
 
 # %%
@@ -72,9 +70,7 @@ class SimThresCIELab:
         if self.nPlanes == 3:
             self.varying_dims = [[1, 2], [0, 2], [0, 1]]
         elif self.nPlanes == 1:
-            self.varying_dims = [
-                [0, 1]
-            ]  # treat it as RG plane with the third dimension fixed at 1
+            self.varying_dims = [[0, 1]]  # treat it as RG plane with the third dimension fixed at 1
 
     def _load_required_files(self, file_date):
         """Internal helper to load all required .mat files."""
@@ -83,9 +79,7 @@ class SimThresCIELab:
 
         # use the primaries of our monitor
         self.T_CONES = loadmat("T_cones_finer.mat")["T_cones"]  # (3, 201)
-        self.B_MONITOR = loadmat(f"B_monitor_dell_{file_date}.mat")[
-            "B_monitor"
-        ]  # (201, 3)
+        self.B_MONITOR = loadmat(f"B_monitor_dell_{file_date}.mat")["B_monitor"]  # (201, 3)
         self.M_LMS_TO_XYZ = loadmat("M_LMSToXYZ.mat")["M_LMSToXYZ"]  # (3, 3)
 
     def _validate_plane_list(self, plane_2D_list):
@@ -95,10 +89,7 @@ class SimThresCIELab:
             ["Isoluminant plane"],
         ]
         if plane_2D_list not in valid_plane_options:
-            raise ValueError(
-                f"Invalid plane_2D_list: {plane_2D_list}. "
-                + "Must be one of {valid_plane_options}."
-            )
+            raise ValueError(f"Invalid plane_2D_list: {plane_2D_list}. " + "Must be one of {valid_plane_options}.")
 
     def get_plane_1slice(self, grid_lb, grid_ub, num_grid_pts, fixed_val, plane_2D):
         """
@@ -165,9 +156,7 @@ class SimThresCIELab:
         """
 
         # Initialize a 4D array to store slices for each 2D plane
-        plane_3slices = np.full(
-            (self.nPlanes, num_grid_pts, num_grid_pts, self.nPlanes), np.nan
-        )
+        plane_3slices = np.full((self.nPlanes, num_grid_pts, num_grid_pts, self.nPlanes), np.nan)
         # Iterate over each 2D plane identifier and generate its corresponding slice
         for i, plane_str in enumerate(self.plane_2D_list):
             plane_3slices[i], grid_1d, X, Y = self.get_plane_1slice(
@@ -203,9 +192,7 @@ class SimThresCIELab:
         color_LMS = M_XYZ_TO_LMS @ color_XYZ.T
 
         # Step 4: LMS → RGB
-        T_inv = np.linalg.pinv(
-            self.T_CONES @ self.B_MONITOR
-        )  # Use pseudo-inverse in case it's ill-conditioned
+        T_inv = np.linalg.pinv(self.T_CONES @ self.B_MONITOR)  # Use pseudo-inverse in case it's ill-conditioned
         color_RGB = T_inv @ color_LMS
 
         return color_RGB.T, color_XYZ, color_LMS.T
@@ -336,15 +323,11 @@ class SimThresCIELab:
         """
 
         if coloralg not in ["CIE1976", "CIE1994", "CIE2000"]:
-            raise ValueError(
-                "The method can only be 'CIE1976' or 'CIE1994' or 'CIE2000'."
-            )
+            raise ValueError("The method can only be 'CIE1976' or 'CIE1994' or 'CIE2000'.")
 
         # The lambda function computes the absolute difference between the
         # deltaE obtained from compute_deltaE function and the target deltaE.
-        deltaE_func = lambda d: abs(
-            self.compute_deltaE(ref_RGB_test, vecDir_test, d, method=coloralg) - deltaE
-        )
+        deltaE_func = lambda d: abs(self.compute_deltaE(ref_RGB_test, vecDir_test, d, method=coloralg) - deltaE)
 
         # Generate initial points for the optimization algorithm within the bounds.
         init = np.random.rand(N_opt) * (ub_opt - lb_opt) + lb_opt
@@ -417,9 +400,7 @@ class SimThresCIELab:
 
         """
         if coloralg not in ["CIE1976", "CIE1994", "CIE2000"]:
-            raise ValueError(
-                "The method can only be 'CIE1976' or 'CIE1994' or 'CIE2000'."
-            )
+            raise ValueError("The method can only be 'CIE1976' or 'CIE1994' or 'CIE2000'.")
 
         # Step 1: Define a chromatic direction in W-space and convert to RGB
         chrom_dir_W = chrom_dir + W_ref  # Shifted chromatic direction
@@ -431,9 +412,7 @@ class SimThresCIELab:
         rgb_vecDir = rgb_vecDir_temp / np.linalg.norm(rgb_vecDir_temp)  # Normalize
 
         # Step 3: Find vector length that produces ΔE = deltaE in CIELab space
-        opt_vecLen = self.find_vecLen(
-            rgb_ref, rgb_vecDir, deltaE=deltaE, coloralg=coloralg
-        )
+        opt_vecLen = self.find_vecLen(rgb_ref, rgb_vecDir, deltaE=deltaE, coloralg=coloralg)
 
         # Step 4: Compute threshold point in RGB space
         rgb_comp_threshold = opt_vecLen * rgb_vecDir + rgb_ref
@@ -506,30 +485,20 @@ class SimThresCIELab:
         # For fixedDim=0 (fix L*), directions are in the (a*, b*) plane.
         # For fixedDim=1 (fix a*), directions are in the (L*, b*) plane.
         # For fixedDim=2 (fix b*), directions are in the (L*, a*) plane.
-        grid_theta_xy = UnitCircleGenerate(
-            num_dir_pts
-        )  # (2, N), unit directions in the slice plane
+        grid_theta_xy = UnitCircleGenerate(num_dir_pts)  # (2, N), unit directions in the slice plane
 
         # --- 2) Radial scalar grid along each direction.
-        bruteforce_scaler = np.linspace(
-            *bruteforce_scaler_bds, bruteforce_num_scalers
-        )  # (M,)
+        bruteforce_scaler = np.linspace(*bruteforce_scaler_bds, bruteforce_num_scalers)  # (M,)
 
         # --- 3) Broadcast directions & scalars to form all candidate points in the slice plane.
         # grid_theta_xy_rep: (M, N, 2) — repeat each 2D direction across M scalars
-        grid_theta_xy_rep = np.tile(
-            grid_theta_xy.T[None], (bruteforce_num_scalers, 1, 1)
-        )  # (M, N, 2)
+        grid_theta_xy_rep = np.tile(grid_theta_xy.T[None], (bruteforce_num_scalers, 1, 1))  # (M, N, 2)
 
         # bruteforce_scaler_rep: (M, N, 2) — match scalars across both in-plane coordinates
-        bruteforce_scaler_rep = np.tile(
-            bruteforce_scaler[:, None, None], (1, *grid_theta_xy_rep.shape[1:])
-        )
+        bruteforce_scaler_rep = np.tile(bruteforce_scaler[:, None, None], (1, *grid_theta_xy_rep.shape[1:]))
 
         # valV_batch: (M, N, 2) — the two *varying* coordinates in the slice plane
-        valV_batch = (
-            grid_theta_xy_rep * bruteforce_scaler_rep + vectors_centroid[None, None]
-        )
+        valV_batch = grid_theta_xy_rep * bruteforce_scaler_rep + vectors_centroid[None, None]
 
         # valF_batch: (M, N, 1) — the *fixed* coordinate (the chosen Lab dimension)
         valF_batch = np.full(valV_batch.shape[:2] + (1,), fixedVal)
@@ -541,19 +510,13 @@ class SimThresCIELab:
 
         # --- 5) Lab → RGB conversion in batch: reshape to (N*M, 3), then back to (M, N, 3).
         Lab_batch_reshape = np.reshape(Lab_batch, (-1, 3))
-        rgb_batch_flat, *_ = self.convert_lab_rgb(
-            Lab_batch_reshape
-        )  # (N*M, 3) expected
-        rgb_batch = np.reshape(
-            rgb_batch_flat, (bruteforce_num_scalers, num_dir_pts, -1)
-        )
+        rgb_batch_flat, *_ = self.convert_lab_rgb(Lab_batch_reshape)  # (N*M, 3) expected
+        rgb_batch = np.reshape(rgb_batch_flat, (bruteforce_num_scalers, num_dir_pts, -1))
 
         # --- 6) Detect out-of-gamut per channel; find earliest exit index along the scalar axis.
         out_of_gamut = (rgb_batch < rgb_bds[0]) | (rgb_batch > rgb_bds[-1])  # (M, N, 3)
         first_idx_allcols = np.argmax(out_of_gamut, axis=0).astype(float)  # (N, 3)
-        first_idx_allcols[~out_of_gamut.any(axis=0)] = (
-            np.nan
-        )  # NaN if a channel never exits
+        first_idx_allcols[~out_of_gamut.any(axis=0)] = np.nan  # NaN if a channel never exits
 
         # --- 7) Collapse channels → first exit per direction, then step back to last in-gamut.
         first_idx = (np.nanmin(first_idx_allcols, axis=1) - 1).astype(int)  # (N,)
@@ -563,14 +526,10 @@ class SimThresCIELab:
 
         # Build indices shaped (1, N, 1) to gather along axis=0 for both Lab and RGB
         first_idx_rep_Lab = first_idx[None, :, None]
-        Lab_at_boundary = np.take_along_axis(
-            Lab_batch, first_idx_rep_Lab, axis=0
-        ).squeeze(0)  # (N, 3)
+        Lab_at_boundary = np.take_along_axis(Lab_batch, first_idx_rep_Lab, axis=0).squeeze(0)  # (N, 3)
 
         first_idx_rep_rgb = first_idx[None, :, None]
-        rgb_at_boundary = np.take_along_axis(
-            rgb_batch, first_idx_rep_rgb, axis=0
-        ).squeeze(0)  # (N, 3)
+        rgb_at_boundary = np.take_along_axis(rgb_batch, first_idx_rep_rgb, axis=0).squeeze(0)  # (N, 3)
 
         return Lab_at_boundary, rgb_at_boundary, scaler_at_boundary
 
@@ -605,13 +564,9 @@ class SimThresCIELab:
 
         # basic checks
         if ex.shape[C] != 2:
-            raise ValueError(
-                f"`existing` channel axis C={C} must be size 2, got {ex.shape[C]}"
-            )
+            raise ValueError(f"`existing` channel axis C={C} must be size 2, got {ex.shape[C]}")
         if fi.shape[C] != 1:
-            raise ValueError(
-                f"`filling` channel axis C={C} must be size 1, got {fi.shape[C]}"
-            )
+            raise ValueError(f"`filling` channel axis C={C} must be size 1, got {fi.shape[C]}")
 
         # split without manual slices; left has channels [:fixed_dim], right has [fixed_dim:]
         left, right = np.split(ex, [int(fixed_dim)], axis=C)
@@ -713,10 +668,7 @@ def pretty_print_preset(preset):
     print("=== Stimulus Configuration ===")
     print(f"Fixed dimension       : {fixed_name} (code {int(preset.fixed_dim)})")
     print(f"Varied dimensions     : {varied_names} (codes {varied})")
-    print(
-        f"Fixed range (linspace): start={preset.vis_range[0]}, "
-        f"stop={preset.vis_range[1]}, num={preset.vis_range[2]}"
-    )
+    print(f"Fixed range (linspace): start={preset.vis_range[0]}, stop={preset.vis_range[1]}, num={preset.vis_range[2]}")
     print(f"Selected fixed idx    : {idx.tolist()}")
     print(f"Selected fixed vals   : {np.round(sel_vals, 1).tolist()}")
     print(f"Vectors centroid      : {tuple(preset.vectors_centroids)}")

@@ -142,12 +142,8 @@ y = sim_trial.sim["resp_binary"]
 # Visualize trial placement
 # -----------------------------------------------------------
 base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/ELPS_analysis/"
-output_figDir = os.path.join(
-    base_dir, "Simulation_FigFiles", f"{ndims * 2}D", "gt_Wishart"
-)
-output_fileDir = os.path.join(
-    base_dir, "Simulation_DataFiles", f"{ndims * 2}D", "gt_Wishart"
-)
+output_figDir = os.path.join(base_dir, "Simulation_FigFiles", f"{ndims * 2}D", "gt_Wishart")
+output_fileDir = os.path.join(base_dir, "Simulation_DataFiles", f"{ndims * 2}D", "gt_Wishart")
 os.makedirs(output_figDir, exist_ok=True)
 os.makedirs(output_fileDir, exist_ok=True)
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=8)
@@ -175,17 +171,13 @@ if flag_plot:
             fig_name=f"{figname}.pdf",
         )
 
-        sampling_vis = SamplingRefCompPairVisualization(
-            ndims, color_thres_data, settings=pltSettings_tp, save_fig=True
-        )
+        sampling_vis = SamplingRefCompPairVisualization(ndims, color_thres_data, settings=pltSettings_tp, save_fig=True)
         sampling_vis.plot_sampling(xref, x1, settings=pltSettings_tp)
         plt.show()
     else:
         plt3Dhtml_settings = Plot3DSamplingHTMLSettings()
         plt3Dhtml_settings = replace(plt3Dhtml_settings, font_size=12)
-        vis_sample_html = SamplingRefCompPairVisualization_html(
-            settings=plt3Dhtml_settings
-        )
+        vis_sample_html = SamplingRefCompPairVisualization_html(settings=plt3Dhtml_settings)
         fig = vis_sample_html.plot_sampling(xref, x1)
         out_html = os.path.join(output_figDir, f"{figname}.html")
         fig.write_html(out_html, include_plotlyjs=True)
@@ -206,8 +198,7 @@ if flag_use_in_expt:
     # session gets the same number of fallback trials.
     if nSims % nSessions != 0:
         raise ValueError(
-            f"nSims ({nSims}) must be divisible by nSessions ({nSessions}) "
-            "to split trials evenly across sessions."
+            f"nSims ({nSims}) must be divisible by nSessions ({nSessions}) to split trials evenly across sessions."
         )
 
     # Trials per session (integer)

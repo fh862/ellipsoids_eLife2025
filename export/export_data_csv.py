@@ -133,9 +133,7 @@ _, grid_fine_flat, Sigmas_noise_flat_org = DataExport.export_ellipses_csv(
 
 # Export best-fit weight tensor W (basis coefficients) to CSV for reproducibility/inspection
 path_csv_weights = os.path.join(output_dir, f"Bestfit_W_sub{subN}.csv")
-_, _, _ = DataExport.export_weights_csv(
-    W_org, "i,j,k,l", "W_org", out_path=path_csv_weights
-)
+_, _, _ = DataExport.export_weights_csv(W_org, "i,j,k,l", "W_org", out_path=path_csv_weights)
 
 # %%
 # -----------------------------------------------------------
@@ -177,9 +175,7 @@ for n in trange(nBtst, desc="Loading bootstraps"):
     Sigmas_noise_grid_btst[n] = np.asarray(vars_dict_n["Sigmas_noise_grid_btst"])
 
     # Save predicted threshold magnitudes at the MOCS validation conditions
-    L2norm_thres_Wishart_btst_list.append(
-        vars_dict_n["thres_Wishart_based_atMOCS"]["vecLen_at_targetPC_Wishart"]
-    )
+    L2norm_thres_Wishart_btst_list.append(vars_dict_n["thres_Wishart_based_atMOCS"]["vecLen_at_targetPC_Wishart"])
 
     # Compute a scalar NBS similarity score for ranking (sum over the fine-grid NBS map)
     NBS_grid = np.asarray(vars_dict_n["NBS_fine_grid"])
@@ -289,12 +285,9 @@ x1_MOCS = np.concatenate(x1_MOCS_list)
 y_MOCS = np.concatenate(y_MOCS_list)
 
 # Sanity checks
-assert xref_MOCS.shape[0] == x1_MOCS.shape[0] == y_MOCS.shape[0], (
-    "Length mismatch across fields."
-)
+assert xref_MOCS.shape[0] == x1_MOCS.shape[0] == y_MOCS.shape[0], "Length mismatch across fields."
 assert xref_MOCS.shape[0] == nTrials_MOCS, (
-    f"Unexpected trial count after removing injected [0,0] rows: "
-    f"got {xref_MOCS.shape[0]}, expected {nTrials_MOCS}."
+    f"Unexpected trial count after removing injected [0,0] rows: got {xref_MOCS.shape[0]}, expected {nTrials_MOCS}."
 )
 
 # %%
@@ -327,14 +320,12 @@ y = np.concatenate((expt_trial.y_all, y_MOCS), axis=0)
 # The helper returns:
 #   - trial_type_ae: list[str] of length nTrials_actual
 #   - (possibly updated) counts for bookkeeping / printing
-trial_type_ae, nTrials_AEPsych, nTrials_AEPsych_sobol, nTrials_pregenSobol = (
-    DataExport.build_trial_type_ae(nTrials_strat, nTrials_actual)
+trial_type_ae, nTrials_AEPsych, nTrials_AEPsych_sobol, nTrials_pregenSobol = DataExport.build_trial_type_ae(
+    nTrials_strat, nTrials_actual
 )
 
 # MOCS labels align with the reconstructed MOCS trial order (after dropping synthetic rows)
-trial_type_mocs = DataExport.build_trial_type_mocs(
-    nRefs_MOCS, nLevels_MOCS, nTrials_perLevel
-)
+trial_type_mocs = DataExport.build_trial_type_mocs(nRefs_MOCS, nLevels_MOCS, nTrials_perLevel)
 
 # Concatenate TrialType strings to match the pooled (main-run + MOCS) arrays
 trial_type_str = trial_type_ae + trial_type_mocs
@@ -342,10 +333,7 @@ trial_type_str = trial_type_ae + trial_type_mocs
 # Sanity checks: all pooled arrays must have identical length
 N = xref.shape[0]
 if not (x1.shape[0] == N and y.shape[0] == N and len(trial_type_str) == N):
-    raise ValueError(
-        f"Length mismatch: xref={N}, x1={x1.shape[0]}, y={y.shape[0]}, "
-        f"TrialType={len(trial_type_str)}"
-    )
+    raise ValueError(f"Length mismatch: xref={N}, x1={x1.shape[0]}, y={y.shape[0]}, TrialType={len(trial_type_str)}")
 
 # Serialize vectors into single CSV columns
 # Store xref and x1 as stringified vectors so each trial occupies one CSV row.
@@ -416,9 +404,7 @@ df_wthres = pd.DataFrame(
 
 # Validation bootstrap columns: one column per bootstrap replicate.
 # Column names encode the bootstrap id (0..nBtst-1).
-v_cols = {
-    f"L2norm_thres_btst{b}": L2norm_thres_validation_btst[b] for b in range(nBtst)
-}
+v_cols = {f"L2norm_thres_btst{b}": L2norm_thres_validation_btst[b] for b in range(nBtst)}
 df_vthres = pd.concat([df_vthres, pd.DataFrame(v_cols)], axis=1)
 
 # Wishart bootstrap columns: we also encode the *rank* of each bootstrap replicate
@@ -433,17 +419,12 @@ rank_of[idx_desc] = np.arange(nBtst)  # rank_of[btst_id] = rank (0 = best)
 
 # L2norm_thres_Wishart_btst is assumed to be shape (nBtst, nRefs) or (nBtst, 25),
 # where each entry is the model-predicted threshold magnitude for that bootstrap.
-w_cols = {
-    f"L2norm_thres_btst{b}_rank{rank_of[b]}": L2norm_thres_Wishart_btst[b]
-    for b in range(nBtst)
-}
+w_cols = {f"L2norm_thres_btst{b}_rank{rank_of[b]}": L2norm_thres_Wishart_btst[b] for b in range(nBtst)}
 df_wthres = pd.concat([df_wthres, pd.DataFrame(w_cols)], axis=1)
 
 # Write to disk
 out_path_v = os.path.join(output_dir, f"thres_at_validation_conditions_sub{subN}.csv")
-out_path_w = os.path.join(
-    output_dir, f"thres_at_validation_conditions_WPPM_sub{subN}.csv"
-)
+out_path_w = os.path.join(output_dir, f"thres_at_validation_conditions_WPPM_sub{subN}.csv")
 
 df_vthres.to_csv(out_path_v, index=False, float_format="%.8f")
 df_wthres.to_csv(out_path_w, index=False, float_format="%.8f")
@@ -459,9 +440,7 @@ if flag_debug_plot:
     # Create settings instance with custom fig_dir
     pltSettings_base = PlotSettingsBase(fig_dir=out_path, fontsize=8)
     pltSettings_tp = replace(Plot2DSamplingSettings(), **pltSettings_base.__dict__)
-    sampling_vis = SamplingRefCompPairVisualization(
-        2, color_thres_data, settings=pltSettings_tp, save_fig=False
-    )
+    sampling_vis = SamplingRefCompPairVisualization(2, color_thres_data, settings=pltSettings_tp, save_fig=False)
 
     # This array defines the opacity of markers in the plots, decreasing with more trials.
     marker_alpha = [0.5, 0.3, 0.5, 0.3]
@@ -479,9 +458,7 @@ if flag_debug_plot:
     ]
 
     # Loop over the selected data points to generate and visualize each corresponding figure.
-    for i, (lb_i, ub_i) in enumerate(
-        zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)
-    ):
+    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
         pltSettings_tp = replace(
             pltSettings_tp,
             ref_markeralpha=marker_alpha[i],
@@ -513,13 +490,9 @@ if flag_debug_plot:
     )
     for n in range(grid_flat.shape[0]):
         cmap_n = color_thres_data.W2D_to_rgb(grid_flat[n])
-        viz.plot_ellipse(
-            ax2, grid_flat[n], Sigmas_thres_flat_org[n], color=cmap_n, ls=":", lw=0.75
-        )
+        viz.plot_ellipse(ax2, grid_flat[n], Sigmas_thres_flat_org[n], color=cmap_n, ls=":", lw=0.75)
 
-        idx_match = np.where(
-            np.all(np.abs(grid_fine_flat - grid_flat[n]) < 1e-5, axis=1)
-        )[0]
+        idx_match = np.where(np.all(np.abs(grid_fine_flat - grid_flat[n]) < 1e-5, axis=1))[0]
         viz.plot_ellipse(
             ax2,
             grid_flat[n],
@@ -544,19 +517,15 @@ if flag_debug_plot:
     # Shape: (nCond, 2)
     L2norm_thres_Wishart_CI_err = np.vstack(
         (
-            vars_dict_MOCS["vecLen_at_targetPC_Wishart"]
-            - L2norm_thres_Wishart_CI_bds[0],
-            L2norm_thres_Wishart_CI_bds[1]
-            - vars_dict_MOCS["vecLen_at_targetPC_Wishart"],
+            vars_dict_MOCS["vecLen_at_targetPC_Wishart"] - L2norm_thres_Wishart_CI_bds[0],
+            L2norm_thres_Wishart_CI_bds[1] - vars_dict_MOCS["vecLen_at_targetPC_Wishart"],
         )
     ).T
 
     slope_corr_dict = vars_dict_MOCS["slope_corr_analysis_matched_btst"]
 
     # plotting
-    vis_MOCS = MOCSTrialsVisualization(
-        vars_dict_MOCS["fit_PMF_MOCS"], settings=pltSettings_tp, save_fig=False
-    )
+    vis_MOCS = MOCSTrialsVisualization(vars_dict_MOCS["fit_PMF_MOCS"], settings=pltSettings_tp, save_fig=False)
     plt_st_n = plt_st[f"sub{subN}"]
     predComp_settings = replace(PlotThresCompSettings(), **pltSettings_base.__dict__)
     predComp_settings = replace(

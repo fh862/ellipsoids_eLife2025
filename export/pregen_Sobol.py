@@ -85,9 +85,7 @@ if scfg.stim_dims == 2:
 sobol_seed = 1500
 
 # Preallocate arrays for Sobol-generated stimuli
-Sobol_xref = np.full(
-    (scfg.nSessions, scfg.nTrials_sobol_perSession, scfg.stim_dims), np.nan
-)
+Sobol_xref = np.full((scfg.nSessions, scfg.nTrials_sobol_perSession, scfg.stim_dims), np.nan)
 Sobol_x1 = np.full_like(Sobol_xref, np.nan)
 
 # Toggle visualization of generated trials
@@ -101,9 +99,7 @@ if scfg.flag_addCatchTrials:
     # Preallocate arrays for catch trial bookkeeping
     catch_idx_all = np.full((scfg.nSessions, nTotal_catchTrials), np.nan)
     choice_unique_catch_all = np.full_like(catch_idx_all, np.nan)
-    delta_catch_all = np.full(
-        (scfg.nSessions, nTotal_catchTrials, scfg.stim_dims), np.nan
-    )
+    delta_catch_all = np.full((scfg.nSessions, nTotal_catchTrials, scfg.stim_dims), np.nan)
 
 # Main loop: generate Sobol trials per session
 for n in range(scfg.nSessions):
@@ -120,17 +116,13 @@ for n in range(scfg.nSessions):
     )
 
     # Shuffle scaling factors (ensures balanced difficulty)
-    sobol_scaler_n = np.concatenate(
-        [rng.permutation(scfg.sobol_scaler) for _ in range(scfg.num_repeats)]
-    )
+    sobol_scaler_n = np.concatenate([rng.permutation(scfg.sobol_scaler) for _ in range(scfg.num_repeats)])
 
     # Construct reference (xref) and comparison (x1) stimuli
     if scfg.psyfield_dims in [4, 6]:
         # Split Sobol samples into reference and direction components
         Sobol_xref[n] = Sobol_samples[:, : scfg.stim_dims]
-        Sobol_x1[n] = (
-            Sobol_xref[n] + sobol_scaler_n[:, None] * Sobol_samples[:, scfg.stim_dims :]
-        )
+        Sobol_x1[n] = Sobol_xref[n] + sobol_scaler_n[:, None] * Sobol_samples[:, scfg.stim_dims :]
     else:
         # Direct scaling (e.g., 3D RGB cube)
         Sobol_xref[n] = 0
@@ -139,15 +131,11 @@ for n in range(scfg.nSessions):
     # Catch trials: replace subset of trials with fixed offsets
     if scfg.flag_addCatchTrials and nTotal_catchTrials > 0:
         # Randomly select trial indices to replace
-        catch_idx = rng.choice(
-            scfg.nTrials_sobol_perSession, size=nTotal_catchTrials, replace=False
-        )
+        catch_idx = rng.choice(scfg.nTrials_sobol_perSession, size=nTotal_catchTrials, replace=False)
         catch_idx_all[n] = catch_idx
 
         # Randomly select predefined delta offsets
-        choose = rng.integers(
-            0, len(scfg.delta_catchTrials_unique), size=nTotal_catchTrials
-        )
+        choose = rng.integers(0, len(scfg.delta_catchTrials_unique), size=nTotal_catchTrials)
         choice_unique_catch_all[n] = choose
 
         delta_catch = scfg.delta_catchTrials_unique[choose]
@@ -180,10 +168,7 @@ for n in range(scfg.nSessions):
             # Draw connecting lines (stimulus differences)
             for m in range(scfg.nTrials_sobol_perSession):
                 ax.plot(
-                    *[
-                        [Sobol_xref[n, m, i], Sobol_x1[n, m, i]]
-                        for i in range(scfg.stim_dims)
-                    ],
+                    *[[Sobol_xref[n, m, i], Sobol_x1[n, m, i]] for i in range(scfg.stim_dims)],
                     c=color_thres_data.W_unit_to_N_unit(Sobol_xref[n, m]),
                     alpha=0.5,
                 )
@@ -196,10 +181,7 @@ for n in range(scfg.nSessions):
             for m in range(scfg.nTrials_sobol_perSession):
                 rgb = np.clip(color_thres_data.W2D_to_rgb(Sobol_xref[n, m]), 0, 1)
                 ax.plot(
-                    *[
-                        [Sobol_xref[n, m, i], Sobol_x1[n, m, i]]
-                        for i in range(scfg.stim_dims)
-                    ],
+                    *[[Sobol_xref[n, m, i], Sobol_x1[n, m, i]] for i in range(scfg.stim_dims)],
                     c=rgb,
                     alpha=0.5,
                     linewidth=0.6,
@@ -208,10 +190,7 @@ for n in range(scfg.nSessions):
             # Highlight catch trials in black
             if scfg.flag_addCatchTrials and nTotal_catchTrials > 0:
                 ax.plot(
-                    *[
-                        [Sobol_xref[n, catch_idx, i], Sobol_x1[n, catch_idx, i]]
-                        for i in range(scfg.stim_dims)
-                    ],
+                    *[[Sobol_xref[n, catch_idx, i], Sobol_x1[n, catch_idx, i]] for i in range(scfg.stim_dims)],
                     c="k",
                     alpha=0.5,
                     linewidth=0.8,
@@ -228,15 +207,10 @@ for n in range(scfg.nSessions):
 # SECTION 2: Save generated data
 # --------------------------------------------------------------------------
 # Determine color space label for filename
-cspace = (
-    "RGBcube" if scfg.stim_dims == 3 else color_thres_data.plane_2D.replace(" ", "_")
-)
+cspace = "RGBcube" if scfg.stim_dims == 3 else color_thres_data.plane_2D.replace(" ", "_")
 
 # Construct output filename
-output_file = (
-    f"Sim{scfg.psyfield_dims}dTask_colorDiscrimination_{cspace}_"
-    f"pregeneratedSobol_seed{sobol_seed}.pkl"
-)
+output_file = f"Sim{scfg.psyfield_dims}dTask_colorDiscrimination_{cspace}_pregeneratedSobol_seed{sobol_seed}.pkl"
 
 # Output directory
 output_fileDir = os.path.join(
@@ -259,9 +233,7 @@ vars_dict.update(
         "Sobol_xref": Sobol_xref,
         "Sobol_x1": Sobol_x1,
         "catch_idx_all": catch_idx_all if scfg.flag_addCatchTrials else None,
-        "choice_unique_catch_all": choice_unique_catch_all
-        if scfg.flag_addCatchTrials
-        else None,
+        "choice_unique_catch_all": choice_unique_catch_all if scfg.flag_addCatchTrials else None,
         "delta_catch_all": delta_catch_all if scfg.flag_addCatchTrials else None,
     }
 )

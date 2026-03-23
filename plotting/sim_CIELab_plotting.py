@@ -27,33 +27,19 @@ from plotting.wishart_plotting import PlotSettingsBase, PlottingTools
 class PlotPrimariesSettings(PlotSettingsBase):
     fig_size: tuple[float, float] = (2, 2)
     visualize_primaries: bool = True
-    cmap: np.ndarray = field(
-        default_factory=lambda: (
-            np.array([[178, 34, 34], [0, 100, 0], [0, 0, 128]]) / 255
-        )
-    )
+    cmap: np.ndarray = field(default_factory=lambda: np.array([[178, 34, 34], [0, 100, 0], [0, 0, 128]]) / 255)
     ls: list[str] = field(default_factory=lambda: [":", "-", "--"])
     ylim: list[float] = field(default_factory=list)
     lw: float = 2
-    fig_name: str = field(
-        default_factory=lambda: (
-            f"Monitor_primaries_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
-    )
+    fig_name: str = field(default_factory=lambda: f"Monitor_primaries_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
 class PlotTconesSettings(PlotSettingsBase):
-    cmap: np.ndarray = field(
-        default_factory=lambda: (
-            np.array([[178, 34, 34], [0, 100, 0], [0, 0, 128]]) / 255
-        )
-    )
+    cmap: np.ndarray = field(default_factory=lambda: np.array([[178, 34, 34], [0, 100, 0], [0, 0, 128]]) / 255)
     ylim: list[float] = field(default_factory=list)
     fig_size: tuple[float, float] = (2, 2)
-    fig_name: str = field(
-        default_factory=lambda: f"T_cones_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    )
+    fig_name: str = field(default_factory=lambda: f"T_cones_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
@@ -61,9 +47,7 @@ class PlotRGBToLABSettings(PlotSettingsBase):
     fig_size: tuple[float, float] = (4, 10)
     visualize_raw_data: bool = False
     rgb_lim: list[float] = field(default_factory=lambda: [0, 1])
-    rgb_ticks: list[float] = field(
-        default_factory=lambda: np.linspace(0.2, 0.8, 3).tolist()
-    )
+    rgb_ticks: list[float] = field(default_factory=lambda: np.linspace(0.2, 0.8, 3).tolist())
     lab_viewing_angle: list[float] = field(default_factory=lambda: [30, -25])
     lab_ticks: list[float] = field(default_factory=lambda: [-60, 0, 60])
     lab_lim_margin: float = 10
@@ -72,9 +56,7 @@ class PlotRGBToLABSettings(PlotSettingsBase):
     lab_scatter_ms: float = 5
     lab_scatter_alpha: float = 0.5
     lab_scatter_edgecolor: str | None = "none"
-    fig_name: str = field(
-        default_factory=lambda: f"RGBToLAB_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    )
+    fig_name: str = field(default_factory=lambda: f"RGBToLAB_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
@@ -98,11 +80,7 @@ class Plot2DSinglePlaneSettings(PlotSettingsBase):
     data_mc: list[float] = field(default_factory=lambda: [0.5, 0.5, 0.5])
     ticks: list[float] = field(default_factory=lambda: np.linspace(0, 1, 5).tolist())
     lim: list[float] = field(default_factory=lambda: [0, 1])
-    fig_name: str = field(
-        default_factory=lambda: (
-            f"Isothreshold_contour_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
-    )
+    fig_name: str = field(default_factory=lambda: f"Isothreshold_contour_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
@@ -121,27 +99,17 @@ class Plot3DSettings(PlotSettingsBase):
     scatter_alpha: float = 0.5
     scatter_ms: float = 3
     lim: list[float] = field(default_factory=lambda: [0, 1])
-    ticks: list[float] = field(
-        default_factory=lambda: np.linspace(0.2, 0.8, 3).tolist()
-    )
+    ticks: list[float] = field(default_factory=lambda: np.linspace(0.2, 0.8, 3).tolist())
     view_angle: list[float] = field(default_factory=lambda: [30, -120])
     title: str = "RGB space"
     flag_input_W: bool = False
-    fig_name: str = field(
-        default_factory=lambda: (
-            f"Isothreshold_ellipsoids_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
-    )
+    fig_name: str = field(default_factory=lambda: f"Isothreshold_ellipsoids_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
 class PlotStimAtThresSettings(PlotSettingsBase):
     fig_size_for1: tuple[float, float] = (2, 2.5)
-    fig_name: str = field(
-        default_factory=lambda: (
-            f"color_patches_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
-    )
+    fig_name: str = field(default_factory=lambda: f"color_patches_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
@@ -152,9 +120,7 @@ class PlotDeltaESettings(PlotSettingsBase):
     lw: float = 2
     lc: str = "k"
     ylabel: str = "Delta E"
-    fig_name: str = field(
-        default_factory=lambda: f"deltaE_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-    )
+    fig_name: str = field(default_factory=lambda: f"deltaE_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
@@ -163,15 +129,9 @@ class PlotLabSettings(PlotSettingsBase):
     xlim: list[float] = field(default_factory=lambda: [-120, 120])
     ylim: list[float] = field(default_factory=lambda: [-120, 120])
     zlim: list[float] = field(default_factory=lambda: [0, 140])
-    xticks: Sequence[float] | np.ndarray = field(
-        default_factory=lambda: np.linspace(-100, 100, 5)
-    )
-    yticks: Sequence[float] | np.ndarray = field(
-        default_factory=lambda: np.linspace(-100, 100, 5)
-    )
-    zticks: Sequence[float] | np.ndarray = field(
-        default_factory=lambda: np.linspace(0, 150, 5)
-    )
+    xticks: Sequence[float] | np.ndarray = field(default_factory=lambda: np.linspace(-100, 100, 5))
+    yticks: Sequence[float] | np.ndarray = field(default_factory=lambda: np.linspace(-100, 100, 5))
+    zticks: Sequence[float] | np.ndarray = field(default_factory=lambda: np.linspace(0, 150, 5))
     bg_alpha: float = 0.04
     grid_alpha: float = 0.1
     scatter_ms: float = 1
@@ -184,9 +144,7 @@ class PlotLabSettings(PlotSettingsBase):
 
 # %%
 class CIELabVisualization(PlottingTools):
-    def __init__(
-        self, sim_CIE, settings: PlotSettingsBase, save_fig=False, save_format="pdf"
-    ):
+    def __init__(self, sim_CIE, settings: PlotSettingsBase, save_fig=False, save_format="pdf"):
         super().__init__(settings, save_fig, save_format)
         self.sim_CIE = sim_CIE
 
@@ -199,9 +157,7 @@ class CIELabVisualization(PlottingTools):
 
         if self.pltP["visualize_primaries"]:
             for i in range(self.sim_CIE.nPlanes):
-                ax.plot(
-                    self.sim_CIE.B_MONITOR[:, i], c=settings.cmap[i], lw=settings.lw
-                )
+                ax.plot(self.sim_CIE.B_MONITOR[:, i], c=settings.cmap[i], lw=settings.lw)
         if rgb is not None:
             for j in range(rgb.shape[1]):
                 spd_j = self.sim_CIE.B_MONITOR @ rgb[:, j]
@@ -234,9 +190,7 @@ class CIELabVisualization(PlottingTools):
             self._save_figure(fig, os.path.join(settings.fig_dir, settings.fig_name))
         return fig, ax
 
-    def plot_RGB_to_LAB(
-        self, ref_rgb, ref_lab, settings: PlotRGBToLABSettings, ax=None
-    ):
+    def plot_RGB_to_LAB(self, ref_rgb, ref_lab, settings: PlotRGBToLABSettings, ax=None):
         self.ndims = 3
 
         # Create a new figure and axes if not provided.
@@ -262,9 +216,7 @@ class CIELabVisualization(PlottingTools):
         b_slc_f = b_slc.flatten()
         ax[0].scatter(r_slc_f, g_slc_f, b_slc_f, c=colors_flat)
         self._update_axes_limits(ax[0], lim=settings.rgb_lim)
-        self._update_axes_labels(
-            ax[0], settings.rgb_ticks, settings.rgb_ticks, nsteps=1
-        )
+        self._update_axes_labels(ax[0], settings.rgb_ticks, settings.rgb_ticks, nsteps=1)
         self._configure_labels_and_title(ax, title="RGB cube")
         ax[0].set_box_aspect([1, 1, 1])
 
@@ -287,10 +239,7 @@ class CIELabVisualization(PlottingTools):
         if settings.lab_xylim is None:
             xymin = np.min([np.min(A_slc_f), np.min(B_slc_f)])
             xymax = np.max([np.max(A_slc_f), np.max(B_slc_f)])
-            xylim = (
-                np.array([-1, 1]) * np.max([np.abs(xymin), xymax])
-                + np.array([-1, 1]) * settings.lab_lim_margin
-            )
+            xylim = np.array([-1, 1]) * np.max([np.abs(xymin), xymax]) + np.array([-1, 1]) * settings.lab_lim_margin
         else:
             xylim = settings.lab_xylim
 
@@ -371,9 +320,7 @@ class CIELabVisualization(PlottingTools):
 
         # Create a figure with multiple subplots if `ax` is not provided.
         if ax is None:
-            fig, axes = plt.subplots(
-                1, self.sim_CIE.nPlanes, figsize=(20, 6), dpi=settings.dpi
-            )
+            fig, axes = plt.subplots(1, self.sim_CIE.nPlanes, figsize=(20, 6), dpi=settings.dpi)
         else:
             fig = ax.figure
             axes = ax
@@ -401,9 +348,7 @@ class CIELabVisualization(PlottingTools):
 
         return fig, axes
 
-    def plot_2D_single_plane(
-        self, grid_est, fitEllipse, settings, rawData=None, ax=None, rgb_background=None
-    ):
+    def plot_2D_single_plane(self, grid_est, fitEllipse, settings, rawData=None, ax=None, rgb_background=None):
         """
         Generate a single plot for a specific plane index.
         All default settings are defined here, but can be overridden via kwargs.
@@ -411,15 +356,21 @@ class CIELabVisualization(PlottingTools):
         num_grid_pts_x, num_grid_pts_y = grid_est.shape[0:2]
 
         # Determine if `ell_lc` is a single color or a color matrix
-        ell_lc_is_matrix = isinstance(
-            settings.ell_lc, np.ndarray
-        ) and settings.ell_lc.shape == (num_grid_pts_x, num_grid_pts_y, 3)
-        ref_mc_is_matrix = isinstance(
-            settings.ref_mc, np.ndarray
-        ) and settings.ref_mc.shape == (num_grid_pts_x, num_grid_pts_y, 3)
-        data_mc_is_matrix = isinstance(
-            settings.data_mc, np.ndarray
-        ) and settings.data_mc.shape == (num_grid_pts_x, num_grid_pts_y, 3)
+        ell_lc_is_matrix = isinstance(settings.ell_lc, np.ndarray) and settings.ell_lc.shape == (
+            num_grid_pts_x,
+            num_grid_pts_y,
+            3,
+        )
+        ref_mc_is_matrix = isinstance(settings.ref_mc, np.ndarray) and settings.ref_mc.shape == (
+            num_grid_pts_x,
+            num_grid_pts_y,
+            3,
+        )
+        data_mc_is_matrix = isinstance(settings.data_mc, np.ndarray) and settings.data_mc.shape == (
+            num_grid_pts_x,
+            num_grid_pts_y,
+            3,
+        )
 
         if ax is None:
             fig, ax = plt.subplots(figsize=settings.fig_size, dpi=settings.dpi)
@@ -434,9 +385,7 @@ class CIELabVisualization(PlottingTools):
         for i in range(num_grid_pts_x):
             for j in range(num_grid_pts_y):
                 # Reference location
-                ref_color = (
-                    settings.ref_mc[i, j] if ref_mc_is_matrix else settings.ref_mc
-                )
+                ref_color = settings.ref_mc[i, j] if ref_mc_is_matrix else settings.ref_mc
                 ax.scatter(
                     *grid_est[i, j],
                     s=settings.ref_ms,
@@ -446,9 +395,7 @@ class CIELabVisualization(PlottingTools):
                 )
 
                 # Ellipses
-                ellipse_color = (
-                    settings.ell_lc[i, j] if ell_lc_is_matrix else settings.ell_lc
-                )
+                ellipse_color = settings.ell_lc[i, j] if ell_lc_is_matrix else settings.ell_lc
                 ax.plot(
                     *fitEllipse[i, j],
                     linestyle=settings.ell_ls,
@@ -458,11 +405,7 @@ class CIELabVisualization(PlottingTools):
 
                 # Threshold points
                 if settings.visualize_raw_data and rawData is not None:
-                    data_color = (
-                        settings.data_mc[i, j]
-                        if data_mc_is_matrix
-                        else settings.data_mc
-                    )
+                    data_color = settings.data_mc[i, j] if data_mc_is_matrix else settings.data_mc
                     ax.scatter(
                         *rawData[i, j],
                         marker=settings.data_m,
@@ -534,10 +477,7 @@ class CIELabVisualization(PlottingTools):
                     alpha=settings.surf_alpha,
                 )
 
-            if (
-                settings.visualize_thresholdPoints
-                and settings.threshold_points is not None
-            ):
+            if settings.visualize_thresholdPoints and settings.threshold_points is not None:
                 if settings.scatter_color is not None:
                     scatter_color = settings.scatter_color
                 else:
@@ -558,9 +498,7 @@ class CIELabVisualization(PlottingTools):
                 )
         self._update_axes_limits(ax, lim=settings.lim, ndims=self.ndims)
         self._configure_labels_and_title(ax, ndims=self.ndims, title=settings.title)
-        self._update_axes_labels(
-            ax, settings.ticks, settings.ticks, ndims=self.ndims, nsteps=1
-        )
+        self._update_axes_labels(ax, settings.ticks, settings.ticks, ndims=self.ndims, nsteps=1)
         ax.view_init(
             elev=settings.view_angle[0], azim=settings.view_angle[1]
         )  # Adjust viewing angle for better visualization
@@ -592,9 +530,7 @@ class CIELabVisualization(PlottingTools):
 
         # Create a new figure/axes if none provided; otherwise reuse the passed axes.
         if ax is None:
-            fig, ax = plt.subplots(
-                subplot_kw={"projection": "3d"}, figsize=settings.fig_size
-            )
+            fig, ax = plt.subplots(subplot_kw={"projection": "3d"}, figsize=settings.fig_size)
         else:
             fig = ax.figure
 
@@ -634,9 +570,7 @@ class CIELabVisualization(PlottingTools):
 
         return fig, ax
 
-    def plot_Lab_inGamut_flattened(
-        self, Lab, rgb, fixed_dim, settings: Plot3DSettings, ax=None
-    ):
+    def plot_Lab_inGamut_flattened(self, Lab, rgb, fixed_dim, settings: Plot3DSettings, ax=None):
         """
         Plot a 2D “slice” of CIELab by fixing one dimension and drawing the other two.
 
@@ -677,9 +611,7 @@ class CIELabVisualization(PlottingTools):
         varied_dims.pop(fixed_dim)
 
         # Scatter the slice using the two varying coordinates; color by per-point RGB.
-        ax.scatter(
-            Lab[:, varied_dims[0]], Lab[:, varied_dims[1]], c=rgb, s=settings.scatter_ms
-        )
+        ax.scatter(Lab[:, varied_dims[0]], Lab[:, varied_dims[1]], c=rgb, s=settings.scatter_ms)
 
         # Keep geometry faithful (equal units on both axes).
         ax.set_aspect("equal", adjustable="box")
@@ -785,9 +717,7 @@ class CIELabVisualization(PlottingTools):
         return fig, ax
 
     @staticmethod
-    def plot_deltaE(
-        deltaE, comp_rgb, settings: PlotDeltaESettings, ax=None, save_fig=False
-    ):
+    def plot_deltaE(deltaE, comp_rgb, settings: PlotDeltaESettings, ax=None, save_fig=False):
 
         if ax is None:
             fig, ax = plt.subplots(1, 1, figsize=settings.fig_size, dpi=settings.dpi)

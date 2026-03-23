@@ -124,9 +124,7 @@ while True:
 
             # Convert angle to a unit direction vector in the plane:
             #   d = [cos(theta), sin(theta)]
-            chromatic_directions = angles_to_2Dchromatic_directions(
-                theta_deg, normalize=True
-            )
+            chromatic_directions = angles_to_2Dchromatic_directions(theta_deg, normalize=True)
 
         elif stim_dims == 3:
             ref_sobol_lb = [
@@ -150,44 +148,22 @@ while True:
             phi_deg = xref_and_angles[:, -1]  # polar angle from +z in degrees, (nRefs,)
 
             # Convert spherical angles to a 3D unit vector.
-            chromatic_directions = angles_to_3Dchromatic_directions(
-                theta_deg, phi_deg, normalize=True
-            )
+            chromatic_directions = angles_to_3Dchromatic_directions(theta_deg, phi_deg, normalize=True)
 
         else:
             raise ValueError(f"stim_dims must be 2 or 3, got {stim_dims!r}")
 
         # Initialize data storage arrays
-        vecLen_t_pC = np.full(
-            (nRefs, 1), np.nan
-        )  # Stores vector lengths at which performance reaches t_pC
-        vecLen_easy = np.full(
-            (nRefs, 1), np.nan
-        )  # Stores vector lengths for easier trials
-        sim_pX1 = np.full(
-            (nRefs, nLevels), np.nan
-        )  # Stores simulated percent correct (pX1)
-        pX1_Wishart = np.full(
-            (nRefs, nVec_len), np.nan
-        )  # Stores Wishart-predicted pX1 for finer stimulus sampling
-        pX1_Wishart_stim = np.full(
-            (nRefs, nLevels), np.nan
-        )  # Stores Wishart-predicted pX1 for MOCS stimulus levels
-        comp_unique_origin = np.full(
-            (nRefs, nLevels, stim_dims), np.nan
-        )  # Stores unique comparison stimuli
-        comp_unique = np.full(
-            (nRefs, nLevels, stim_dims), np.nan
-        )  # Stores unique comparison stimuli
-        refStimulus = np.full(
-            (nRefs, num_trials, stim_dims), np.nan
-        )  # Stores reference stimuli per trial
-        compStimulus = np.full(
-            refStimulus.shape, np.nan
-        )  # Stores comparison stimuli per trial
-        responses = np.full(
-            (nRefs, num_trials), np.nan
-        )  # Stores simulated binary responses
+        vecLen_t_pC = np.full((nRefs, 1), np.nan)  # Stores vector lengths at which performance reaches t_pC
+        vecLen_easy = np.full((nRefs, 1), np.nan)  # Stores vector lengths for easier trials
+        sim_pX1 = np.full((nRefs, nLevels), np.nan)  # Stores simulated percent correct (pX1)
+        pX1_Wishart = np.full((nRefs, nVec_len), np.nan)  # Stores Wishart-predicted pX1 for finer stimulus sampling
+        pX1_Wishart_stim = np.full((nRefs, nLevels), np.nan)  # Stores Wishart-predicted pX1 for MOCS stimulus levels
+        comp_unique_origin = np.full((nRefs, nLevels, stim_dims), np.nan)  # Stores unique comparison stimuli
+        comp_unique = np.full((nRefs, nLevels, stim_dims), np.nan)  # Stores unique comparison stimuli
+        refStimulus = np.full((nRefs, num_trials, stim_dims), np.nan)  # Stores reference stimuli per trial
+        compStimulus = np.full(refStimulus.shape, np.nan)  # Stores comparison stimuli per trial
+        responses = np.full((nRefs, num_trials), np.nan)  # Stores simulated binary responses
 
         # ----------------------------------------------------
         # Loop through each MOCS reference condition
@@ -230,9 +206,7 @@ while True:
 
             # Add the easier trial level to the comparison set
             easyTrial_stim = cdir_idx * vecLen_easy[i]
-            comp_unique_origin[i] = np.vstack(
-                (comp_unique_truncated[1:], easyTrial_stim)
-            )
+            comp_unique_origin[i] = np.vstack((comp_unique_truncated[1:], easyTrial_stim))
             comp_unique[i] = comp_unique_origin[i] + xref_unique[i]
 
             # Check if values exceed bounds [-1, 1]
@@ -250,9 +224,7 @@ while True:
 
             for j in range(nLevels):
                 # Simulate binary responses based on the predicted probability of choosing x1
-                sim_resp_n, pC_mean_n = sim_MOCS_trials.sim_binary_trials(
-                    pX1_Wishart_stim[i][j], trials_per_level
-                )
+                sim_resp_n, pC_mean_n = sim_MOCS_trials.sim_binary_trials(pX1_Wishart_stim[i][j], trials_per_level)
 
                 # Store the simulated responses
                 idx_lb = j * trials_per_level  # Lower index for this level
@@ -260,14 +232,10 @@ while True:
                 responses[i, idx_lb:idx_ub] = sim_resp_n
 
                 # Repeat reference stimuli for the given number of trials
-                refStimulus[i, idx_lb:idx_ub] = np.tile(
-                    xref_unique[i], (trials_per_level, 1)
-                )
+                refStimulus[i, idx_lb:idx_ub] = np.tile(xref_unique[i], (trials_per_level, 1))
 
                 # Compute and store the comparison stimuli, ensuring correct shifts
-                compStimulus[i, idx_lb:idx_ub] = np.tile(
-                    comp_unique[i][j], (trials_per_level, 1)
-                )
+                compStimulus[i, idx_lb:idx_ub] = np.tile(comp_unique[i][j], (trials_per_level, 1))
         # If we got here, all conditions passed the gamut checks
         break
     except Exception as e:
@@ -356,9 +324,7 @@ MOCS_xref_unshuffled = np.reshape(refStimulus, shape_flat)
 MOCS_x1_unshuffled = np.reshape(compStimulus, shape_flat)
 
 # Create a shuffled array for levels within each reference condition
-rng = np.random.default_rng(
-    sobol_seed_success
-)  # Create a random number generator with a seed
+rng = np.random.default_rng(sobol_seed_success)  # Create a random number generator with a seed
 shuffled_list = []
 for n in range(nRefs):
     #  Create a 2D array of levels (nLevels x trials_per_level)
@@ -366,9 +332,7 @@ for n in range(nRefs):
 
     # Shuffle each column independently using rng.permutation()
     for col in range(shuffled_array_n.shape[1]):
-        shuffled_array_n[:, col] = rng.permutation(
-            shuffled_array_n[:, col]
-        )  # Shuffle while ensuring reproducibility
+        shuffled_array_n[:, col] = rng.permutation(shuffled_array_n[:, col])  # Shuffle while ensuring reproducibility
 
     # Flatten the shuffled array and store it in the list
     shuffled_list.append(shuffled_array_n.ravel())
@@ -379,14 +343,9 @@ shuffled_array = np.concatenate(shuffled_list)
 # Create a DataFrame containing trial information
 pregenerated_trials = pd.DataFrame(
     {
-        "condition": np.repeat(
-            np.arange(nRefs), num_trials
-        ).tolist(),  # Reference condition index
-        "level": np.tile(
-            np.repeat(np.arange(nLevels), trials_per_level), nRefs
-        ).tolist(),  # Original level index
-        "trial": list(range(trials_per_level))
-        * (nRefs * nLevels),  # Trial index within each level
+        "condition": np.repeat(np.arange(nRefs), num_trials).tolist(),  # Reference condition index
+        "level": np.tile(np.repeat(np.arange(nLevels), trials_per_level), nRefs).tolist(),  # Original level index
+        "trial": list(range(trials_per_level)) * (nRefs * nLevels),  # Trial index within each level
         "shuffled_level": shuffled_array,  # The shuffled levels for each trial
     }
 )

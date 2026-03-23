@@ -65,9 +65,7 @@ class ModelPerformance:
 
         # ground truth covariance matrices and model predictions
         self.covMat_gt = np.full((self.nRefs, self.ndims, self.ndims), np.nan)
-        self.covMat_modelPred = np.full(
-            (self.nLevels, self.nRefs, self.ndims, self.ndims), np.nan
-        )
+        self.covMat_modelPred = np.full((self.nLevels, self.nRefs, self.ndims, self.ndims), np.nan)
 
     def load_modelPreds_ellParams(self, ellParams_set, verbose=False):
         """
@@ -93,15 +91,11 @@ class ModelPerformance:
                     radii_ii, eigVec_ii = ModelPerformance.sort_eig(radii_ii, eigVec_ii)
 
                     # Convert sorted ellipse params into covariance matrix
-                    self.covMat_modelPred[l, ii] = ellParams_to_covMat(
-                        radii_ii, eigVec_ii
-                    )
+                    self.covMat_modelPred[l, ii] = ellParams_to_covMat(radii_ii, eigVec_ii)
 
                     # If verbose mode is enabled, print radius comparison for first level
                     if verbose and l == 0:
-                        _, radii_gt = self._convert_ellParams_to_covMat(
-                            self.ellParams_gt[ii]
-                        )
+                        _, radii_gt = self._convert_ellParams_to_covMat(self.ellParams_gt[ii])
                         print(f"{ii}:")
                         print(f"Ground truths: {np.sort(radii_gt)}")
                         print(f"W Model preds: {np.sort(radii_ii)}")
@@ -153,14 +147,10 @@ class ModelPerformance:
 
         # compute Bures-Wasserstein distance between the ground truth cov matrix
         # and the smallest sphere that can just contain the ellipsoid
-        BW_distance_maxEigval = self.compute_Bures_Wasserstein_distance(
-            covMat_gt, covMat_max
-        )
+        BW_distance_maxEigval = self.compute_Bures_Wasserstein_distance(covMat_gt, covMat_max)
         # compute Bures-Wasserstein distance between the ground truth cov matrix
         # and the largest sphere that can just be put inside the ellipsoid
-        BW_distance_minEigval = self.compute_Bures_Wasserstein_distance(
-            covMat_gt, covMat_min
-        )
+        BW_distance_minEigval = self.compute_Bures_Wasserstein_distance(covMat_gt, covMat_min)
 
         LU_distance_maxEigval = self.log_operator_norm_distance(covMat_gt, covMat_max)
         LU_distance_minEigval = self.log_operator_norm_distance(covMat_gt, covMat_min)
@@ -186,12 +176,8 @@ class ModelPerformance:
         # Compute normalized bures similarity and Bures-Wasserstein distance
         # between ground truth and ellipsoids at selected corner locations
         for m in range(self.nCorners):
-            BW_distance_corner[m] = self.compute_Bures_Wasserstein_distance(
-                covMat_corner[m], covMat_gt
-            )
-            LU_distance_corner[m] = self.log_operator_norm_distance(
-                covMat_corner[m], covMat_gt
-            )
+            BW_distance_corner[m] = self.compute_Bures_Wasserstein_distance(covMat_corner[m], covMat_gt)
+            LU_distance_corner[m] = self.log_operator_norm_distance(covMat_corner[m], covMat_gt)
         return BW_distance_corner, LU_distance_corner
 
     def compare_gt_model_pred_one_instance(self, covMat_gt, covMat_modelPred):
@@ -221,12 +207,8 @@ class ModelPerformance:
         BW_distance = np.full((self.nLevels,), np.nan)
         LU_distance = np.full((self.nLevels,), np.nan)
         for l in range(self.nLevels):
-            BW_distance[l] = self.compute_Bures_Wasserstein_distance(
-                covMat_gt, covMat_modelPred[l]
-            )
-            LU_distance[l] = self.log_operator_norm_distance(
-                covMat_gt, covMat_modelPred[l]
-            )
+            BW_distance[l] = self.compute_Bures_Wasserstein_distance(covMat_gt, covMat_modelPred[l])
+            LU_distance[l] = self.log_operator_norm_distance(covMat_gt, covMat_modelPred[l])
         return BW_distance, LU_distance
 
     def evaluate_model_performance(self, ellParams_set, covMat_corner=None):
@@ -272,9 +254,7 @@ class ModelPerformance:
         # Initialize arrays for corner comparisons, if provided
         if covMat_corner is not None:
             self.nCorners = len(covMat_corner)
-            self.BW_distance_corner = np.full(
-                (self.nCorners,) + self.BW_distance_maxEigval.shape, np.nan
-            )
+            self.BW_distance_corner = np.full((self.nCorners,) + self.BW_distance_maxEigval.shape, np.nan)
             self.LU_distance_corner = np.full(self.BW_distance_corner.shape, np.nan)
 
         for idx in range(self.nRefs):
@@ -292,15 +272,13 @@ class ModelPerformance:
                 # Optionally compare ground-truth ellipses to corner ellipses
                 # This gives additional sense of variability / performance range
                 if covMat_corner is not None:
-                    self.BW_distance_corner[:, idx], self.LU_distance_corner[:, idx] = (
-                        self.compare_with_corner_ell(self.covMat_gt[idx], covMat_corner)
+                    self.BW_distance_corner[:, idx], self.LU_distance_corner[:, idx] = self.compare_with_corner_ell(
+                        self.covMat_gt[idx], covMat_corner
                     )
 
                 # Compare model-predicted ellipses to ground-truth ellipse for each bootstrap level
-                self.BW_distance[:, idx], self.LU_distance[:, idx] = (
-                    self.compare_gt_model_pred_one_instance(
-                        self.covMat_gt[idx], self.covMat_modelPred[:, idx]
-                    )
+                self.BW_distance[:, idx], self.LU_distance[:, idx] = self.compare_gt_model_pred_one_instance(
+                    self.covMat_gt[idx], self.covMat_modelPred[:, idx]
                 )
             except:
                 print("Cannot find ellipse parameters for reference index", idx)
@@ -543,9 +521,7 @@ def generate_ellipsoids_within_BWdistance(
         bw_dist = ModelPerformance.compute_Bures_Wasserstein_distance(cov_gt, cov_sim)
 
         if np.isclose(bw_dist, target_bw_dist, atol=tol):
-            ellipsoids.append(
-                {"radii": radii, "evecs": evecs, "center": center_gt.copy()}
-            )
+            ellipsoids.append({"radii": radii, "evecs": evecs, "center": center_gt.copy()})
             distances.append(bw_dist)
 
         attempts += 1

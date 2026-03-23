@@ -37,9 +37,7 @@ try:
     expt_file_manager = ExperimentFileManager.load_state(path_metadata)
 except:
     # If loading fails (e.g., file not found), initialize a new ExperimentFileManager
-    expt_file_manager = ExperimentFileManager(
-        subject_id, subject_init, networkDisk_path
-    )
+    expt_file_manager = ExperimentFileManager(subject_id, subject_init, networkDisk_path)
 # Create a new session file for the current session
 file_path, file_name = expt_file_manager.create_session_file(session_today)
 # List all files created for this subject
@@ -65,9 +63,7 @@ if not flag_load_rgb:
     AEPsych_trial_type = [f"AEPsych_{i}" for i in range(1, 6)]
     trial_type_both = MOCS_trial_type + AEPsych_trial_type
     random.shuffle(trial_type_both)
-    trial_type_final = [
-        f"Trial_{i + 1}_{item}" for i, item in enumerate(trial_type_both)
-    ]
+    trial_type_final = [f"Trial_{i + 1}_{item}" for i, item in enumerate(trial_type_both)]
     print(trial_type_final)
 
     ref_rgb_values = np.random.rand(10, 3)  # Generate 10 random RGB values
@@ -83,9 +79,7 @@ else:
     trial_type_final = [f"MOCS_{i}" for i in range(1, ref_rgb_values.shape[0] + 1)]
 
 # run it
-for i, (trial, ref_rgb, comp_rgb) in enumerate(
-    zip(trial_type_final, ref_rgb_values, comp_rgb_values), start=1
-):
+for i, (trial, ref_rgb, comp_rgb) in enumerate(zip(trial_type_final, ref_rgb_values, comp_rgb_values), start=1):
     print(f"Sending reference and comparison pair {i}...")
     communicator.send_RGBvals(trial, ref_rgb.tolist(), comp_rgb.tolist())
     print(f"RGB values {i} confirmed.")

@@ -117,12 +117,8 @@ fitEllipsoid_scaled = np.full(base_shape1 + (ndims, nTheta * nPhi), np.nan)
 fitEllipsoid_unscaled = np.full(base_shape1 + (ndims, nTheta * nPhi), np.nan)
 
 # Discrete threshold samples on the isothreshold surface (3 x nDirs)
-rgb_comp_surface_unscaled = np.full(
-    base_shape1 + (ndims, numDirPts_xy * numDirPts_z), np.nan
-)
-rgb_comp_surface_scaled = np.full(
-    base_shape1 + (ndims, numDirPts_xy * numDirPts_z), np.nan
-)
+rgb_comp_surface_unscaled = np.full(base_shape1 + (ndims, numDirPts_xy * numDirPts_z), np.nan)
+rgb_comp_surface_scaled = np.full(base_shape1 + (ndims, numDirPts_xy * numDirPts_z), np.nan)
 
 # Per-reference dictionary of fitted ellipsoid parameters (center, radii, evecs, etc.)
 ellParams = np.full(base_shape1, {})
@@ -166,18 +162,12 @@ for idx in tqdm(np.ndindex(*base_shape1), total=np.prod(base_shape1), desc="Comp
     )
 
     # Convert fitted ellipsoid parameters to a covariance matrix for downstream visualization
-    covMat_vis[idx] = ellParams_to_covMat(
-        ellParams[idx]["radii"], ellParams[idx]["evecs"]
-    )
+    covMat_vis[idx] = ellParams_to_covMat(ellParams[idx]["radii"], ellParams[idx]["evecs"])
 
 # %% visualize ellipsoids
 base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
-output_figDir = os.path.join(
-    base_dir, "ELPS_analysis", "Simulation_FigFiles", "3D", f"{color_diff_algorithm}"
-)
-output_fileDir = os.path.join(
-    base_dir, "ELPS_analysis", "Simulation_DataFiles", "3D", f"{color_diff_algorithm}"
-)
+output_figDir = os.path.join(base_dir, "ELPS_analysis", "Simulation_FigFiles", "3D", f"{color_diff_algorithm}")
+output_fileDir = os.path.join(base_dir, "ELPS_analysis", "Simulation_DataFiles", "3D", f"{color_diff_algorithm}")
 os.makedirs(output_figDir, exist_ok=True)
 os.makedirs(output_fileDir, exist_ok=True)
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=12)
@@ -255,9 +245,7 @@ if os.path.exists(full_path):
     flag_match_grid_pts = f"stim{ext_str}" in existing_dict
 
     if flag_match_grid_pts:
-        flag_overwrite = input(
-            f"The file '{file_name}' already exists. Enter 'y' to overwrite: "
-        )
+        flag_overwrite = input(f"The file '{file_name}' already exists. Enter 'y' to overwrite: ")
 
         if flag_overwrite.lower() == "y":
             with open(full_path, "wb") as f:

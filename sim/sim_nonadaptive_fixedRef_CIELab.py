@@ -88,9 +88,7 @@ stim_dims = 3  # We vary 2 or 3 chromatic dimensions (2D slice)
 rnd_seed = 0  # Random seed for reproducibility
 colordiff_alg = "CIE1994"  # ΔE algorithm: "CIE1976", "CIE1994", "CIE2000"
 nSims = 240  # per ref
-jitter = (
-    0.01  # Amount of Gaussian jitter added to sampled stimuli (typical range: 0.1–0.5)
-)
+jitter = 0.01  # Amount of Gaussian jitter added to sampled stimuli (typical range: 0.1–0.5)
 
 # number of grid
 num_grid_pts = 5
@@ -107,9 +105,7 @@ if stim_dims == 2:
     # For num_grid_pts = 7:
     #   fixed_val ∈ [0.15, 0.258333, 0.366667, 0.475, 0.583333, 0.691667, 0.8]
 
-    fixed_val = (
-        1 if plane_2D == "Isoluminant plane" else 0.5
-    )  # 1 for 'Isoluminant plane
+    fixed_val = 1 if plane_2D == "Isoluminant plane" else 0.5  # 1 for 'Isoluminant plane
 
     # Helper object that manages transforms and loads precomputed GT CIE thresholds
     color_thres_data = color_thresholds(
@@ -195,12 +191,8 @@ y = np.reshape(sim_trial.sim["resp_binary"], (-1))
 # Visualize
 # -----------------------------------------------------------
 # Define base directories for saving figure and data files
-output_figDir = os.path.join(
-    base_dir, "Simulation_FigFiles", f"{stim_dims}D", f"{colordiff_alg}"
-)
-output_fileDir = os.path.join(
-    base_dir, "Simulation_DataFiles", f"{stim_dims}D", f"{colordiff_alg}"
-)
+output_figDir = os.path.join(base_dir, "Simulation_FigFiles", f"{stim_dims}D", f"{colordiff_alg}")
+output_fileDir = os.path.join(base_dir, "Simulation_DataFiles", f"{stim_dims}D", f"{colordiff_alg}")
 os.makedirs(output_figDir, exist_ok=True)
 os.makedirs(output_fileDir, exist_ok=True)
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=8)
@@ -234,19 +226,13 @@ if stim_dims == 2:
     )
 
     # define figure name
-    sampling_vis = SamplingRefCompPairVisualization(
-        stim_dims, color_thres_data, settings=pltSettings_tp, save_fig=True
-    )
+    sampling_vis = SamplingRefCompPairVisualization(stim_dims, color_thres_data, settings=pltSettings_tp, save_fig=True)
 
     if plane_2D != "Isoluminant plane":
-        xref = color_thres_data.N_unit_to_W_unit(
-            xref
-        )  # the last row is a filler row (all 1's)
+        xref = color_thres_data.N_unit_to_W_unit(xref)  # the last row is a filler row (all 1's)
         x1 = color_thres_data.N_unit_to_W_unit(x1)  # so we can just get rid of that row
 
-    fig, ax = plt.subplots(
-        1, 1, figsize=pltSettings_tp.fig_size, dpi=pltSettings_tp.dpi
-    )
+    fig, ax = plt.subplots(1, 1, figsize=pltSettings_tp.fig_size, dpi=pltSettings_tp.dpi)
     sampling_vis.plot_sampling(xref, x1, ax=ax, settings=pltSettings_tp)
     if plane_2D != "Isoluminant plane":
         ax.set_xlabel(f"{plane_2D[0]}")
@@ -281,13 +267,9 @@ if stim_dims == 2:
     row_eg = 4
     col_eg = 0
     # Retrieve parameters for the ellipsoid at the selected location
-    ellPara_eg = sim_trial.gt_CIE_results["ellParams"][
-        sim_trial.config.fixed_color_dim, row_eg, col_eg
-    ]
+    ellPara_eg = sim_trial.gt_CIE_results["ellParams"][sim_trial.config.fixed_color_dim, row_eg, col_eg]
     # Extract the reference RGB values at the selected location
-    rgb_ref_eg = sim_trial.sim["ref_points"][
-        row_eg, col_eg
-    ]  # sim_trial.config.varying_RGBplane
+    rgb_ref_eg = sim_trial.sim["ref_points"][row_eg, col_eg]  # sim_trial.config.varying_RGBplane
     # Retrieve the ground truth ellipses during the transformation process
     rgb_comp_eg, rgb_comp_eg_1stepback, rgb_comp_eg_2stepback, rgb_comp_eg_3stepback = (
         sim_trial.sample_comp_2DNearContour(rgb_ref_eg, ellPara_eg)
@@ -302,17 +284,13 @@ if stim_dims == 2:
     # ground truth of the 3rd form: stretched
     gt_comp_eg_1stepback = PointsOnEllipseQ(ellPara_eg[2], ellPara_eg[3], 0, 0, 0)
     # ground truth of the 4th form: rotated and relocated
-    gt_comp_eg = PointsOnEllipseQ(
-        ellPara_eg[2], ellPara_eg[3], ellPara_eg[4], ellPara_eg[0], ellPara_eg[1]
-    )
+    gt_comp_eg = PointsOnEllipseQ(ellPara_eg[2], ellPara_eg[3], ellPara_eg[4], ellPara_eg[0], ellPara_eg[1])
 
     # plot the transformation
     pltSettings_ts = replace(PlotTransformationSettings(), **pltSettings_base.__dict__)
     pltSettings_ts = replace(pltSettings_ts, colorcode_resp=True)
     # first visualize the Weibull psychometric functions
-    sim_vis = TrialPlacementVisualization(
-        sim_trial, settings=pltSettings_base, save_fig=False
-    )
+    sim_vis = TrialPlacementVisualization(sim_trial, settings=pltSettings_base, save_fig=False)
     sim_vis.plot_transformation(
         rgb_comp_eg_3stepback,
         rgb_comp_eg_2stepback,

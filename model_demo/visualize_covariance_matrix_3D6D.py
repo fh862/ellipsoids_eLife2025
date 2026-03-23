@@ -96,16 +96,12 @@ model = WishartProcessModel(
 
 # Coarse grid of points in the 2D stimulus space (for plotting ellipses).
 grid = jnp.stack(
-    jnp.meshgrid(
-        *[jnp.linspace(-0.7, 0.7, num_grid_pts) for _ in range(model.num_dims)]
-    ),
+    jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, num_grid_pts) for _ in range(model.num_dims)]),
     axis=-1,
 )
 
 grid_1d_fine = jnp.linspace(-1, 1, num_grid_pts_fine)
-grid_fine = jnp.stack(
-    jnp.meshgrid(*[grid_1d_fine for _ in range(model.num_dims)]), axis=-1
-)
+grid_fine = jnp.stack(jnp.meshgrid(*[grid_1d_fine for _ in range(model.num_dims)]), axis=-1)
 
 # Sample Chebyshev coefficients W from the prior.
 W_init = model.sample_W_prior(W_INIT_KEY)
@@ -142,43 +138,31 @@ pltSettings_sigma3D = replace(
     fig_size=(8, 8.5),  # (9.5,7)
 )
 # Visualization helper for Wishart model quantities
-visualize_sigma3D = WishartModelBasicsVisualization(
-    save_fig=True, settings=pltSettings_base, save_format="png"
-)
+visualize_sigma3D = WishartModelBasicsVisualization(save_fig=True, settings=pltSettings_base, save_format="png")
 # Render U as a sequence of 2D slices through the 3D field
-visualize_sigma3D.plot_basis_functions_3D(
-    X_mesh, Y_mesh, Z_mesh, Sigmas_grid_fine, settings=pltSettings_sigma3D
-)
+visualize_sigma3D.plot_basis_functions_3D(X_mesh, Y_mesh, Z_mesh, Sigmas_grid_fine, settings=pltSettings_sigma3D)
 
 # save a gif
 if visualize_sigma3D.save_format == "png":
-    PlottingTools.save_gif(
-        fig_outputDir, gif_name=fig_name, fig_name_start=fig_name, fig_name_end=".png"
-    )
+    PlottingTools.save_gif(fig_outputDir, gif_name=fig_name, fig_name_start=fig_name, fig_name_end=".png")
 
 
 # %%
 # -----------------------------------------------------------
 # SECTION 2b: look at the weighted sum (U)
 # -----------------------------------------------------------
-pltSettings_sigma3D = replace(
-    pltSettings_3Dsigma, fig_name="U_given_sampledWeightMatrix", fig_size=(9.5, 8)
-)
+pltSettings_sigma3D = replace(pltSettings_3Dsigma, fig_name="U_given_sampledWeightMatrix", fig_size=(9.5, 8))
 visualize_sigma3D.save_fig = False
 
 # Render U as a sequence of 2D slices through the 3D field
-visualize_sigma3D.plot_basis_functions_3D(
-    X_mesh, Y_mesh, Z_mesh, U_fine, settings=pltSettings_sigma3D
-)
+visualize_sigma3D.plot_basis_functions_3D(X_mesh, Y_mesh, Z_mesh, U_fine, settings=pltSettings_sigma3D)
 
 # %%
 # -----------------------------------------------------------
 # SECTION 3: visualize the internal noise ellipsoids in html
 # -----------------------------------------------------------
 pltSettings_html = Plot3DPredHTMLSettings()
-pltSettings_html = replace(
-    pltSettings_html, ell_scaler=3
-)  # enlarge it by a scaler of 3 for better visibility
+pltSettings_html = replace(pltSettings_html, ell_scaler=3)  # enlarge it by a scaler of 3 for better visibility
 
 # Visualization helper with HTML settings
 vis_html = WishartPredictionsVisualization_html(settings=pltSettings_html)

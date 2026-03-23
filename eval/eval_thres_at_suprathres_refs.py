@@ -116,9 +116,7 @@ Plot3D_settings = replace(
 vis = CIELabVisualization(color_thres_data, settings=pltSettings_base)
 
 # create a figure
-fig1 = plt.figure(
-    figsize=Plot3D_settings.fig_size, dpi=Plot3D_settings.dpi, constrained_layout=True
-)
+fig1 = plt.figure(figsize=Plot3D_settings.fig_size, dpi=Plot3D_settings.dpi, constrained_layout=True)
 ax1 = fig1.add_subplot(111, projection="3d")
 vis.plot_3D(
     np.reshape(grid_3D_trans, (num_grid_pts_3D**ndims, ndims)),
@@ -168,9 +166,7 @@ model_pred_thres.target_pC = 0.75
 grid_suprathres = xref_3DW_suprathres[None, None]
 
 # Recompute threshold ellipsoids at the suprathreshold reference locations
-model_pred_thres, _ = rerun_model_pred_wExisting_model(
-    grid_suprathres, model_pred_thres, color_thres_data
-)
+model_pred_thres, _ = rerun_model_pred_wExisting_model(grid_suprathres, model_pred_thres, color_thres_data)
 
 # %%
 # ---------------------------------------------------------------------------
@@ -208,21 +204,15 @@ for n in range(nRefs_suprathres):
     evecs_n = ell_params_n["evecs"]
 
     # Intersect ellipsoid with the plane spanned by Vt[0], Vt[1]
-    sliced_ell_byPlane[n], _ = slice_ellipsoid_byPlane(
-        center_n, radii_n, evecs_n, Vt[0], Vt[1], num_grid_pts=nTheta
-    )
+    sliced_ell_byPlane[n], _ = slice_ellipsoid_byPlane(center_n, radii_n, evecs_n, Vt[0], Vt[1], num_grid_pts=nTheta)
 
     # Project the 3D slice back to the 2D model plane for “flat” visualization
     # W3D → RGB → W2D (drop homogeneous row afterward)
-    flat_ell = color_thres_data_2D.M_RGBTo2DW @ color_thres_data.W_unit_to_N_unit(
-        sliced_ell_byPlane[n]
-    )
+    flat_ell = color_thres_data_2D.M_RGBTo2DW @ color_thres_data.W_unit_to_N_unit(sliced_ell_byPlane[n])
     flat_ell_isoluminant[n] = flat_ell[:2]
 
 # create a figure
-fig3 = plt.figure(
-    figsize=Plot3D_settings.fig_size, dpi=Plot3D_settings.dpi, constrained_layout=True
-)
+fig3 = plt.figure(figsize=Plot3D_settings.fig_size, dpi=Plot3D_settings.dpi, constrained_layout=True)
 ax3 = fig3.add_subplot(111, projection="3d")
 
 # draw plane (no label)

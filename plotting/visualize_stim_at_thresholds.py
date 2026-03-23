@@ -62,9 +62,7 @@ input_fileDir_fits_MOCS, file_name_MOCS = select_file_and_get_path()
 full_path_MOCS = os.path.join(input_fileDir_fits_MOCS, file_name_MOCS)
 
 # Create an output directory for saving stimulus visualization figures
-output_figDir = input_fileDir_fits_MOCS.replace("DataFiles", "FigFiles").replace(
-    "fits", "expt_stimuli/flat"
-)
+output_figDir = input_fileDir_fits_MOCS.replace("DataFiles", "FigFiles").replace("fits", "expt_stimuli/flat")
 os.makedirs(output_figDir, exist_ok=True)
 
 # Load data from the pickled file
@@ -72,9 +70,7 @@ with open(full_path_MOCS, "rb") as f:
     MOCS = pickled.load(f)
 
 # Extract thresholded stimulus data and reference locations
-x1_at_thres_MOCS = MOCS[
-    "stim_at_targetPC_MOCS"
-]  # Stimuli at estimated thresholds from MOCS
+x1_at_thres_MOCS = MOCS["stim_at_targetPC_MOCS"]  # Stimuli at estimated thresholds from MOCS
 xref_MOCS = MOCS["xref_unique"]  # Reference stimuli locations
 nRefs = MOCS["nRefs"]  # Number of unique reference locations
 
@@ -106,9 +102,7 @@ if flag_add_stim_supra:
     # Concatenate all reference and comparison stimuli for plotting:
     # includes suprathreshold examples, MOCS threshold trials, MOCS catch trials, and Wishart model threshold trials
     MOCS_xref_cat = np.vstack((xref_supra, xref_MOCS, xref_MOCS, xref_MOCS))
-    MOCS_x1_cat = np.vstack(
-        (x1_supra, x1_at_thres_MOCS, x1_catch_MOCS, x1_at_thres_Wishart)
-    )
+    MOCS_x1_cat = np.vstack((x1_supra, x1_at_thres_MOCS, x1_catch_MOCS, x1_at_thres_Wishart))
 else:
     # If not including suprathreshold stimuli, only plot MOCS and Wishart threshold-related stimuli
     MOCS_xref_cat = np.vstack((xref_MOCS, xref_MOCS, xref_MOCS))
@@ -138,18 +132,10 @@ pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=8)
 pltStimSettings = replace(PlotStimAtThresSettings(), **pltSettings_base.__dict__)
 
 # Construct figure names
-fig_name_part1 = (
-    ["MOCS_thres"] * nRefs + ["MOCS_catch"] * nRefs + ["Wishart_thres"] * nRefs
-)
+fig_name_part1 = ["MOCS_thres"] * nRefs + ["MOCS_catch"] * nRefs + ["Wishart_thres"] * nRefs
 fig_name_part2 = list(range(1, nRefs + 1)) * 3
-fig_name_supra = (
-    [f"supra_thres_{i}" for i in range(xref_supra.shape[0])]
-    if flag_add_stim_supra
-    else []
-)
-fig_name = fig_name_supra + [
-    f"{s1}_{s2}" for s1, s2 in zip(fig_name_part1, fig_name_part2)
-]
+fig_name_supra = [f"supra_thres_{i}" for i in range(xref_supra.shape[0])] if flag_add_stim_supra else []
+fig_name = fig_name_supra + [f"{s1}_{s2}" for s1, s2 in zip(fig_name_part1, fig_name_part2)]
 
 # Plot each reference + target stimulus pair as a small figure
 for i in range(12):  # MOCS_xref_cat.shape[0]
@@ -225,17 +211,11 @@ if flag_change_blobby_filename and os.path.exists(output_figDir_blobby):
 
             # find the index that matches
             rgb_diff_ref = np.sum(
-                np.abs(
-                    np.array(blobby_ref_rgb)[np.newaxis]
-                    - MOCS_trials_RGB["MOCS_xref_shuffled"]
-                ),
+                np.abs(np.array(blobby_ref_rgb)[np.newaxis] - MOCS_trials_RGB["MOCS_xref_shuffled"]),
                 axis=1,
             )
             rgb_diff_comp = np.sum(
-                np.abs(
-                    np.array(blobby_comp_rgb)[np.newaxis]
-                    - MOCS_trials_RGB["MOCS_x1_shuffled"]
-                ),
+                np.abs(np.array(blobby_comp_rgb)[np.newaxis] - MOCS_trials_RGB["MOCS_x1_shuffled"]),
                 axis=1,
             )
             idx_match = np.argmin(rgb_diff_ref + rgb_diff_comp)

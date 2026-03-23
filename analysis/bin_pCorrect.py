@@ -193,9 +193,7 @@ class BinnedPC:
         if self.ndim != 2:
             raise ValueError("bin_2d requires xref/x1 to be 2D (N,2).")
 
-        if not hasattr(self, "theta_edges_rad") or not hasattr(
-            self, "theta_centers_rad"
-        ):
+        if not hasattr(self, "theta_edges_rad") or not hasattr(self, "theta_centers_rad"):
             raise ValueError("Theta bins not set. Call edges_theta_deg(...) first.")
 
         theta, valid = self._theta()
@@ -257,9 +255,7 @@ class BinnedPC:
         if self.ndim != 3:
             raise ValueError("bin_3d requires xref/x1 to be 3D (N,3).")
 
-        if not hasattr(self, "theta_edges_rad") or not hasattr(
-            self, "theta_centers_rad"
-        ):
+        if not hasattr(self, "theta_edges_rad") or not hasattr(self, "theta_centers_rad"):
             raise ValueError("Theta bins not set. Call edges_theta_deg(...) first.")
 
         _, phi, valid_phi = self._u_and_phi()  # elevation = phi
@@ -281,10 +277,7 @@ class BinnedPC:
 
         # build idx[p][t]
         idx_per_bin = [
-            [
-                idx_all[(elev_id == p) & (theta_id == t)]
-                for t in range(self.n_theta_bins)
-            ]
+            [idx_all[(elev_id == p) & (theta_id == t)] for t in range(self.n_theta_bins)]
             for p in range(self.n_phi_bins)
         ]
 

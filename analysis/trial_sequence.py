@@ -39,12 +39,8 @@ class ExperimentTrialSequence:
         self.nTrials_AEPsych = nTrials_AEPsych
         self.pregenerated_MOCS = pregenerated_MOCS
         self.nBlocks = nBlocks
-        if (
-            self.pregenerated_MOCS is not None
-        ):  # if we do want to interleave MOCS trials
-            self.nTrials_MOCS = pregenerated_MOCS["xref"].shape[
-                -2
-            ]  # Total number of MOCS trials.
+        if self.pregenerated_MOCS is not None:  # if we do want to interleave MOCS trials
+            self.nTrials_MOCS = pregenerated_MOCS["xref"].shape[-2]  # Total number of MOCS trials.
 
             # initialize a dictionary that saves the data for MOCS trials
             self._initialize_data_MOCS()
@@ -54,9 +50,7 @@ class ExperimentTrialSequence:
         # other info that's unrelated to the input MOCS trials
         # Check if the trials for AEPsych and MOCS are divisible by the number of blocks.
         self._check_divisible()
-        self.nTrials_total = (
-            nTrials_AEPsych + self.nTrials_MOCS
-        )  # Total number of trials across all blocks.
+        self.nTrials_total = nTrials_AEPsych + self.nTrials_MOCS  # Total number of trials across all blocks.
         self.nBumpUp_MOCS = 0  # the number of times that a MOCS trial is bumped up
         self.break_trials = break_trials
         self.pregenerated_Sobol = pregenerated_Sobol
@@ -94,12 +88,7 @@ class ExperimentTrialSequence:
         """
         trial_status = []
         for i in range(nExpt):
-            trial_status.append(
-                [
-                    [f"Trial_{n}_" + self.original_sequence[i][n]]
-                    for n in range(self.nTrials_total)
-                ]
-            )
+            trial_status.append([[f"Trial_{n}_" + self.original_sequence[i][n]] for n in range(self.nTrials_total)])
         self.trial_status = trial_status
 
     def _initialize_data_MOCS(self):
@@ -137,9 +126,7 @@ class ExperimentTrialSequence:
         - status (str): New status for the trial. Must be one of the allowed statuses.
         """
         if not (0 <= trial_idx < self.nTrials_total):
-            raise IndexError(
-                f"Trial index {trial_idx} is out of range (0 to {self.nTrials_total - 1})."
-            )
+            raise IndexError(f"Trial index {trial_idx} is out of range (0 to {self.nTrials_total - 1}).")
         else:
             new_status_list = self.trial_status[expt_idx][trial_idx] + [status]
             self.trial_status[expt_idx][trial_idx] = new_status_list
@@ -218,16 +205,10 @@ class ExperimentTrialSequence:
             trial_next = self.updated_sequence[expt_idx][n_search]
 
             # Check that the MOCS trial has not been completed
-            if trial_next.startswith("MOCS") and not self.trial_status[expt_idx][
-                n_search
-            ][-1].startswith("Completed"):
+            if trial_next.startswith("MOCS") and not self.trial_status[expt_idx][n_search][-1].startswith("Completed"):
                 # Update trial statuses
-                self.set_trial_status(
-                    expt_idx, trial_idx, f"Stepped_down_to_{trial_next}"
-                )
-                self.set_trial_status(
-                    expt_idx, n_search, f"Stepped_up_to_{current_trial}"
-                )
+                self.set_trial_status(expt_idx, trial_idx, f"Stepped_down_to_{trial_next}")
+                self.set_trial_status(expt_idx, n_search, f"Stepped_up_to_{current_trial}")
 
                 # Split the string by the underscore '_'
                 _, trial_idx = trial_next.split("_")  # the omitting part must be 'MOCS'
@@ -280,9 +261,7 @@ class ExperimentTrialSequence:
             list_randomized = []
             for n in range(self.nBlocks):
                 # Ensure AEPsych and MOCS trials are evenly split across blocks
-                temp_list = [0] * self.nTrials_AEPsych_perBlock + [
-                    1
-                ] * self.nTrials_MOCS_perBlock
+                temp_list = [0] * self.nTrials_AEPsych_perBlock + [1] * self.nTrials_MOCS_perBlock
                 rng.shuffle(temp_list)  # Shuffle the trial assignments within the block
                 list_randomized += temp_list
 
@@ -325,18 +304,12 @@ class ExperimentTrialSequence:
             A list of indices where elements in the trial sequence start with the specified trial type.
         """
         # Use list comprehension for simplicity and efficiency
-        return [
-            idx
-            for idx, item in enumerate(trial_sequence)
-            if item.startswith(match_trial)
-        ]
+        return [idx for idx, item in enumerate(trial_sequence) if item.startswith(match_trial)]
 
 
 # %%
 @staticmethod
-def shuffle_sobol_trials(
-    val_scaler, nTrials_strat, shuffle_val_scaler_max_strat, seed=None
-):
+def shuffle_sobol_trials(val_scaler, nTrials_strat, shuffle_val_scaler_max_strat, seed=None):
     """
     Randomly shuffles Sobol trial scalers for a subset of strategies while keeping
     the rest unchanged.
@@ -369,21 +342,14 @@ def shuffle_sobol_trials(
 
     # Validate that val_scaler and nTrials_strat have matching lengths
     if len(val_scaler) != len(nTrials_strat):
-        raise ValueError(
-            "Mismatch: val_scaler and nTrials_strat must have the same length."
-        )
+        raise ValueError("Mismatch: val_scaler and nTrials_strat must have the same length.")
 
     # Validate shuffle_val_scaler_max_strat
     if not isinstance(shuffle_val_scaler_max_strat, int):
-        raise ValueError(
-            "Invalid type: shuffle_val_scaler_max_strat must be an integer."
-        )
+        raise ValueError("Invalid type: shuffle_val_scaler_max_strat must be an integer.")
 
     if shuffle_val_scaler_max_strat < 1:
-        raise ValueError(
-            "Invalid value: shuffle_val_scaler_max_strat must be at least 1. "
-            "No scalers will be shuffled."
-        )
+        raise ValueError("Invalid value: shuffle_val_scaler_max_strat must be at least 1. No scalers will be shuffled.")
 
     if shuffle_val_scaler_max_strat >= len(val_scaler):
         raise ValueError(
@@ -494,15 +460,11 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
 
         if getattr(self, "nExpt", 1) == 1:
             # Keys: trial index only
-            self.data_MOCS = {
-                trial: empty_entry() for trial in range(self.nTrials_MOCS)
-            }
+            self.data_MOCS = {trial: empty_entry() for trial in range(self.nTrials_MOCS)}
         else:
             # Keys: (expt index, trial index)
             self.data_MOCS = {
-                (expt, trial): empty_entry()
-                for expt in range(self.nExpt)
-                for trial in range(self.nTrials_MOCS)
+                (expt, trial): empty_entry() for expt in range(self.nExpt) for trial in range(self.nTrials_MOCS)
             }
 
     def _initialize_trial_status(self, nExpt):
@@ -512,10 +474,7 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
         trial_status = []
         for i in range(nExpt):
             trial_status.append(
-                [
-                    [f"Trial_{n}_Cond_{i}_" + self.original_sequence[i][n]]
-                    for n in range(self.nTrials_total)
-                ]
+                [[f"Trial_{n}_Cond_{i}_" + self.original_sequence[i][n]] for n in range(self.nTrials_total)]
             )
         self.trial_status = trial_status
 
@@ -610,9 +569,7 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
             list_randomized = []
             for n in range(self.nBlocks):
                 # Ensure AEPsych and MOCS trials are evenly split across blocks
-                temp_list = [0] * self.nTrials_AEPsych_perBlock + [
-                    1
-                ] * self.nTrials_MOCS_perBlock
+                temp_list = [0] * self.nTrials_AEPsych_perBlock + [1] * self.nTrials_MOCS_perBlock
                 rng.shuffle(temp_list)  # Shuffle the trial assignments within the block
                 list_randomized += temp_list
 
@@ -630,11 +587,7 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
             if not str(shuffled_labels[0]).startswith("AEPsych_"):
                 # Find the first AEPsych label and swap it to the front
                 swap_idx = next(
-                    (
-                        i
-                        for i, lab in enumerate(shuffled_labels)
-                        if str(lab).startswith("AEPsych_")
-                    ),
+                    (i for i, lab in enumerate(shuffled_labels) if str(lab).startswith("AEPsych_")),
                     None,
                 )
                 if swap_idx is not None:

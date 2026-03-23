@@ -81,16 +81,12 @@ model = WishartProcessModel(
 
 # Coarse grid of points in the 2D stimulus space (for plotting ellipses).
 grid = jnp.stack(
-    jnp.meshgrid(
-        *[jnp.linspace(-0.7, 0.7, num_grid_pts) for _ in range(model.num_dims)]
-    ),
+    jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, num_grid_pts) for _ in range(model.num_dims)]),
     axis=-1,
 )
 
 grid_fine = jnp.stack(
-    jnp.meshgrid(
-        *[jnp.linspace(-0.7, 0.7, num_grid_pts_fine) for _ in range(model.num_dims)]
-    ),
+    jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, num_grid_pts_fine) for _ in range(model.num_dims)]),
     axis=-1,
 )
 
@@ -125,9 +121,7 @@ pltSettings_base = PlotSettingsBase(fig_dir=fig_outputDir, fontsize=9)
 pltCovSettings = replace(PlotCovMatSettings(), **pltSettings_base.__dict__)
 
 # Visualization helper for Wishart model covariances
-visualize_sigma2D = WishartModelBasicsVisualization(
-    save_fig=True, save_format="png", settings=pltCovSettings
-)
+visualize_sigma2D = WishartModelBasicsVisualization(save_fig=True, save_format="png", settings=pltCovSettings)
 
 # Titles for the 2×2 covariance components:
 #   [0,0]: σ_dim1², [0,1] and [1,0]: σ_dim1,dim2, [1,1]: σ_dim2²
@@ -157,14 +151,10 @@ for p in range(num_grid_pts):
         )
 
         # Plot heatmaps of Σ(x) components (fine grid) and ellipses (coarse grid)
-        visualize_sigma2D.plot_2D_covMat(
-            grid, Sigmas_test_grid_fine, Sigmas_test_grid, settings=pltCovSettings_randW
-        )
+        visualize_sigma2D.plot_2D_covMat(grid, Sigmas_test_grid_fine, Sigmas_test_grid, settings=pltCovSettings_randW)
 
 if visualize_sigma2D.save_format == "png":
-    PlottingTools.save_gif(
-        fig_outputDir, gif_name=fig_name, fig_name_start=fig_name, fig_name_end=".png"
-    )
+    PlottingTools.save_gif(fig_outputDir, gif_name=fig_name, fig_name_start=fig_name, fig_name_end=".png")
 
 # %%
 # -----------------------------------------------------------
@@ -178,7 +168,5 @@ pltUSettings = replace(
     fig_name="U_given_sampledWeightMatrix",
     fig_name_ext=f"_seed{W_INIT_KEY[1]}",
 )
-visualize_sigma2D.fig_dir = os.path.join(
-    fig_output_sim, "U_given_estimatedWeightMatrix"
-)
+visualize_sigma2D.fig_dir = os.path.join(fig_output_sim, "U_given_estimatedWeightMatrix")
 visualize_sigma2D.plot_U_2D(U_fine, settings=pltUSettings)

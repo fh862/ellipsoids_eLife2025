@@ -48,9 +48,7 @@ class PlotCovMatSettings(PlotSettingsBase):
     slc_idx_dim1: int = 0
     slc_idx_dim2: int = 0
     lw_grid: float = 0.5
-    lc_grid: str | np.ndarray | list[float] = field(
-        default_factory=lambda: [0.5, 0.5, 0.5]
-    )
+    lc_grid: str | np.ndarray | list[float] = field(default_factory=lambda: [0.5, 0.5, 0.5])
     bds_W_unit: list[float] = field(default_factory=lambda: [-1, 1])
     skip_nticks: int = 2
     plane_2D: str = ""
@@ -110,15 +108,9 @@ class PlotWAllSettings(PlotSettingsBase):
     marker_alpha: float = 0.8
     marker_size: float = 100
     jitter_seed: int = 0
-    marker_color: str | np.ndarray | list[float] = field(
-        default_factory=lambda: [0.3, 0.3, 0.3]
-    )
-    marker_edgecolor: str | np.ndarray | list[float] = field(
-        default_factory=lambda: [1.0, 1.0, 1.0]
-    )
-    yticks: list[float] = field(
-        default_factory=lambda: list(np.linspace(-0.05, 0.05, 3))
-    )
+    marker_color: str | np.ndarray | list[float] = field(default_factory=lambda: [0.3, 0.3, 0.3])
+    marker_edgecolor: str | np.ndarray | list[float] = field(default_factory=lambda: [1.0, 1.0, 1.0])
+    yticks: list[float] = field(default_factory=lambda: list(np.linspace(-0.05, 0.05, 3)))
     ybds: list[float] = field(default_factory=lambda: [-0.05, 0.05])
     xlabel: str = "Max order of the 2D chebyshev polynomial"
     ylabel: str = "Weight"
@@ -168,9 +160,7 @@ class PlottingTools:
             os.makedirs(self.st.fig_dir)
 
         full_path = os.path.join(self.st.fig_dir, fig_name)
-        fig.savefig(
-            full_path, dpi=self.st.dpi, bbox_inches=bbox_inches, pad_inches=pad_inches
-        )
+        fig.savefig(full_path, dpi=self.st.dpi, bbox_inches=bbox_inches, pad_inches=pad_inches)
 
     def _update_axes_limits(self, ax, lim=[-1, 1], ndims=2):
         """
@@ -223,12 +213,8 @@ class PlottingTools:
         else:  # otherwise
             ax.set_xticks(unit_true_x[::nsteps])
             ax.set_yticks(unit_true_y[::nsteps])
-            ax.set_xticklabels(
-                [f"{x:.2f}" for x in unit_show_x[::nsteps]], fontsize=self.st.fontsize
-            )
-            ax.set_yticklabels(
-                [f"{x:.2f}" for x in unit_show_y[::nsteps]], fontsize=self.st.fontsize
-            )
+            ax.set_xticklabels([f"{x:.2f}" for x in unit_show_x[::nsteps]], fontsize=self.st.fontsize)
+            ax.set_yticklabels([f"{x:.2f}" for x in unit_show_y[::nsteps]], fontsize=self.st.fontsize)
 
         # if the plot is a 3d
         if ndims == 3:
@@ -333,11 +319,7 @@ class PlottingTools:
             fps (int): Frames per second, defining the speed of the GIF.
         """
 
-        images = [
-            img
-            for img in os.listdir(fig_dir)
-            if img.startswith(fig_name_start) and img.endswith(fig_name_end)
-        ]
+        images = [img for img in os.listdir(fig_dir) if img.startswith(fig_name_start) and img.endswith(fig_name_end)]
         images.sort()  # Sort the images by name (optional)
         image_list = [imageio.imread(f"{fig_dir}/{img}") for img in images]
         if reverse_list:
@@ -352,9 +334,7 @@ class PlottingTools:
 
 # %%
 class WishartModelBasicsVisualization(PlottingTools):
-    def plot_basis_function_1d(
-        self, degree, grid, cheby_func, settings: PlotBasis1DSettings, ax=None
-    ):
+    def plot_basis_function_1d(self, degree, grid, cheby_func, settings: PlotBasis1DSettings, ax=None):
         """
         Plot a series of 1D Chebyshev polynomial basis functions.
 
@@ -380,9 +360,7 @@ class WishartModelBasicsVisualization(PlottingTools):
         """
         # Create a figure and a set of subplots with shared x and y axes.
         if ax is None:
-            fig, ax = plt.subplots(
-                degree, 1, figsize=settings.fig_size, sharex=True, sharey=True
-            )
+            fig, ax = plt.subplots(degree, 1, figsize=settings.fig_size, sharex=True, sharey=True)
         else:
             fig = ax.figure
 
@@ -396,9 +374,7 @@ class WishartModelBasicsVisualization(PlottingTools):
 
         return fig, ax
 
-    def plot_2D_covMat(
-        self, grid, cov_fine, cov_grid, settings: PlotCovMatSettings, ax=None
-    ):
+    def plot_2D_covMat(self, grid, cov_fine, cov_grid, settings: PlotCovMatSettings, ax=None):
         """
         Visualize a 2D field of covariance matrices as both heatmaps and ellipses.
 
@@ -436,11 +412,7 @@ class WishartModelBasicsVisualization(PlottingTools):
 
         # Configure the colormap bounds from the fine-scale covariances,
         # unless explicit bounds were provided in `settings`.
-        cmap_bds = (
-            settings.cmap_bds
-            if settings.cmap_bds
-            else self._configure_colormap(cov_fine)
-        )
+        cmap_bds = settings.cmap_bds if settings.cmap_bds else self._configure_colormap(cov_fine)
 
         if settings.flag_remake_cmap:
             cmap = PlottingTools.remake_cmap(settings.cmap)
@@ -470,9 +442,7 @@ class WishartModelBasicsVisualization(PlottingTools):
             # Expect an array-like of Axes with shape (2,4)
             axs = ax
             if not isinstance(axs, np.ndarray):
-                raise TypeError(
-                    "`ax` must be a numpy.ndarray of Axes with shape (2,4), or None."
-                )
+                raise TypeError("`ax` must be a numpy.ndarray of Axes with shape (2,4), or None.")
             if axs.shape != (2, 4):
                 raise ValueError(f"`ax` must have shape (2,4). Got {axs.shape}.")
             fig = axs.ravel()[0].figure
@@ -480,21 +450,15 @@ class WishartModelBasicsVisualization(PlottingTools):
         for i in range(ndims):
             for j in range(ndims):
                 # Heatmap for the (i, j) entry of the covariance matrix across the fine grid.
-                im = ax[i, j].imshow(
-                    cov_fine[:, :, i, j], cmap=cmap, vmin=cmap_bds[0], vmax=cmap_bds[1]
-                )
+                im = ax[i, j].imshow(cov_fine[:, :, i, j], cmap=cmap, vmin=cmap_bds[0], vmax=cmap_bds[1])
 
                 # Optionally draw crosshair lines at a selected grid location.
                 if settings.flag_add_horz_vert_lines:
                     # Extract the selected coarse-grid point in W units.
-                    grid_slc = grid[
-                        num_grid - 1 - settings.slc_idx_dim1, settings.slc_idx_dim2
-                    ]
+                    grid_slc = grid[num_grid - 1 - settings.slc_idx_dim1, settings.slc_idx_dim2]
 
                     # Map from W units to N units and then to pixel indices of the fine grid.
-                    grid_norm = (
-                        color_thresholds.W_unit_to_N_unit(grid_slc) * num_grid_fine
-                    )
+                    grid_norm = color_thresholds.W_unit_to_N_unit(grid_slc) * num_grid_fine
                     xv_grid, yv_grid = grid_norm
 
                     # Horizontal line through the selected point.
@@ -516,13 +480,9 @@ class WishartModelBasicsVisualization(PlottingTools):
 
                 # Set axis ticks and labels in either W units or N units.
                 if settings.flag_rescale_axes_label:
-                    self._update_axes_labels(
-                        ax[i, j], ticks_N * num_grid_fine, ticks_N, nsteps=1
-                    )
+                    self._update_axes_labels(ax[i, j], ticks_N * num_grid_fine, ticks_N, nsteps=1)
                 else:
-                    self._update_axes_labels(
-                        ax[i, j], ticks_N * num_grid_fine, settings.ticks_W, nsteps=1
-                    )
+                    self._update_axes_labels(ax[i, j], ticks_N * num_grid_fine, settings.ticks_W, nsteps=1)
                 # Restrict to the full fine-grid extent.
                 self._update_axes_limits(ax[i, j], [0, num_grid_fine - 1])
 
@@ -558,9 +518,7 @@ class WishartModelBasicsVisualization(PlottingTools):
                     cmap_ell = settings.cmap_ell[num_grid - 1 - pp, qq]
 
                 # Only plot ellipses up to and including the selected slice index.
-                if pp < settings.slc_idx_dim1 or (
-                    pp == settings.slc_idx_dim1 and qq <= settings.slc_idx_dim2
-                ):
+                if pp < settings.slc_idx_dim1 or (pp == settings.slc_idx_dim1 and qq <= settings.slc_idx_dim2):
                     viz.plot_ellipse(
                         ax_ell,
                         grid[row, col],
@@ -572,9 +530,7 @@ class WishartModelBasicsVisualization(PlottingTools):
         if settings.flag_rescale_axes_label:
             self._update_axes_labels(ax_ell, settings.ticks_W, ticks_N, nsteps=1)
         else:
-            self._update_axes_labels(
-                ax_ell, settings.ticks_W, settings.ticks_W, nsteps=1
-            )
+            self._update_axes_labels(ax_ell, settings.ticks_W, settings.ticks_W, nsteps=1)
         self._configure_labels_and_title(ax_ell)
         ax_ell.grid(True, alpha=0.5)
         ax_ell.set_aspect("equal")
@@ -590,9 +546,7 @@ class WishartModelBasicsVisualization(PlottingTools):
         return fig, ax, ax_ell
 
     # %%
-    def plot_basis_function_2D(
-        self, degree, grid, settings: PlotBasis2DSettings, ax=None
-    ):
+    def plot_basis_function_2D(self, degree, grid, settings: PlotBasis2DSettings, ax=None):
         """
         Plot 2D Chebyshev basis functions on a specified grid.
 
@@ -618,9 +572,7 @@ class WishartModelBasicsVisualization(PlottingTools):
 
         if ax is None:
             # Create a figure with subplots arranged in a square grid.
-            fig, ax = plt.subplots(
-                degree, degree, figsize=settings.fig_size, sharex=True, sharey=True
-            )
+            fig, ax = plt.subplots(degree, degree, figsize=settings.fig_size, sharex=True, sharey=True)
         else:
             fig = ax.figure
 
@@ -700,9 +652,7 @@ class WishartModelBasicsVisualization(PlottingTools):
                         XG[:, :, l],
                         ZG[:, :, l],
                         YG[:, :, l],
-                        facecolors=colormap(
-                            (M[:, :, l, i, j] + max_val) / (2 * max_val + 1e-10)
-                        ),
+                        facecolors=colormap((M[:, :, l, i, j] + max_val) / (2 * max_val + 1e-10)),
                         rstride=1,
                         cstride=1,
                     )
@@ -712,17 +662,13 @@ class WishartModelBasicsVisualization(PlottingTools):
                     ax[i, j].view_init(*settings.view_anlge)
                     ax[i, j].set_aspect("equal")
                     ax[i, j].set_autoscale_on(False)
-            plt.subplots_adjust(
-                left=None, bottom=None, right=None, top=None, wspace=-0.1, hspace=-0.1
-            )
+            plt.subplots_adjust(left=None, bottom=None, right=None, top=None, wspace=-0.1, hspace=-0.1)
             plt.show()
             if settings.fig_dir and self.save_fig:
                 self._save_figure(fig, f"{settings.fig_name}_slice{l:02}")
 
     # %%
-    def plot_W_selected_slice(
-        self, W, settings: PlotWSettings, basis_orders=None, slc_slice=[0]
-    ):
+    def plot_W_selected_slice(self, W, settings: PlotWSettings, basis_orders=None, slc_slice=[0]):
         """
         Plots selected slices of the weight matrix for 2D or 3D Chebyshev polynomial basis functions.
 
@@ -747,9 +693,7 @@ class WishartModelBasicsVisualization(PlottingTools):
             Indices specifying the slice of the last two dimensions of W to be visualized. Defaults to [0].
 
         """
-        cmap_bds = (
-            settings.cmap_bds if settings.cmap_bds else self._configure_colormap(W)
-        )
+        cmap_bds = settings.cmap_bds if settings.cmap_bds else self._configure_colormap(W)
 
         degree = W.shape[0]
 
@@ -757,19 +701,13 @@ class WishartModelBasicsVisualization(PlottingTools):
         W_org = np.reshape(W, (degree, degree, -1))
 
         for i in slc_slice:
-            fig, ax = plt.subplots(
-                1, 1, figsize=settings.fig_size, sharex=True, sharey=True
-            )
-            cax = ax.imshow(
-                W_org[..., i], cmap=settings.cmap, vmin=cmap_bds[0], vmax=cmap_bds[1]
-            )
+            fig, ax = plt.subplots(1, 1, figsize=settings.fig_size, sharex=True, sharey=True)
+            cax = ax.imshow(W_org[..., i], cmap=settings.cmap, vmin=cmap_bds[0], vmax=cmap_bds[1])
 
             if settings.show_colorbar:
                 # Add the colorbar to the right of the main axis
                 cbar = fig.colorbar(cax, ax=ax)
-                cbar.ax.tick_params(
-                    labelsize=settings.fontsize
-                )  # Adjust font size of colorbar ticks
+                cbar.ax.tick_params(labelsize=settings.fontsize)  # Adjust font size of colorbar ticks
 
             # Set the aspect of the main axis to be square
             ax.set_aspect("equal")
@@ -796,8 +734,7 @@ class WishartModelBasicsVisualization(PlottingTools):
             if settings.fig_dir and self.save_fig:
                 self._save_figure(
                     fig,
-                    f"{settings.fig_name}{settings.fig_name_ext}"
-                    + f"_degree{degree}_{i}",
+                    f"{settings.fig_name}{settings.fig_name_ext}" + f"_degree{degree}_{i}",
                 )
 
     def plot_W_all(self, W, basis_orders, settings: PlotWAllSettings, ax=None):
@@ -879,9 +816,7 @@ class WishartModelBasicsVisualization(PlottingTools):
             Additional keyword arguments to override default plotting settings.
 
         """
-        cmap_bds = (
-            settings.cmap_bds if settings.cmap_bds else self._configure_colormap(U)
-        )
+        cmap_bds = settings.cmap_bds if settings.cmap_bds else self._configure_colormap(U)
 
         # Extract the number of finely sampled grid points.
         num_grid_fine = U.shape[0]

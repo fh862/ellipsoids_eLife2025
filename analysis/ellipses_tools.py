@@ -147,9 +147,7 @@ def covMat_to_ellParamsQ(covM):
         else:
             vx, vy, vz = vx / r, vy / r, vz / r
             theta_deg = np.degrees(np.arctan2(vy, vx))  # azimuth
-            phi_deg = np.degrees(
-                np.arccos(np.clip(vz, -1.0, 1.0))
-            )  # inclination from +z
+            phi_deg = np.degrees(np.arccos(np.clip(vz, -1.0, 1.0)))  # inclination from +z
 
         return eigenvalues, eigenvectors, axes_lengths, theta_deg, phi_deg
 
@@ -336,9 +334,7 @@ def convert_2Dcov_to_points_on_ellipse(cov2D, ref_x=0, ref_y=0, nTheta=200):
     # axes loength and rotation angle
     _, _, axisLength, rotAngle = covMat_to_ellParamsQ(cov2D)
     # poitns on ellipses
-    ell_2d_x, ell_2d_y = PointsOnEllipseQ(
-        *axisLength, rotAngle, ref_x, ref_y, nTheta=nTheta
-    )
+    ell_2d_x, ell_2d_y = PointsOnEllipseQ(*axisLength, rotAngle, ref_x, ref_y, nTheta=nTheta)
     return ell_2d_x, ell_2d_y
 
 
@@ -475,17 +471,13 @@ def fit_2d_isothreshold_contour(
         ellipse = EllipseModel()
         ok = ellipse.estimate(comp_unscaled.T)  # (M, 2)
         if not ok or ellipse.params is None:
-            raise RuntimeError(
-                "Ellipse fit failed. Contour points may be degenerate or too noisy."
-            )
+            raise RuntimeError("Ellipse fit failed. Contour points may be degenerate or too noisy.")
 
         xCenter, yCenter, majorAxis, minorAxis, theta_rad = ellipse.params
         theta_deg = np.rad2deg(theta_rad)
 
         # Render ellipse curve
-        x_fit, y_fit = PointsOnEllipseQ(
-            majorAxis, minorAxis, theta_deg, xCenter, yCenter, nTheta
-        )
+        x_fit, y_fit = PointsOnEllipseQ(majorAxis, minorAxis, theta_deg, xCenter, yCenter, nTheta)
         fitEllipse_unscaled = np.stack((x_fit, y_fit), axis=0)
 
     else:
@@ -508,10 +500,7 @@ def fit_2d_isothreshold_contour(
         lam, V = np.linalg.eigh(Q)  # lam sorted ascending
 
         if np.any(lam <= 0):
-            raise ValueError(
-                "Not an ellipse: quadratic form is not positive "
-                + "definite (eigenvalues must be > 0)."
-            )
+            raise ValueError("Not an ellipse: quadratic form is not positive " + "definite (eigenvalues must be > 0).")
 
         # lam_small corresponds to major axis (largest radius)
         lam_small, lam_large = lam[0], lam[1]
@@ -534,9 +523,7 @@ def fit_2d_isothreshold_contour(
         fitEllipse_unscaled = (R @ pts) + ref[:, None]
 
     # Scale fitted ellipse about ref
-    fitEllipse_scaled = (fitEllipse_unscaled - ref[:, None]) * ellipse_scaler + ref[
-        :, None
-    ]
+    fitEllipse_scaled = (fitEllipse_unscaled - ref[:, None]) * ellipse_scaler + ref[:, None]
     comp_scaled = (comp - ref[:, None]) * ellipse_scaler + ref[:, None]
 
     ellipse_params = [xCenter, yCenter, majorAxis, minorAxis, theta_deg]
@@ -585,9 +572,7 @@ def rotate_relocate_stretched_ellipse(x, y, rot_angle, x0, y0):
     - Finally, the rotated points are translated to `(x0, y0)`.
 
     """
-    R = rotAngle_to_eigenvectors(
-        rot_angle
-    )  # Convert rotation angle to eigenvectors (rotation matrix)
+    R = rotAngle_to_eigenvectors(rot_angle)  # Convert rotation angle to eigenvectors (rotation matrix)
     xy = np.vstack((x, y))  # Stack x and y into a 2-row matrix
     rot_xy = R @ xy  # Apply rotation
     reloc_xy = rot_xy + np.array([[x0, y0]]).T  # Translate to new center
@@ -757,9 +742,7 @@ class GegenfurtnerEll:
         W_pts = np.stack((W_pts_d1, W_pts_d2, np.ones(W_pts_d1.shape, dtype=float)))
         DKL_pts = M_trans @ W_pts
 
-        *_, ellP2 = fit_2d_isothreshold_contour(
-            np.array([0, 0]), DKL_pts[:2, :], flag_force_centered_ref=True
-        )
+        *_, ellP2 = fit_2d_isothreshold_contour(np.array([0, 0]), DKL_pts[:2, :], flag_force_centered_ref=True)
         covMat_ell_DKL2 = ellParamsQ_to_covMat(*ellP2[2:])
         return covMat_ell_DKL2
 
@@ -819,8 +802,6 @@ class GegenfurtnerEll:
         """
         # Apply the stretching matrix to normalize the covariance matrix.
         # This effectively rescales the ellipse to have unit length along its axes.
-        scaled_matrix = (
-            stretchingMat_DKL_to_unit @ cov_matrix_test @ stretchingMat_DKL_to_unit.T
-        )
+        scaled_matrix = stretchingMat_DKL_to_unit @ cov_matrix_test @ stretchingMat_DKL_to_unit.T
 
         return scaled_matrix

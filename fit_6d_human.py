@@ -82,9 +82,7 @@ flag_using_gpu = True
 
 # base directory
 base_dir = (
-    os.path.dirname(__file__)
-    if flag_running_on_hpc
-    else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
+    os.path.dirname(__file__) if flag_running_on_hpc else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
 )
 
 # specify subject information
@@ -146,9 +144,7 @@ nRepeats = 1
 # Generate a multidimensional grid based on the number of color dimensions
 max_val = 0.7
 grid = jnp.stack(
-    jnp.meshgrid(
-        *[jnp.linspace(-max_val, max_val, NUM_GRID_PTS) for _ in range(model.num_dims)]
-    ),
+    jnp.meshgrid(*[jnp.linspace(-max_val, max_val, NUM_GRID_PTS) for _ in range(model.num_dims)]),
     axis=-1,
 )
 
@@ -174,8 +170,7 @@ if flag_running_on_hpc:
     for flag_btst, btst_seed in zip(flag_btst_list, btst_seed_list):
         str_ext = f"_btst_AEPsych[{btst_seed}]" if flag_btst else ""
         output_file = (
-            f"Fitted_{session_file_name_part1}_decayRate{model.decay_rate}"
-            + f"_nBasisDeg{model.degree}{str_ext}.pkl"
+            f"Fitted_{session_file_name_part1}_decayRate{model.decay_rate}" + f"_nBasisDeg{model.degree}{str_ext}.pkl"
         )
         full_path = os.path.join(output_fileDir_fits, output_file)
 
@@ -185,9 +180,7 @@ if flag_running_on_hpc:
             data_allSessions = load_expt_data.load_data_all_sessions(session_files)
 
             # Extract and concatenate AEPsych data across all sessions
-            aepsych_data, sobol_data, combined_data = (
-                load_expt_data.load_combine_AEPsych_pregSobol(data_allSessions)
-            )
+            aepsych_data, sobol_data, combined_data = load_expt_data.load_combine_AEPsych_pregSobol(data_allSessions)
             (
                 xref_AEPsych_list,
                 x1_AEPsych_list,
@@ -209,14 +202,12 @@ if flag_running_on_hpc:
             # Pack the processed data into a tuple for further use.
             if flag_btst:
                 # bootstrap AEPsych trials
-                xref_jnp, x1_jnp, y_jnp, btst_indices = (
-                    load_expt_data.bootstrap_AEPsych_data(
-                        xref_combined,
-                        x1_combined,
-                        y_combined,
-                        trials_split=[sum(NTRIALS_STRAT[:-1]), nTrials_AEPsych],
-                        seed=btst_seed,
-                    )
+                xref_jnp, x1_jnp, y_jnp, btst_indices = load_expt_data.bootstrap_AEPsych_data(
+                    xref_combined,
+                    x1_combined,
+                    y_combined,
+                    trials_split=[sum(NTRIALS_STRAT[:-1]), nTrials_AEPsych],
+                    seed=btst_seed,
                 )
             else:
                 xref_jnp = xref_combined
@@ -231,19 +222,13 @@ if flag_running_on_hpc:
             # Generate a matrix of random seeds for each initialization
             random_seeds = np.random.randint(0, 2**12, size=(nRepeats, 2))
             # Initialize a high upper bound for negative log-likelihood (nLL) to track the best fit
-            objhist_end = (
-                1e3  # Start with a large number to ensure any valid fit is better
-            )
+            objhist_end = 1e3  # Start with a large number to ensure any valid fit is better
 
             # Loop through each random initialization
             for i in range(nRepeats):
                 # Generate random keys for initializing parameters, data, and optimizer
-                W_INIT_KEY_i = jax.random.PRNGKey(
-                    random_seeds[i, 0]
-                )  # Key to initialize `W_est`.
-                OPT_KEY_i = jax.random.PRNGKey(
-                    random_seeds[i, 1]
-                )  # Key passed to optimizer.
+                W_INIT_KEY_i = jax.random.PRNGKey(random_seeds[i, 0])  # Key to initialize `W_est`.
+                OPT_KEY_i = jax.random.PRNGKey(random_seeds[i, 1])  # Key passed to optimizer.
 
                 # Fit model, initialized at a random W sampled from the prior distribution
                 W_init_i = 1e-1 * model.sample_W_prior(W_INIT_KEY_i)
@@ -360,24 +345,16 @@ if flag_running_on_hpc:
             # extract points on the isoluminant plane
             NUM_GRID_PTS_2D = 7
             grid_1d = jnp.linspace(-max_val, max_val, NUM_GRID_PTS_2D)
-            grid_isoluminant_2DW = jnp.stack(
-                jnp.meshgrid(*[grid_1d for _ in range(2)]), axis=-1
-            )
+            grid_isoluminant_2DW = jnp.stack(jnp.meshgrid(*[grid_1d for _ in range(2)]), axis=-1)
 
             # we need to extract the coordinates of the grid of reference stimuli on
             # the isoluminant plane
             # 2D model space -> RGB in 3D -> 3D model space
-            grid_isoluminant_RGB = color_thres_data.W2D_to_rgb(
-                grid_isoluminant_2DW.reshape(-1, 2)
-            )[None, None]
-            grid_isoluminant_3DW = color_thres_data.N_unit_to_W_unit(
-                grid_isoluminant_RGB
-            )
+            grid_isoluminant_RGB = color_thres_data.W2D_to_rgb(grid_isoluminant_2DW.reshape(-1, 2))[None, None]
+            grid_isoluminant_3DW = color_thres_data.N_unit_to_W_unit(grid_isoluminant_RGB)
 
             # covariance matrices
-            Sigmas_noise_grid_isoluminant = model.compute_Sigmas(
-                model.compute_U(W_est, grid_isoluminant_3DW)
-            )
+            Sigmas_noise_grid_isoluminant = model.compute_Sigmas(model.compute_U(W_est, grid_isoluminant_3DW))
 
             # model predictions
             model_pred_Wishart_grid_isoluminant = wishart_model_pred(
@@ -393,9 +370,7 @@ if flag_running_on_hpc:
                 ngrid_bruteforce=1000,
                 bds_bruteforce=[0.0005, 0.3],
             )
-            model_pred_Wishart_grid_isoluminant.convert_Sig_Threshold_oddity_batch(
-                grid_isoluminant_3DW
-            )
+            model_pred_Wishart_grid_isoluminant.convert_Sig_Threshold_oddity_batch(grid_isoluminant_3DW)
 
             # Append new variables to the dictionary
             vars_dict.update(
@@ -486,14 +461,10 @@ if not flag_running_on_hpc and not flag_btst:
     ]
 
     # Loop over the selected data points to generate and visualize each corresponding figure.
-    for i, (lb_i, ub_i) in enumerate(
-        zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)
-    ):
+    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
         # Construct a filename for each figure based on the plane and number of experiments.
         str_idx = f"{ub_i:05}total" if lb_i == 0 else f"{ub_i:05}total_from{lb_i:05}"
-        fig_name = (
-            f"TrialPlacement_isothreshold_{psyfield_dims}DExpt_{str_idx}_sub{subN}"
-        )
+        fig_name = f"TrialPlacement_isothreshold_{psyfield_dims}DExpt_{str_idx}_sub{subN}"
         pltSampSettings = replace(
             pltSettings_tp,
             fontsize=11,
@@ -503,9 +474,7 @@ if not flag_running_on_hpc and not flag_btst:
             flag_rescale_axes_label=False,
             ticks=np.linspace(-0.7, 0.7, 5),
             ref_markeralpha=0.5,
-            comp_markeralpha=marker_alpha[
-                i
-            ],  # Marker transparency for this subset of data
+            comp_markeralpha=marker_alpha[i],  # Marker transparency for this subset of data
             fig_name=fig_name,
         )
 
@@ -542,9 +511,7 @@ if not flag_running_on_hpc and not flag_btst:
     eps = 1e-8
     non_edge_mask = jnp.all(jnp.abs(xref_jnp) < 0.85 - eps, axis=1)
     non_edge_idx = jnp.where(non_edge_mask)[0]
-    non_edge_non_sobol_idx = non_edge_idx[
-        (non_edge_idx > sum(NTRIALS_STRAT[:-1])) & (non_edge_idx < nTrials_AEPsych)
-    ]
+    non_edge_non_sobol_idx = non_edge_idx[(non_edge_idx > sum(NTRIALS_STRAT[:-1])) & (non_edge_idx < nTrials_AEPsych)]
     nTrials_non_edge_non_sobol = non_edge_non_sobol_idx.shape[0]
     # Visualize the trials up to the nth data point with specified marker transparency.
     sampling_vis_az.plot_sampling(
@@ -564,9 +531,7 @@ if not flag_running_on_hpc and not flag_btst:
 
     # %% Visualize
     # Visualization helper with HTML settings
-    vis_pred_html = WishartPredictionsVisualization_html(
-        settings=Plot3DPredHTMLSettings()
-    )
+    vis_pred_html = WishartPredictionsVisualization_html(settings=Plot3DPredHTMLSettings())
 
     fig2 = go.Figure()
     # Render 3D ellipsoids (mesh surfaces) evaluated on the isoluminant plane
@@ -591,13 +556,9 @@ if not flag_running_on_hpc and not flag_btst:
     xref_adaptive = np.asarray(xref_jnp[lb_i:ub_i], float)
     x1_adaptive = np.asarray(x1_jnp[lb_i:ub_i], float)
 
-    vis_sample_html = SamplingRefCompPairVisualization_html(
-        settings=Plot3DSamplingHTMLSettings()
-    )
+    vis_sample_html = SamplingRefCompPairVisualization_html(settings=Plot3DSamplingHTMLSettings())
 
     fig3 = vis_sample_html.plot_sampling(xref_adaptive, x1_adaptive)
 
-    out_html = os.path.join(
-        html_dir, f"TrialPlacement_{psyfield_dims}DExpt_sub{subN}.html"
-    )
+    out_html = os.path.join(html_dir, f"TrialPlacement_{psyfield_dims}DExpt_sub{subN}.html")
     fig3.write_html(out_html, include_plotlyjs=True)

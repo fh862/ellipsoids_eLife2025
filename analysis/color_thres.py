@@ -82,7 +82,9 @@ class ColorTransFilenames:
 
 @dataclass(frozen=True)
 class ModelFitFilenames:
-    base_2d_filename: str = "Fitted_isothreshold_{plane}_sim240perCond_samplingNearContour_jitter0.1_seed0_bandwidth0.005_oddity.pkl"
+    base_2d_filename: str = (
+        "Fitted_isothreshold_{plane}_sim240perCond_samplingNearContour_jitter0.1_seed0_bandwidth0.005_oddity.pkl"
+    )
     isoluminant_filename: str = "Fitted_isothreshold_Isoluminant plane{cie}_sim18000total_samplingNearContour_jitter0.3_seed0_bandwidth0.005_decay0.4_oddity.pkl"
     ellipsoid_3d_filename: str = "Fitted_isothreshold_ellipsoids_sim240perCond_samplingNearContour_jitter0.3_seed0{cie}_bandwidth0.005_oddity.pkl"
 
@@ -111,9 +113,7 @@ class CIEDataFilenames:
     ellipsoid_3d: str = "Isothreshold_ellipsoid_CIELABderived{cie}.pkl"
 
     @staticmethod
-    def get_filename(
-        color_dimension: int, plane_2D: str = "", cie_version: str = ""
-    ) -> str:
+    def get_filename(color_dimension: int, plane_2D: str = "", cie_version: str = "") -> str:
         cie_suffix = f"_{cie_version}"
         if color_dimension == 2:
             if plane_2D == "Isoluminant plane":
@@ -137,9 +137,7 @@ class ManualFitFilenames:
 
     @property
     def simplified_names(self) -> list[str]:
-        return [
-            f"Fitted_isothreshold_isoluminant_plane_sub{i}.pkl" for i in range(1, 6)
-        ]
+        return [f"Fitted_isothreshold_isoluminant_plane_sub{i}.pkl" for i in range(1, 6)]
 
 
 # %%
@@ -223,9 +221,7 @@ class color_thresholds:
                 if 1 <= selected_id <= len(files.full_names):
                     return files.full_names[selected_id - 1]
                 else:
-                    print(
-                        f"Invalid ID. Please enter a number between 1 and {len(files.full_names)}."
-                    )
+                    print(f"Invalid ID. Please enter a number between 1 and {len(files.full_names)}.")
             except ValueError:
                 print("Invalid input. Please enter a valid number.")
 
@@ -256,12 +252,8 @@ class color_thresholds:
             + f"Number of grid points = {num_grid_pts}"
         )
         if self.color_dimension == 2 and self.plane_2D != "Isoluminant plane":
-            self.CIE_data[stim_key] = data[
-                f"stim_grid{num_grid_pts}_fixedVal{self.fixed_value}"
-            ]
-            self.CIE_data[results_key] = data[
-                f"results_grid{num_grid_pts}_fixedVal{self.fixed_value}"
-            ]
+            self.CIE_data[stim_key] = data[f"stim_grid{num_grid_pts}_fixedVal{self.fixed_value}"]
+            self.CIE_data[results_key] = data[f"results_grid{num_grid_pts}_fixedVal{self.fixed_value}"]
         else:
             self.CIE_data[stim_key] = data[f"stim_grid{num_grid_pts}"]
             self.CIE_data[results_key] = data[f"results_grid{num_grid_pts}"]
@@ -284,9 +276,7 @@ class color_thresholds:
                     manual_input=False,
                 )
         else:
-            file_name = ModelFitFilenames.get_filename(
-                plane_2D=None, cie_version=CIE_version, is_3d=True
-            )
+            file_name = ModelFitFilenames.get_filename(plane_2D=None, cie_version=CIE_version, is_3d=True)
 
         file_path = self._find_exact_path(file_name)
         self.file_path_model_fits = file_path
@@ -340,76 +330,42 @@ class color_thresholds:
         """
 
         # save the file paths
-        filenames = ColorTransFilenames(
-            file_date
-        )  # instantiate with default cal_date or provide one if needed
-        print(
-            f"The transformation matrices are based on the calibration done on {file_date}."
-        )
+        filenames = ColorTransFilenames(file_date)  # instantiate with default cal_date or provide one if needed
+        print(f"The transformation matrices are based on the calibration done on {file_date}.")
 
         try:
-            self.file_path_M_2DWToRGB = self._find_exact_path(
-                filenames.M_2DWToRGB_filename
-            )
-            self.file_path_M_RGBTo2DW = self._find_exact_path(
-                filenames.M_RGBTo2DW_filename
-            )
-            self.M_2DWToRGB = np.array(
-                pd.read_csv(self.file_path_M_2DWToRGB, header=None)
-            )
-            self.M_RGBTo2DW = np.array(
-                pd.read_csv(self.file_path_M_RGBTo2DW, header=None)
-            )
+            self.file_path_M_2DWToRGB = self._find_exact_path(filenames.M_2DWToRGB_filename)
+            self.file_path_M_RGBTo2DW = self._find_exact_path(filenames.M_RGBTo2DW_filename)
+            self.M_2DWToRGB = np.array(pd.read_csv(self.file_path_M_2DWToRGB, header=None))
+            self.M_RGBTo2DW = np.array(pd.read_csv(self.file_path_M_RGBTo2DW, header=None))
             print("Loaded transformation matrices between RGB and 2DW.")
         except Exception:
             # If files/paths aren't available for this calibration, keep as None
-            print(
-                "Transformation matrices between RGB and 2DW are not found for this calibration date."
-            )
+            print("Transformation matrices between RGB and 2DW are not found for this calibration date.")
 
         # Try to load DKL matrices (optional)
         try:
-            self.file_path_M_2DWToDKL = self._find_exact_path(
-                filenames.M_2DWToDKL_filename
-            )
-            self.file_path_M_DKLTo2DW = self._find_exact_path(
-                filenames.M_DKLTo2DW_filename
-            )
+            self.file_path_M_2DWToDKL = self._find_exact_path(filenames.M_2DWToDKL_filename)
+            self.file_path_M_DKLTo2DW = self._find_exact_path(filenames.M_DKLTo2DW_filename)
 
-            self.M_2DWToDKL = np.array(
-                pd.read_csv(self.file_path_M_2DWToDKL, header=None)
-            )
-            self.M_DKLTo2DW = np.array(
-                pd.read_csv(self.file_path_M_DKLTo2DW, header=None)
-            )
+            self.M_2DWToDKL = np.array(pd.read_csv(self.file_path_M_2DWToDKL, header=None))
+            self.M_DKLTo2DW = np.array(pd.read_csv(self.file_path_M_DKLTo2DW, header=None))
             print("Loaded transformation matrices between 2DW and DKL.")
         except Exception:
             # If files/paths aren't available for this calibration, keep as None
-            print(
-                "Transformation matrices between DKL and 2DW are not found for this calibration date."
-            )
+            print("Transformation matrices between DKL and 2DW are not found for this calibration date.")
 
         # Try to load LMS transformation matrices (optional)
         try:
-            self.file_path_M_LMSToRGB = self._find_exact_path(
-                filenames.M_LMSToRGB_filename
-            )
-            self.file_path_M_RGBToLMS = self._find_exact_path(
-                filenames.M_RGBToLMS_filename
-            )
+            self.file_path_M_LMSToRGB = self._find_exact_path(filenames.M_LMSToRGB_filename)
+            self.file_path_M_RGBToLMS = self._find_exact_path(filenames.M_RGBToLMS_filename)
 
-            self.M_LMSToRGB = np.array(
-                pd.read_csv(self.file_path_M_LMSToRGB, header=None)
-            )
-            self.M_RGBToLMS = np.array(
-                pd.read_csv(self.file_path_M_RGBToLMS, header=None)
-            )
+            self.M_LMSToRGB = np.array(pd.read_csv(self.file_path_M_LMSToRGB, header=None))
+            self.M_RGBToLMS = np.array(pd.read_csv(self.file_path_M_RGBToLMS, header=None))
             print("Loaded transformation matrices between RGB and LMS.")
         except Exception:
             # If files/paths aren't available for this calibration, keep as None
-            print(
-                "Transformation matrices between RGB and LMS are not found for this calibration date."
-            )
+            print("Transformation matrices between RGB and LMS are not found for this calibration date.")
 
     def get_data(self, key, dataset="CIE_data"):
         """
@@ -475,9 +431,7 @@ class color_thresholds:
         elif rgb.ndim == 2 and rgb.shape[0] == 3:
             rgb2 = rgb.T
         else:
-            raise ValueError(
-                f"`rgb` must have shape (3,), (N,3), or (3,N); got {rgb.shape}"
-            )
+            raise ValueError(f"`rgb` must have shape (3,), (N,3), or (3,N); got {rgb.shape}")
 
         # Apply transform. Expected: M_RGBTo2DW shape (3, 3), rgb2.T shape (3, N)
         W = (self.M_RGBTo2DW @ rgb2.T).T  # (N, 3)
@@ -531,9 +485,7 @@ class color_thresholds:
         elif W2D.ndim == 2 and W2D.shape[0] == 2:
             W = W2D.T
         else:
-            raise ValueError(
-                f"`W2D` must have shape (2,), (N,2), or (2,N); got {W2D.shape}"
-            )
+            raise ValueError(f"`W2D` must have shape (2,), (N,2), or (2,N); got {W2D.shape}")
 
         # Convert to homogeneous coordinates by appending a column of ones:
         #   [w1, w2] -> [w1, w2, 1]

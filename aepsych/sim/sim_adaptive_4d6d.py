@@ -202,9 +202,7 @@ pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_sims, fontsize=10)
 pltSampSettings = replace(Plot2DSamplingSettings(), **pltSettings_base.__dict__)
 
 # Visualization object for plotting reference–comparison stimulus pairs
-sampling_vis = SamplingRefCompPairVisualization(
-    stim_dims, color_thres_data, settings=pltSampSettings, save_fig=False
-)
+sampling_vis = SamplingRefCompPairVisualization(stim_dims, color_thres_data, settings=pltSampSettings, save_fig=False)
 
 data_vis_AEPsych = expt_data(
     server._strats[-1].x[:, 0:stim_dims],
@@ -222,9 +220,7 @@ slc_datapoints_to_show_lb = np.concatenate(([0], np.cumsum(NTRIALS_STRAT)[:-1]))
 slc_datapoints_to_show_ub = np.cumsum(NTRIALS_STRAT)
 
 # Loop over the selected data points to generate and visualize each corresponding figure.
-for i, (lb_i, ub_i) in enumerate(
-    zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)
-):
+for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
     # Construct a filename indicating the total number of trials shown
     # and, if applicable, the starting index of the block
     str_trial_idx = f"{ub_i:05}total" if lb_i == 0 else f"{ub_i:05}total_from{lb_i:05}"
@@ -244,9 +240,7 @@ for i, (lb_i, ub_i) in enumerate(
 
     # Create a 2D or 3D axis depending on stimulus dimensionality
     if stim_dims == 2:
-        fig, ax = plt.subplots(
-            1, 1, figsize=pltSampSettings.fig_size, dpi=pltSampSettings.dpi
-        )
+        fig, ax = plt.subplots(1, 1, figsize=pltSampSettings.fig_size, dpi=pltSampSettings.dpi)
     else:
         fig = plt.figure(figsize=pltSampSettings.fig_size, dpi=pltSampSettings.dpi)
         ax = fig.add_subplot(111, projection="3d")

@@ -92,9 +92,7 @@ class CrossValidation:
             # Shuffle data within each unique reference location
             for ref_n in xref_unique:
                 # Find the indices of trials matching the current reference location
-                idx_match_original = np.where(
-                    np.all(np.abs(xref_all - ref_n) < tol, axis=1)
-                )[0]
+                idx_match_original = np.where(np.all(np.abs(xref_all - ref_n) < tol, axis=1))[0]
 
                 # Shuffle indices in place
                 idx_match = np.array(idx_match_original)
@@ -111,9 +109,7 @@ class CrossValidation:
                     fig, ax = plt.subplots(1, 2)
                     y_slc = y_all[idx_match_original]
                     x1_slc = x1_all[idx_match_original]
-                    ax[0].scatter(
-                        x1_slc[y_slc == 1, 0], x1_slc[y_slc == 1, 1], color="g", s=1
-                    )
+                    ax[0].scatter(x1_slc[y_slc == 1, 0], x1_slc[y_slc == 1, 1], color="g", s=1)
                     ax[0].scatter(
                         x1_slc[y_slc == 0, 0],
                         x1_slc[y_slc == 0, 1],
@@ -125,9 +121,7 @@ class CrossValidation:
 
                     yy_slc = y_shuffled[lb:ub]
                     xx1_slc = x1_shuffled[lb:ub]
-                    ax[1].scatter(
-                        xx1_slc[yy_slc == 1, 0], xx1_slc[yy_slc == 1, 1], color="g"
-                    )
+                    ax[1].scatter(xx1_slc[yy_slc == 1, 0], xx1_slc[yy_slc == 1, 1], color="g")
                     ax[1].scatter(
                         xx1_slc[yy_slc == 0, 0],
                         xx1_slc[yy_slc == 0, 1],
@@ -162,9 +156,7 @@ class CrossValidation:
 
         # Validate data consistency
         if not (y_all.shape[0] == xref_all.shape[0] == x1_all.shape[0]):
-            raise ValueError(
-                "Input size mismatch: All data arrays must have the same number"
-            )
+            raise ValueError("Input size mismatch: All data arrays must have the same number")
         nTrials_total = y_all.shape[0]
 
         # Initialize the output dictionary
@@ -187,12 +179,8 @@ class CrossValidation:
 
         data_org["lb_idx"] = row_lb_list
         data_org["ub_idx"] = row_ub_list
-        data_org["heldout_nTrials"] = [
-            ub - lb for ub, lb in zip(row_ub_list, row_lb_list)
-        ]
-        data_org["keep_nTrials"] = [
-            nTrials_total - m for m in data_org["heldout_nTrials"]
-        ]
+        data_org["heldout_nTrials"] = [ub - lb for ub, lb in zip(row_ub_list, row_lb_list)]
+        data_org["keep_nTrials"] = [nTrials_total - m for m in data_org["heldout_nTrials"]]
 
         for n in range(total_folds):
             # Determine column indices for the held-out fold
@@ -223,9 +211,7 @@ class CrossValidation:
 
 # %%
 class TrialDistribution:
-    def separate_edge_vs_central_trials_2Dplane(
-        data, dim1_bd, dim2_bd=None, ndims=2, tol=1e-6
-    ):
+    def separate_edge_vs_central_trials_2Dplane(data, dim1_bd, dim2_bd=None, ndims=2, tol=1e-6):
         """
         Separates trials into 'edge' and 'central' based on whether the reference stimulus
         lies on the boundary of the specified dimensions in a 2D color plane.
@@ -280,9 +266,7 @@ class TrialDistribution:
 
         # Sanity check to ensure completeness of split
         if len(indices_all) != len(indices_edge) + len(indices_central):
-            raise ValueError(
-                "Mismatch in trial count: total trials must equal edge + central trials."
-            )
+            raise ValueError("Mismatch in trial count: total trials must equal edge + central trials.")
 
         # Split data into edge and central sets based on indices
         data_edge = (y_all[indices_edge], xref_all[indices_edge], x1_all[indices_edge])
@@ -351,9 +335,7 @@ class TrialDistribution:
 
         # Separate trials based on whether the reference stimulus is on the boundary
         data_edge, data_central, nTrials_edge, nTrials_central = (
-            TrialDistribution.separate_edge_vs_central_trials_2Dplane(
-                data, dim1_bd, dim1_bd, ndims=ndims, tol=tol
-            )
+            TrialDistribution.separate_edge_vs_central_trials_2Dplane(data, dim1_bd, dim1_bd, ndims=ndims, tol=tol)
         )
 
         # Sanity check: total number of trials should match
@@ -369,9 +351,7 @@ class TrialDistribution:
             nTrials_total_keep = int(nTrials_edge / edge_percentage_desired)
             nTrials_central_desired = nTrials_total_keep - nTrials_edge_desired
             data_edge_trunc = data_edge
-            data_central_trunc = tuple(
-                arr[:nTrials_central_desired] for arr in data_central
-            )
+            data_central_trunc = tuple(arr[:nTrials_central_desired] for arr in data_central)
         else:
             # Desired percentage is lower — need to truncate edge trials
             nTrials_central_desired = nTrials_central  # retain all central trials
@@ -382,9 +362,7 @@ class TrialDistribution:
 
         # Generate evenly spaced levels of trial counts (optional)
         if nLevels is not None and nTrials_min is not None:
-            nTrials_levels = np.linspace(
-                nTrials_min, nTrials_total_keep, nLevels
-            ).astype(int)
+            nTrials_levels = np.linspace(nTrials_min, nTrials_total_keep, nLevels).astype(int)
             nTrials_edge_levels = (nTrials_levels * edge_percentage_desired).astype(int)
             nTrials_central_levels = nTrials_levels - nTrials_edge_levels
 
@@ -465,10 +443,7 @@ class TrialDistribution:
 
         # Validate input lengths
         if len(data_list) != len(nTrials_includsion_list):
-            raise ValueError(
-                "The size of the input dataset does not match the "
-                "size of the included trials!"
-            )
+            raise ValueError("The size of the input dataset does not match the size of the included trials!")
 
         data_trunc_list = []
 
@@ -587,9 +562,7 @@ class TrialDistribution:
                     model_pred_idx_list.append(model_pred_idx)
 
                     # Infer grid size and extract ellipse parameters
-                    params_ell_grid = TrialDistribution.extract_params_ell_grid(
-                        model_pred_idx
-                    )
+                    params_ell_grid = TrialDistribution.extract_params_ell_grid(model_pred_idx)
 
                 BWD_sum_all_list.append(BWD_sum_seed_list)
                 BWD_all_list.append(BWD_seed_list)
@@ -603,16 +576,8 @@ class TrialDistribution:
 
             # Post-processing
             BWD_sum_all_org = BWD_sum_all[:, 0]
-            BWD_sum_all_btst = (
-                np.sort(BWD_sum_all[:, 1:], axis=1)
-                if nSeeds > 1
-                else np.empty((nSets, 0))
-            )
-            BWD_CI = (
-                [BWD_sum_all_btst[:, 0], BWD_sum_all_btst[:, -1]]
-                if BWD_sum_all_btst.shape[1] > 0
-                else None
-            )
+            BWD_sum_all_btst = np.sort(BWD_sum_all[:, 1:], axis=1) if nSeeds > 1 else np.empty((nSets, 0))
+            BWD_CI = [BWD_sum_all_btst[:, 0], BWD_sum_all_btst[:, -1]] if BWD_sum_all_btst.shape[1] > 0 else None
 
             BWD_dict = {
                 "nTrials_inclusion": list(nTrials_inclusion),

@@ -30,9 +30,7 @@ from plotting.wishart_predictions_plotting import (
 # %%
 @dataclass
 class Plot2DSamplingSettings(PlotSettingsBase):
-    ticks: np.ndarray = field(
-        default_factory=lambda: np.linspace(-0.8, 0.8, 5)
-    )  # W unit as numpy array
+    ticks: np.ndarray = field(default_factory=lambda: np.linspace(-0.8, 0.8, 5))  # W unit as numpy array
     linealpha: float = 0.5
     ref_marker: str = "+"
     ref_markersize: float = 20
@@ -47,25 +45,17 @@ class Plot2DSamplingSettings(PlotSettingsBase):
     flag_add_trialNum_title: bool = False
     fig_size: tuple[float, float] = (3, 3.5)
     visualize_bounds: bool = True
-    bounds: list[float] = field(
-        default_factory=lambda: [-0.6, 0.6]
-    )  # [lower_bound, upper_bound] in W_unit
+    bounds: list[float] = field(default_factory=lambda: [-0.6, 0.6])  # [lower_bound, upper_bound] in W_unit
     bounds_alpha: float = 0.2
     bounds_label: str = "Bounds for the reference"
     plane_2D: str = ""
     title: str = field(default="Isoluminant plane")
-    fig_name: str = field(
-        default_factory=lambda: (
-            f"RandomSamples_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
-    )
+    fig_name: str = field(default_factory=lambda: f"RandomSamples_{datetime.now().strftime('%Y%m%d_%H%M%S')}")
 
 
 @dataclass
 class Plot3DSamplingSettings(PlotSettingsBase):
-    ticks: np.ndarray = field(
-        default_factory=lambda: np.linspace(-0.8, 0.8, 5)
-    )  # W unit as numpy array
+    ticks: np.ndarray = field(default_factory=lambda: np.linspace(-0.8, 0.8, 5))  # W unit as numpy array
     linealpha: float = 0.5
     ref_marker: str = "+"
     ref_markersize: float = 20
@@ -80,9 +70,7 @@ class Plot3DSamplingSettings(PlotSettingsBase):
     fig_size: tuple[float, float] = (5, 4)
     plane_3D: str = "RGB space"
     fig_name: str = field(
-        default_factory=lambda: (
-            f"3D_randRef_nearContourComp_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
-        )
+        default_factory=lambda: f"3D_randRef_nearContourComp_{datetime.now().strftime('%Y%m%d_%H%M%S')}"
     )
 
 
@@ -227,9 +215,7 @@ class SamplingRefCompPairVisualization(PlottingTools):
             self._configure_labels_and_title(ax, title=settings.title)
 
         # Set the legend with a custom location and show the plot.
-        plt.legend(
-            loc="lower center", bbox_to_anchor=(0.5, -0.47), fontsize=settings.fontsize
-        )
+        plt.legend(loc="lower center", bbox_to_anchor=(0.5, -0.47), fontsize=settings.fontsize)
         fig.tight_layout()
 
         # Save the figure if the directory is set and saving is enabled.
@@ -317,9 +303,7 @@ class SamplingRefCompPairVisualization(PlottingTools):
         )
         ax.set_box_aspect((1, 1, 1))
         plt.tight_layout()
-        plt.subplots_adjust(
-            left=0.05, right=0.9, top=0.95, bottom=0.3, wspace=-0.05, hspace=-0.05
-        )
+        plt.subplots_adjust(left=0.05, right=0.9, top=0.95, bottom=0.3, wspace=-0.05, hspace=-0.05)
         plt.show()
         # Save the figure if required.
         if settings.fig_dir and self.save_fig:

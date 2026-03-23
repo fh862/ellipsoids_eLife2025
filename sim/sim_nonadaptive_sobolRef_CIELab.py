@@ -81,9 +81,7 @@ stim_dims = 2  # even though the stimulus lives in 2D space,
 psyfield_dims = 4  # this is actually a 4d psychometric field.
 rnd_seed = 0  # for reproducibility
 colordiff_alg = "CIE1994"  # algorithm for color differences
-plane_2D = (
-    "Isoluminant plane"  # "GB plane", "RB plane", "RG plane", "Isoluminant plane"
-)
+plane_2D = "Isoluminant plane"  # "GB plane", "RB plane", "RG plane", "Isoluminant plane"
 jitter = 0.3  # Sampling noise level (fraction of ref->threshold distance); keep tiny for debugging
 nSims = 6000  # Number of simulated trials
 
@@ -150,9 +148,7 @@ sim_trial = TrialPlacement_sobolRef(config=stim_config)
 # % Define the Weibull psychometric function with specified parameters
 # Calculate the probability of correct response given alpha and beta.
 deltaE_1JND = 2.5
-sim_trial.setup_WeibullFunc(
-    alpha=3.189, beta=1.505, guessing_rate=1 / 3, deltaE_1JND=deltaE_1JND
-)
+sim_trial.setup_WeibullFunc(alpha=3.189, beta=1.505, guessing_rate=1 / 3, deltaE_1JND=deltaE_1JND)
 # Print the target probability based on the Weibull function for the given delta E
 print(f"target probability: {sim_trial.sim['pC_given_alpha_beta']}")
 
@@ -163,12 +159,8 @@ sim_trial.run_sim(sim_CIELab)
 
 # %%
 # Define output direcotries
-output_figDir = os.path.join(
-    base_dir, "Simulation_FigFiles", f"{psyfield_dims}D", f"{colordiff_alg}"
-)
-output_fileDir = os.path.join(
-    base_dir, "Simulation_DataFiles", f"{psyfield_dims}D", f"{colordiff_alg}"
-)
+output_figDir = os.path.join(base_dir, "Simulation_FigFiles", f"{psyfield_dims}D", f"{colordiff_alg}")
+output_fileDir = os.path.join(base_dir, "Simulation_DataFiles", f"{psyfield_dims}D", f"{colordiff_alg}")
 os.makedirs(output_figDir, exist_ok=True)
 os.makedirs(output_fileDir, exist_ok=True)
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=8)
@@ -181,9 +173,7 @@ figname = (
 )
 
 # first visualize the Weibull psychometric functions
-sim_vis = TrialPlacementVisualization(
-    sim_trial, settings=pltSettings_base, save_fig=False
-)
+sim_vis = TrialPlacementVisualization(sim_trial, settings=pltSettings_base, save_fig=False)
 pltSettings_PMF = replace(PlotWeibullPMFSettings(), **pltSettings_base.__dict__)
 pltSettings_PMF = replace(pltSettings_PMF, xticks=np.linspace(0, 9, 4))
 x_PMF = np.linspace(0, 9, 100)
@@ -204,18 +194,14 @@ pltSettings_tp = replace(
     ref_markeralpha=0.6,
     comp_markeralpha=0.3,
 )
-sampling_vis = SamplingRefCompPairVisualization(
-    stim_dims, color_thres_data, settings=pltSettings_tp, save_fig=False
-)
+sampling_vis = SamplingRefCompPairVisualization(stim_dims, color_thres_data, settings=pltSettings_tp, save_fig=False)
 
 # These two sets of data are selected for no particular reason
 vd = sim_trial.config.varying_color_dim
 xref = sim_trial.sim["ref"].T
 x1 = sim_trial.sim["comp"].T
 if plane_2D != "Isoluminant plane":
-    xref = color_thres_data.N_unit_to_W_unit(
-        xref
-    )  # the last row is a filler row (all 1's)
+    xref = color_thres_data.N_unit_to_W_unit(xref)  # the last row is a filler row (all 1's)
     x1 = color_thres_data.N_unit_to_W_unit(x1)  # so we can just get rid of that row
 
 fig, ax = plt.subplots(1, 1, figsize=pltSettings_tp.fig_size, dpi=pltSettings_tp.dpi)

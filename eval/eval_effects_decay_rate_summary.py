@@ -141,9 +141,7 @@ for i, dr in enumerate(decayRates):
 
 # Plot mean ± SD for slope
 ax[0].plot(decayRates, slope_avgSub, color="k", marker=".", ms=5)
-ax[0].errorbar(
-    decayRates, slope_avgSub, yerr=slope_stdSub, fmt="none", color="k", capsize=3
-)
+ax[0].errorbar(decayRates, slope_avgSub, yerr=slope_stdSub, fmt="none", color="k", capsize=3)
 
 # Plot mean ± SD for correlation coefficient
 ax[1].plot(decayRates, corr_coef_avgSub, color="k", marker=".", ms=5, label="mean")

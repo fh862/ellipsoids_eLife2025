@@ -75,8 +75,7 @@ output_figDir_fits = os.path.join(
 )  #'by_sessions')
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=8)
 fig_name_part1 = (
-    "Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_"
-    + f"all_vs_partial_AEPsychData_{sesInfo}"
+    "Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_" + f"all_vs_partial_AEPsychData_{sesInfo}"
 )  # decay0.4vs0.8
 # -----------------------------------------
 # SECTION 6: Visualize model predictions
@@ -127,9 +126,7 @@ pred2D_settings2 = replace(
 
 # visualize samples and model-estimated cov matrices
 # customize cmap for the isoluminant plane
-fig1, ax1 = plt.subplots(
-    1, 1, figsize=pred2D_settings1.fig_size, dpi=pred2D_settings1.dpi
-)
+fig1, ax1 = plt.subplots(1, 1, figsize=pred2D_settings1.fig_size, dpi=pred2D_settings1.dpi)
 wishart_pred_vis_set1.plot_2D(grid, ax=ax1, settings=pred2D_settings1)
 wishart_pred_vis_set2.plot_2D(grid, ax=ax1, settings=pred2D_settings2)
 ax1.set_title("Isoluminant plane")

@@ -121,9 +121,7 @@ class PltVaryingHyperParamSettings(PlotSettingsBase):
     xticks: np.ndarray | None = None
     xticklabels: np.ndarray | None = None
     label_CI: str = "full range"
-    fig_name: str = (
-        "CrossValidation5folds_1reptitions_varyingHyperParam_ColorDiscrimination"
-    )
+    fig_name: str = "CrossValidation5folds_1reptitions_varyingHyperParam_ColorDiscrimination"
 
 
 @dataclass
@@ -144,17 +142,13 @@ class PltVaryingTrialsNumbersSettings(PlotSettingsBase):
     ylim: list[str] | None = None
     xlim: list[str] | None = None
     xlabel: str = "Included trials"
-    ylabel: str = (
-        "Sum BWD between\nthe model-estimated and\nthe ground-truth threshold ellipses"
-    )
+    ylabel: str = "Sum BWD between\nthe model-estimated and\nthe ground-truth threshold ellipses"
     fig_name: str = "TrialEfficiency_varyingTrials_Fitted_byWishart_Isoluminant plane"
 
 
 # %%
 class ModelPerformanceVisualization(PlottingTools):
-    def __init__(
-        self, model_perf, settings: PlotSettingsBase, save_fig=False, save_format="pdf"
-    ):
+    def __init__(self, model_perf, settings: PlotSettingsBase, save_fig=False, save_format="pdf"):
         super().__init__(settings, save_fig, save_format)
         self.model_perf = model_perf
 
@@ -167,9 +161,7 @@ class ModelPerformanceVisualization(PlottingTools):
         cmap_corner=None,
     ):
         BW_distance_circle_median = np.median(self.model_perf.BW_distance_minEigval)
-        BW_distance_corner_median = np.median(
-            self.model_perf.BW_distance_corner, axis=1
-        )
+        BW_distance_corner_median = np.median(self.model_perf.BW_distance_corner, axis=1)
         ax.plot(
             [-nConds_Wishart - 1, nConds_indvEll + 2],
             [BW_distance_circle_median, BW_distance_circle_median],
@@ -283,9 +275,7 @@ class ModelPerformanceVisualization(PlottingTools):
             else:
                 ls_m = settings.ls_median[m]
             median_m = np.median(self.model_perf.BW_benchmark[m].flatten())
-            counts_m, _ = np.histogram(
-                self.model_perf.BW_benchmark[m].flatten(), bins=bin_edges
-            )
+            counts_m, _ = np.histogram(self.model_perf.BW_benchmark[m].flatten(), bins=bin_edges)
             ax.plot(
                 bin_centers + settings.jitter[m],
                 counts_m,
@@ -293,9 +283,7 @@ class ModelPerformanceVisualization(PlottingTools):
                 ls=ls,
                 lw=settings.lw,
             )
-            ax.plot(
-                [median_m, median_m], [0, 80], ls=ls_m, color=cmap_m, lw=settings.lw
-            )
+            ax.plot([median_m, median_m], [0, 80], ls=ls_m, color=cmap_m, lw=settings.lw)
         ax.grid(True, alpha=0.3)
 
     def plot_BWD_hist(self, bin_edges, settings: PltSimSettings_2D, ax=None):
@@ -440,9 +428,7 @@ class NFoldsCrossValidationVisualization(PlottingTools):
         if settings.xticklabels is not None:
             ax.set_xticklabels(settings.xticklabels)
         ax.set_xlabel(settings.xlabel)
-        ax.set_ylabel(
-            f"Mean negative log likelihood (nLL)\nof the model across {total_folds} folds"
-        )
+        ax.set_ylabel(f"Mean negative log likelihood (nLL)\nof the model across {total_folds} folds")
 
         # Compute y-axis limits from confidence intervals
         y_lb = np.min(np.vstack((nLL_training_CI[0], nLL_test_CI[0])))

@@ -76,9 +76,7 @@ with open(gt_file_path, "rb") as f:
 
 color_thres_data = gt_Wishart["color_thres_data"]
 ndims = color_thres_data.color_dimension  # 2 for isoluminant; 3 for RGB cube
-num_grid_pts = gt_Wishart[
-    "model_pred_Wishart"
-].num_grid_pts1  # grid resolution per axis
+num_grid_pts = gt_Wishart["model_pred_Wishart"].num_grid_pts1  # grid resolution per axis
 
 # Build a simulation config:
 #   - 3D: no plane slicing (fixed_plane="")
@@ -108,9 +106,7 @@ vd = stim_config.varying_color_dim
 # After reorg:
 #   xref_raw: (..., nSims, ndims)
 #   x1_raw:   (..., nSims, ndims)
-xref_raw = np.moveaxis(
-    np.repeat(sim_trial.sim["ref_points"][..., None], nSims, axis=-1), -1, -2
-)[..., vd]
+xref_raw = np.moveaxis(np.repeat(sim_trial.sim["ref_points"][..., None], nSims, axis=-1), -1, -2)[..., vd]
 x1_raw = np.moveaxis(sim_trial.sim["comp"], -1, -2)[..., vd]
 
 # Flatten the data:
@@ -125,22 +121,15 @@ y = sim_trial.sim["resp_binary"].reshape(-1)
 # Visualize trial placement
 # -----------------------------------------------------------
 base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/ELPS_analysis/"
-output_figDir = os.path.join(
-    base_dir, "Simulation_FigFiles", f"{ndims}D", f"gt_W_sub{subN}"
-)
-output_fileDir = os.path.join(
-    base_dir, "Simulation_DataFiles", f"{ndims}D", f"gt_W_sub{subN}"
-)
+output_figDir = os.path.join(base_dir, "Simulation_FigFiles", f"{ndims}D", f"gt_W_sub{subN}")
+output_fileDir = os.path.join(base_dir, "Simulation_DataFiles", f"{ndims}D", f"gt_W_sub{subN}")
 os.makedirs(output_figDir, exist_ok=True)
 os.makedirs(output_fileDir, exist_ok=True)
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=8)
 
 # figure name
 str_optional = (color_thres_data.plane_2D.replace(" ", "_") + "_") if ndims == 2 else ""
-figname = (
-    f"SimTrialData_nonadaptive_{ndims}DExpt_{str_optional}"
-    + f"{nSims}perRef_jitter{jitter}_seed{rnd_seed}"
-)
+figname = f"SimTrialData_nonadaptive_{ndims}DExpt_{str_optional}" + f"{nSims}perRef_jitter{jitter}_seed{rnd_seed}"
 
 pltSettings_tp = replace(Plot2DSamplingSettings(), **pltSettings_base.__dict__)
 if ndims == 2:
@@ -155,9 +144,7 @@ if ndims == 2:
         fig_name=f"{figname}.pdf",
     )
 
-    sampling_vis = SamplingRefCompPairVisualization(
-        ndims, color_thres_data, settings=pltSettings_tp, save_fig=False
-    )
+    sampling_vis = SamplingRefCompPairVisualization(ndims, color_thres_data, settings=pltSettings_tp, save_fig=False)
     sampling_vis.plot_sampling(xref, x1, settings=pltSettings_tp)
     plt.show()
 else:
@@ -184,9 +171,7 @@ else:
     # create a figure
     fig = plt.figure(figsize=pltSettings_tp.fig_size, dpi=pltSettings_tp.dpi)
     ax = fig.add_subplot(111, projection="3d")
-    sampling_vis = SamplingRefCompPairVisualization(
-        ndims, color_thres_data, settings=pltSettings_tp, save_fig=True
-    )
+    sampling_vis = SamplingRefCompPairVisualization(ndims, color_thres_data, settings=pltSettings_tp, save_fig=True)
 
     # Visualize the trials up to the nth data point with specified marker transparency.
     sampling_vis.plot_sampling(xref, x1, ax=ax, settings=pltSettings_tp)
@@ -203,9 +188,7 @@ if ndims == 2:
     # Retrieve parameters for the ellipsoid at the selected location
     ellPara_eg = sim_trial.gt_ellParams[row_eg][col_eg]
     # Extract the reference RGB values at the selected location
-    rgb_ref_eg = sim_trial.sim["ref_points"][
-        row_eg, col_eg
-    ]  # sim_trial.config.varying_RGBplane
+    rgb_ref_eg = sim_trial.sim["ref_points"][row_eg, col_eg]  # sim_trial.config.varying_RGBplane
     # Retrieve the ground truth ellipses during the transformation process
     rgb_comp_eg, rgb_comp_eg_1stepback, rgb_comp_eg_2stepback, rgb_comp_eg_3stepback = (
         sim_trial.sample_comp_2DNearContour(rgb_ref_eg, ellPara_eg)
@@ -220,17 +203,13 @@ if ndims == 2:
     # ground truth of the 3rd form: stretched
     gt_comp_eg_1stepback = PointsOnEllipseQ(ellPara_eg[2], ellPara_eg[3], 0, 0, 0)
     # ground truth of the 4th form: rotated and relocated
-    gt_comp_eg = PointsOnEllipseQ(
-        ellPara_eg[2], ellPara_eg[3], ellPara_eg[4], ellPara_eg[0], ellPara_eg[1]
-    )
+    gt_comp_eg = PointsOnEllipseQ(ellPara_eg[2], ellPara_eg[3], ellPara_eg[4], ellPara_eg[0], ellPara_eg[1])
 
     # plot the transformation
     pltSettings_ts = replace(PlotTransformationSettings(), **pltSettings_base.__dict__)
     pltSettings_ts = replace(pltSettings_ts, alpha=0.9, colorcode_resp=True)
     # first visualize the Weibull psychometric functions
-    sim_vis = TrialPlacementVisualization(
-        sim_trial, settings=pltSettings_base, save_fig=True
-    )
+    sim_vis = TrialPlacementVisualization(sim_trial, settings=pltSettings_base, save_fig=True)
     sim_vis.plot_transformation(
         rgb_comp_eg_3stepback,
         rgb_comp_eg_2stepback,

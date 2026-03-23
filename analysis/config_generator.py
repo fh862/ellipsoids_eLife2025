@@ -33,9 +33,7 @@ class ConfigGenerator:
         """
 
         if expt_dim not in (2, 3, 4, 6):
-            raise ValueError(
-                "The color discrimination task must be either 2, 3, 4 or 6."
-            )
+            raise ValueError("The color discrimination task must be either 2, 3, 4 or 6.")
         self.expt_dim = expt_dim
         self.load_default_config = load_default_config
         self.base_path = base_path
@@ -133,9 +131,7 @@ class ConfigGenerator:
         for root, dirs, files in os.walk(self.base_path):
             if self.load_file_name in files:
                 return os.path.join(root, self.load_file_name)
-        raise FileNotFoundError(
-            f"File {self.load_file_name} not found in directory {self.base_path}."
-        )
+        raise FileNotFoundError(f"File {self.load_file_name} not found in directory {self.base_path}.")
 
     def _load_config(self, exact_path):
         """
@@ -175,12 +171,8 @@ class ConfigGenerator:
         """
         parnames_list = self._string_to_list("common", "parnames")
         if self.version_new:
-            lb_list = [
-                float(self.config_parser.get(p, "lower_bound")) for p in parnames_list
-            ]
-            ub_list = [
-                float(self.config_parser.get(p, "upper_bound")) for p in parnames_list
-            ]
+            lb_list = [float(self.config_parser.get(p, "lower_bound")) for p in parnames_list]
+            ub_list = [float(self.config_parser.get(p, "upper_bound")) for p in parnames_list]
         else:
             lb_list = self._string_to_list("common", "lb")
             ub_list = self._string_to_list("common", "ub")
@@ -229,13 +221,9 @@ class ConfigGenerator:
             val (str): The new value to set for the field.
         """
         if not self.config_parser.has_section(section):
-            raise ValueError(
-                f"The section '{section}' does not exist in the configuration."
-            )
+            raise ValueError(f"The section '{section}' does not exist in the configuration.")
         if not self.config_parser.has_option(section, field):
-            raise ValueError(
-                f"The field '{field}' does not exist in the section '{section}'."
-            )
+            raise ValueError(f"The field '{field}' does not exist in the section '{section}'.")
 
         self.config_parser.set(section, field, val)
         self._consistency_check()

@@ -85,9 +85,7 @@ for session_data in data_allSessions:
     # Stack trial-wise values into arrays of shape (N_trials, ndims) or (N_trials, 1)
     xref_n = np.vstack([mocs_trials[trial]["xref"] for trial in range(num_mocs_trials)])
     x1_n = np.vstack([mocs_trials[trial]["x1"] for trial in range(num_mocs_trials)])
-    y_n = np.vstack(
-        [mocs_trials[trial]["binaryResp"] for trial in range(num_mocs_trials)]
-    )
+    y_n = np.vstack([mocs_trials[trial]["binaryResp"] for trial in range(num_mocs_trials)])
 
     # append to the list
     xref_all_list.append(xref_n)
@@ -144,9 +142,7 @@ for session_idx in range(nSessions):
     # Loop over each reference stimulus and find its catch trial(s)
     for r, ref_stimulus in enumerate(unique_xref):
         # Trials in this session with the current reference stimulus
-        matching_indices = np.where(
-            np.all(xref_all[session_idx] == ref_stimulus, axis=1)
-        )[0]
+        matching_indices = np.where(np.all(xref_all[session_idx] == ref_stimulus, axis=1))[0]
 
         # Comparison stimuli for those trials
         x1_subset = x1_all[session_idx, matching_indices]
@@ -155,14 +151,10 @@ for session_idx in range(nSessions):
         l2_norm_differences_n = np.linalg.norm(x1_subset - ref_stimulus, axis=1)
 
         # Identify trial(s) whose distance matches the precomputed catch-trial distance
-        max_l2_norm_indices = np.where(l2_norm_differences_n == l2_norm_easy_trials[r])[
-            0
-        ]
+        max_l2_norm_indices = np.where(l2_norm_differences_n == l2_norm_easy_trials[r])[0]
 
         # Append the corresponding binary responses
-        y_easy_trials.extend(
-            y_all[session_idx, matching_indices[max_l2_norm_indices]].flatten().tolist()
-        )
+        y_easy_trials.extend(y_all[session_idx, matching_indices[max_l2_norm_indices]].flatten().tolist())
 
     # Summarize catch-trial performance for this session
     num_correct_trials[session_idx] = np.sum(y_easy_trials)
@@ -170,9 +162,7 @@ for session_idx in range(nSessions):
 
     # print out the results
     if num_easy_trials[session_idx] != 0:
-        pC_easy_trials[session_idx] = (
-            num_correct_trials[session_idx] / num_easy_trials[session_idx]
-        )
+        pC_easy_trials[session_idx] = num_correct_trials[session_idx] / num_easy_trials[session_idx]
         print(
             f"Session {session_idx + 1}: Catch trial pC = "
             f"{int(num_correct_trials[session_idx])}/"
@@ -188,8 +178,5 @@ for session_idx in range(nSessions):
 num_correct_total = np.nansum(num_correct_trials)
 pC_easy_trials_avg = num_correct_total / np.nansum(num_easy_trials)
 
-print(
-    f"All sessions: Catch trial pC = "
-    f"{num_correct_total}/{np.sum(num_easy_trials)} = {pC_easy_trials_avg:.4f}"
-)
+print(f"All sessions: Catch trial pC = {num_correct_total}/{np.sum(num_easy_trials)} = {pC_easy_trials_avg:.4f}")
 print(f"Range: [{np.nanmin(pC_easy_trials):.4f}, {np.nanmax(pC_easy_trials):.4f}]")

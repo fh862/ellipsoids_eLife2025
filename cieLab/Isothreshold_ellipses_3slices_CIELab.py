@@ -88,9 +88,7 @@ scaler = 1
 def run_one_setting(fixed_RGBvec, nGridPts_ref, color_diff_algorithm):
     # Instantiate simulator for computing isothreshold contours in CIELab space
     # (evaluated on three 2D planes: GB, RB, RG)
-    sim_thres_CIELab = SimThresCIELab(
-        background_RGB, plane_2D_list=["GB plane", "RB plane", "RG plane"]
-    )
+    sim_thres_CIELab = SimThresCIELab(background_RGB, plane_2D_list=["GB plane", "RB plane", "RG plane"])
 
     # Build RGB planes for visualization (fine grid over full [0, 1] range)
     # plane_points shape: (nPlanes, 3, nGridPts_ref_fine, nGridPts_ref_fine)
@@ -175,8 +173,7 @@ def run_one_setting(fixed_RGBvec, nGridPts_ref, color_diff_algorithm):
                 )
             # derive the comparison stimuli
             rgb_comp_contour_unscaled[p, *ij] = (
-                grid_theta_xy * opt_vecLen[p, *ij][None]
-                + rgb_ref_pij[idx_varyingDim, None]
+                grid_theta_xy * opt_vecLen[p, *ij][None] + rgb_ref_pij[idx_varyingDim, None]
             )
 
             # fit an ellipse
@@ -195,9 +192,7 @@ def run_one_setting(fixed_RGBvec, nGridPts_ref, color_diff_algorithm):
 
     # PLOTTING
     fixedVal_s = strip_trailing_zeros(f"{fixed_RGBvec:.6f}")
-    sim_CIE_vis = CIELabVisualization(
-        sim_thres_CIELab, settings=pltSettings_base, save_fig=True
-    )
+    sim_CIE_vis = CIELabVisualization(sim_thres_CIELab, settings=pltSettings_base, save_fig=True)
 
     plt2D_settings = replace(Plot2DSinglePlaneSettings(), **pltSettings_base.__dict__)
     plt2D_settings = replace(
@@ -206,8 +201,7 @@ def run_one_setting(fixed_RGBvec, nGridPts_ref, color_diff_algorithm):
         ell_lc=[1, 1, 1],
         ref_mc=[1, 1, 1],
         rgb_background=plane_points,
-        fig_name=f"Isothreshold_contour_{color_diff_algorithm}"
-        + f"_fixedVal{fixedVal_s}.pdf",
+        fig_name=f"Isothreshold_contour_{color_diff_algorithm}" + f"_fixedVal{fixedVal_s}.pdf",
     )
 
     grid_est = np.stack((X, Y), axis=2)
@@ -269,9 +263,7 @@ def run_one_setting(fixed_RGBvec, nGridPts_ref, color_diff_algorithm):
         flag_match_grid_pts = f"stim{ext_str}" in existing_dict
 
         if flag_match_grid_pts:
-            flag_overwrite = input(
-                f"The file '{file_name}' already exists. Enter 'y' to overwrite: "
-            )
+            flag_overwrite = input(f"The file '{file_name}' already exists. Enter 'y' to overwrite: ")
 
             if flag_overwrite.lower() == "y":
                 with open(full_path, "wb") as f:
@@ -299,9 +291,7 @@ color_diff_algorithm_list = ["CIE1976", "CIE1994", "CIE2000"]
 # Progress bar setup: total runs = (algorithms) × (grid sizes) × (fixed values per grid)
 total_runs = 0
 for n in nGridPts_ref_list:
-    total_runs += len(np.linspace(lb_RGB_grid, ub_RGB_grid, n)) * len(
-        color_diff_algorithm_list
-    )
+    total_runs += len(np.linspace(lb_RGB_grid, ub_RGB_grid, n)) * len(color_diff_algorithm_list)
 
 pbar = tqdm(total=total_runs, desc="Sweeping settings", unit="run")
 for c in color_diff_algorithm_list:

@@ -55,8 +55,7 @@ except Exception as e:
     geodesics = None
     HAS_GEODESICS = False
     print(
-        f"[WARN] Optional module `core.geodesics` not available. "
-        f"Geodesic-related functionality will be disabled. ({e})"
+        f"[WARN] Optional module `core.geodesics` not available. Geodesic-related functionality will be disabled. ({e})"
     )
 
 
@@ -148,9 +147,7 @@ class fit_PMF_MOCS_trials:
             self.resp_org,
         ) = self._get_unique_stim()
         if self.nLevels != self.unique_stim.shape[0]:
-            raise ValueError(
-                "The number of unique stimuli does not match the number of input levels!"
-            )
+            raise ValueError("The number of unique stimuli does not match the number of input levels!")
 
         # Set number of initializations from kwargs, or use default values if not provided
         self.nInitializations = kwargs.get("nInitializations", 20)
@@ -165,17 +162,11 @@ class fit_PMF_MOCS_trials:
         """
         # --- Check stimulus dimensionality ---
         if self.stim.shape[1] != self.nDim:
-            raise ValueError(
-                f"Stimulus dimensionality mismatch: expected {self.nDim}, "
-                f"but got {self.stim.shape[1]}"
-            )
+            raise ValueError(f"Stimulus dimensionality mismatch: expected {self.nDim}, but got {self.stim.shape[1]}")
 
         # --- Check matching number of trials and responses ---
         if self.stim.shape[0] != self.resp.shape[0]:
-            raise ValueError(
-                f"Trial count mismatch: {self.stim.shape[0]} stimuli but "
-                f"{self.resp.shape[0]} responses"
-            )
+            raise ValueError(f"Trial count mismatch: {self.stim.shape[0]} stimuli but {self.resp.shape[0]} responses")
 
         # --- Check if stimuli are centered on the origin ---
         # At least one stimulus should lie on each axis (within tolerance)
@@ -228,9 +219,7 @@ class fit_PMF_MOCS_trials:
         num_unique = len(unique_stim_dim1)  # Number of unique groups
 
         # Initialize arrays for results
-        unique_stim = np.full(
-            (num_unique, self.stim.shape[1]), np.nan
-        )  # Unique rows for all columns
+        unique_stim = np.full((num_unique, self.stim.shape[1]), np.nan)  # Unique rows for all columns
         nTrials_perLevel = np.full(num_unique, np.nan)  # Number of trials per level
         pC_perLevel = np.full(num_unique, np.nan)  # Proportion correct per level
         stim_org = np.full(self.stim.shape, np.nan)  # undo shuffling
@@ -244,21 +233,15 @@ class fit_PMF_MOCS_trials:
 
             # Store the aggregated values for each column
             unique_stim[n, 0] = value  # First column uses the unique rounded value
-            for col in range(
-                1, self.stim.shape[1]
-            ):  # For other columns, take the first occurrence
+            for col in range(1, self.stim.shape[1]):  # For other columns, take the first occurrence
                 unique_stim[n, col] = self.stim[idx_n[0], col]
 
             # Count the number of trials corresponding to the current unique stimulus group
             nTrials_perLevel[n] = len(idx_n)
 
             # organize the trials
-            stim_org[int(idx_counter) : int(idx_counter + nTrials_perLevel[n])] = (
-                unique_stim[n]
-            )
-            resp_org[int(idx_counter) : int(idx_counter + nTrials_perLevel[n])] = (
-                self.resp[idx_n]
-            )
+            stim_org[int(idx_counter) : int(idx_counter + nTrials_perLevel[n])] = unique_stim[n]
+            resp_org[int(idx_counter) : int(idx_counter + nTrials_perLevel[n])] = self.resp[idx_n]
             idx_counter += nTrials_perLevel[n]
 
             # Compute the proportion correct for the current unique stimulus group
@@ -417,9 +400,7 @@ class fit_PMF_MOCS_trials:
 
         # Responses (`self.resp_org`) are already sorted by stimulus order, with
         # trials from the same stimulus grouped in miniblocks.
-        self.bestfit_result = self._fit_PsychometricFunc(
-            self.dist_xref_x1, self.resp_org
-        )
+        self.bestfit_result = self._fit_PsychometricFunc(self.dist_xref_x1, self.resp_org)
 
     def find_stim_at_targetPC_givenData(self):
         self.stim_at_targetPC = self._find_stim_at_targetPC(self.fine_pC)
@@ -499,9 +480,7 @@ class fit_PMF_MOCS_trials:
         self._derive_fineVal()
 
         # Compute predicted pC values at the finely sampled stimulus magnitudes
-        fine_pC = self.pC_Weibull(
-            bestfit_params, self.fineVal, guess_rate=self.guess_rate
-        )
+        fine_pC = self.pC_Weibull(bestfit_params, self.fineVal, guess_rate=self.guess_rate)
         return fine_pC
 
     @staticmethod
@@ -563,10 +542,7 @@ class fit_PMF_MOCS_trials:
 
         repeats = np.asarray(nTrials_rep)
         if repeats.shape[0] != self.nLevels:
-            raise ValueError(
-                f"Length mismatch: repeats len={repeats.shape[0]} vs "
-                f"unique distances len={self.nLevels}"
-            )
+            raise ValueError(f"Length mismatch: repeats len={repeats.shape[0]} vs unique distances len={self.nLevels}")
 
         dist_xref_x1 = np.repeat(self.unique_stim_dist, repeats, axis=0)
         return dist_xref_x1
@@ -604,9 +580,7 @@ class fit_PMF_MOCS_trials:
         self.W_est = W_est
         self.stim_ref = xref
         if self.stim_ref.shape != self.stim.shape:
-            raise ValueError(
-                f"`stim_ref.shape` {self.stim_ref.shape} must equal `stim.shape` {self.stim.shape}."
-            )
+            raise ValueError(f"`stim_ref.shape` {self.stim_ref.shape} must equal `stim.shape` {self.stim.shape}.")
 
     def compute_Mahalanobis_dist(self, xref, x1):
         """
@@ -643,21 +617,15 @@ class fit_PMF_MOCS_trials:
 
         # --- Covariance at comparison stimuli ---
         x1_batched = x1[None, ...]  # shape: (1, N, 2)
-        sigma_x1 = model.compute_Sigmas(
-            model.compute_U(self.W_est, x1_batched)
-        )  # shape: (1, N, 2, 2)
+        sigma_x1 = model.compute_Sigmas(model.compute_U(self.W_est, x1_batched))  # shape: (1, N, 2, 2)
 
         # --- Compute Mahalanobis distances in batch ---
         # Remove the extra leading axis (index 0) to match what compute_Mahalanobis_distance_batch expects
-        modelp.compute_Mahalanobis_distance_batch(
-            xref, x1, sigma_xref.squeeze(0), sigma_x1.squeeze(0)
-        )
+        modelp.compute_Mahalanobis_distance_batch(xref, x1, sigma_xref.squeeze(0), sigma_x1.squeeze(0))
         return modelp.mahalanobis_distances
 
     # %% Geodesic-distance specific methods
-    def set_geodesic_params(
-        self, num_gen=30, pop_size=50, key=jax.random.PRNGKey(1), tol=1e-4
-    ):
+    def set_geodesic_params(self, num_gen=30, pop_size=50, key=jax.random.PRNGKey(1), tol=1e-4):
         """
         Set parameters for geodesic distance calculations.
 
@@ -686,9 +654,7 @@ class fit_PMF_MOCS_trials:
 
         """
         # Compute the covariance matrices Σ(x) for the given stimuli x
-        return jnp.linalg.inv(
-            self.model.compute_Sigmas(self.model.compute_U(self.W_est, x))
-        )
+        return jnp.linalg.inv(self.model.compute_Sigmas(self.model.compute_U(self.W_est, x)))
 
     def compute_Geodesic_dist(self, xref, x1):
         """
@@ -721,10 +687,7 @@ class fit_PMF_MOCS_trials:
             # Use tuple of points as dictionary key
             key_pair = (tuple(xref[n]), tuple(x1[n]))
 
-            if (
-                key_pair in self._geodesic_path_dict
-                or key_pair in self._geodesic_dist_dict
-            ):
+            if key_pair in self._geodesic_path_dict or key_pair in self._geodesic_dist_dict:
                 geodesic_dist[n] = self._geodesic_dist_dict[key_pair]
             else:
                 state, metrics = geodesics.estimate_v0(
@@ -738,9 +701,7 @@ class fit_PMF_MOCS_trials:
                     solution_dim=self.model.num_dims,
                 )
                 v0 = metrics["best_solution"]
-                xt_n, ts_n = geodesics.shooting_geodesic(
-                    xref[n], v0, self.precision_field
-                )
+                xt_n, ts_n = geodesics.shooting_geodesic(xref[n], v0, self.precision_field)
                 cost_n = geodesics.estimate_path_cost(xt_n, ts_n, self.precision_field)
 
                 # Save distance
@@ -845,28 +806,18 @@ class fit_PMF_MOCS_trials:
         # Repeat 120 times and stack into (120, nT)
         shuffled_idx = np.stack(
             [
-                self.shuffle_indices_once(
-                    cumTrials_start, cumTrials_end, self.nTrials_perLevel, rng
-                )
+                self.shuffle_indices_once(cumTrials_start, cumTrials_end, self.nTrials_perLevel, rng)
                 for _ in range(self.nBtst)
             ],
             axis=0,
         )
 
         # Initialize arrays to store bootstrap results
-        self.dist_xref_x1_btst = np.full(
-            (self.nBtst, nT), np.nan
-        )  # Bootstrapped distance
-        self.resp_btst = np.full(
-            (self.nBtst,) + self.resp.shape, np.nan
-        )  # Bootstrapped responses
+        self.dist_xref_x1_btst = np.full((self.nBtst, nT), np.nan)  # Bootstrapped distance
+        self.resp_btst = np.full((self.nBtst,) + self.resp.shape, np.nan)  # Bootstrapped responses
         self.bestfit_result_btst = []  # Fitted parameters
-        self.fine_pC_btst = np.full(
-            (self.nBtst, self.nGridPts), np.nan
-        )  # Reconstructed psychometric function
-        self.stim_at_targetPC_btst = np.full(
-            (self.nBtst,), np.nan
-        )  # Stimuli at target performance level
+        self.fine_pC_btst = np.full((self.nBtst, self.nGridPts), np.nan)  # Reconstructed psychometric function
+        self.stim_at_targetPC_btst = np.full((self.nBtst,), np.nan)  # Stimuli at target performance level
 
         # Perform bootstrap iterations
         for n in trange(self.nBtst):
@@ -874,9 +825,7 @@ class fit_PMF_MOCS_trials:
             self.dist_xref_x1_btst[n] = self.dist_xref_x1[shuffled_idx[n]]
 
             # Fit a psychometric function to the bootstrapped dataset
-            fit_btst_n = self._fit_PsychometricFunc(
-                self.dist_xref_x1_btst[n], self.resp_btst[n]
-            )
+            fit_btst_n = self._fit_PsychometricFunc(self.dist_xref_x1_btst[n], self.resp_btst[n])
 
             # Extract fitted parameters and negative log-likelihood
             self.bestfit_result_btst.append(fit_btst_n)
@@ -885,9 +834,7 @@ class fit_PMF_MOCS_trials:
             self.fine_pC_btst[n] = self._reconstruct_PsychometricFunc(fit_btst_n.x)
 
             # Identify the stimulus corresponding to the target performance level (e.g., 0.667)
-            self.stim_at_targetPC_btst[n] = self._find_stim_at_targetPC(
-                self.fine_pC_btst[n]
-            )
+            self.stim_at_targetPC_btst[n] = self._find_stim_at_targetPC(self.fine_pC_btst[n])
 
     def compute_95btstCI(self):
         """
@@ -916,9 +863,7 @@ class fit_PMF_MOCS_trials:
 
         # Step 2: Compute the indices corresponding to the 2.5% and 97.5% percentiles
         idx_lb = int(np.ceil(self.nBtst * 0.025))  # Lower bound index
-        idx_ub = (
-            int(np.floor(self.nBtst * 0.975)) - 1
-        )  # Upper bound index (convert to 0-based indexing)
+        idx_ub = int(np.floor(self.nBtst * 0.975)) - 1  # Upper bound index (convert to 0-based indexing)
 
         # Step 3: Extract the 95% confidence interval for the stimulus at the target performance level
         self.stim_at_targetPC_95btstCI = val_sorted[[idx_lb, idx_ub]]
@@ -926,10 +871,8 @@ class fit_PMF_MOCS_trials:
         # Step 4: Compute the error bounds relative to the central stimulus estimate
         self.stim_at_targetPC_95btstErr = np.array(
             [
-                self.stim_at_targetPC
-                - self.stim_at_targetPC_95btstCI[0],  # Lower error
-                self.stim_at_targetPC_95btstCI[1]
-                - self.stim_at_targetPC,  # Upper error
+                self.stim_at_targetPC - self.stim_at_targetPC_95btstCI[0],  # Lower error
+                self.stim_at_targetPC_95btstCI[1] - self.stim_at_targetPC,  # Upper error
             ]
         )
 
@@ -966,15 +909,11 @@ def compute_Wishart_based_pCorrect_atMOCS(
 
     for n in trange(nRefs):
         # Sort stimulus vectors by descending distance from the origin
-        sorted_indices = np.argsort(
-            -np.linalg.norm(fit_PMF_MOCS[n].unique_stim, axis=1)
-        )
+        sorted_indices = np.argsort(-np.linalg.norm(fit_PMF_MOCS[n].unique_stim, axis=1))
         sorted_array = fit_PMF_MOCS[n].unique_stim[sorted_indices]
 
         # Generate a finer grid of stimuli along the most distant chromatic direction
-        finer_stim = sim_MOCS_trials.create_discrete_stim(
-            sorted_array[0], fit_PMF_MOCS[n].nGridPts, ndims=ndims
-        )
+        finer_stim = sim_MOCS_trials.create_discrete_stim(sorted_array[0], fit_PMF_MOCS[n].nGridPts, ndims=ndims)
 
         # Predict proportion correct (pChoosingX1) using the Wishart model
         pChoosingX1_Wishart[n] = model_pred._compute_pChoosingX1(
@@ -982,17 +921,12 @@ def compute_Wishart_based_pCorrect_atMOCS(
         )
 
         # Find the vector length corresponding to target performance (e.g., 66.7%) from Wishart predictions
-        vecLen_at_targetPC_Wishart[n] = fit_PMF_MOCS[n]._find_stim_at_targetPC(
-            pChoosingX1_Wishart[n]
-        )
+        vecLen_at_targetPC_Wishart[n] = fit_PMF_MOCS[n]._find_stim_at_targetPC(pChoosingX1_Wishart[n])
 
         # Compute stimulus coordinates at Wishart threshold
         stim_at_targetPC_Wishart[n] = (
             vecLen_at_targetPC_Wishart[n]
-            * (
-                fit_PMF_MOCS[n].unique_stim[nLevels // 2]
-                / np.linalg.norm(fit_PMF_MOCS[n].unique_stim[nLevels // 2])
-            )
+            * (fit_PMF_MOCS[n].unique_stim[nLevels // 2] / np.linalg.norm(fit_PMF_MOCS[n].unique_stim[nLevels // 2]))
             + xref_unique[n]
         )
 
@@ -1007,9 +941,7 @@ def compute_Wishart_based_pCorrect_atMOCS(
 # %%
 class sim_MOCS_trials:
     @staticmethod
-    def generate_vectors_min_angle(
-        min_angle_degrees=60, max_angle_degrees=160, ndims=2, seed=None
-    ):
+    def generate_vectors_min_angle(min_angle_degrees=60, max_angle_degrees=160, ndims=2, seed=None):
         """
         Generate two random vectors in a given dimension (2D or 3D) such that their angle is
         at least `min_angle_degrees` apart and at most `max_angle_degrees` apart.
@@ -1114,9 +1046,7 @@ class sim_MOCS_trials:
         for bd, num_pts in zip(bds, num_grid_pts):
             # Generate a list of linspace arrays for each dimension
             linspaces = [np.linspace(-bd, bd, num_pts) for _ in range(ndims)]
-            grid = np.stack(
-                np.meshgrid(*linspaces, indexing="ij"), axis=-1
-            )  # 'ij' ensures correct order in any dim
+            grid = np.stack(np.meshgrid(*linspaces, indexing="ij"), axis=-1)  # 'ij' ensures correct order in any dim
             stacked_grids.append(grid.reshape(-1, ndims))  # Flatten the grid
 
         # Stack all grids together

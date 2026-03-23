@@ -54,9 +54,7 @@ def shuffle_trials_within_levels(df, xref, x1, seed=None, x2=None):
     # Build shuffled_idx by shuffling within each (trial, level) group
     for trial in unique_trials:
         for level in unique_levels:
-            row_indices = df[
-                (df["trial"] == trial) & (df["shuffled_level"] == level)
-            ].index.to_numpy()
+            row_indices = df[(df["trial"] == trial) & (df["shuffled_level"] == level)].index.to_numpy()
 
             if row_indices.size == 0:
                 continue  # nothing to shuffle for this (trial, level)
@@ -268,15 +266,11 @@ class DataExport:
 
         # Basic shape checks
         if Sigmas.shape[-1] != Sigmas.shape[-2]:
-            raise ValueError(
-                f"Sigmas must be square on the last two dims; got {Sigmas.shape}."
-            )
+            raise ValueError(f"Sigmas must be square on the last two dims; got {Sigmas.shape}.")
 
         D = Sigmas.shape[-1]
         if grid.shape[-1] != D:
-            raise ValueError(
-                f"grid last dim must match covariance dimension D={D}; got grid shape {grid.shape}."
-            )
+            raise ValueError(f"grid last dim must match covariance dimension D={D}; got grid shape {grid.shape}.")
 
         # Flatten everything into (N, D) and (N, D, D)
         grid_flat = grid.reshape(-1, D)
@@ -312,12 +306,8 @@ class DataExport:
 
         # 2) Convert numeric arrays into compact, CSV-friendly string columns.
         #    (Storing as strings makes the CSV easy to inspect and parse downstream.)
-        grid_str = DataExport.vec_to_str(
-            grid_flat, decimals=decimals
-        )  # e.g., "x,y" (or "x,y,z", ...)
-        sigmas_str = DataExport.cov_to_str(
-            Sigmas_flat, decimals=decimals
-        )  # e.g., '[[...],[...]]'
+        grid_str = DataExport.vec_to_str(grid_flat, decimals=decimals)  # e.g., "x,y" (or "x,y,z", ...)
+        sigmas_str = DataExport.cov_to_str(Sigmas_flat, decimals=decimals)  # e.g., '[[...],[...]]'
 
         # 3) Assemble and write the table.
         df = pd.DataFrame({grid_col: grid_str, sigma_col: sigmas_str})
@@ -357,9 +347,7 @@ class DataExport:
         return df, idx, vals
 
     @staticmethod
-    def append_bootstrap_cov_columns(
-        Sigmas_sorted, idx_desc, out_path, prefix="thres", decimals=8
-    ):
+    def append_bootstrap_cov_columns(Sigmas_sorted, idx_desc, out_path, prefix="thres", decimals=8):
         """
         Append bootstrap covariance columns to an existing CSV.
 
@@ -374,14 +362,11 @@ class DataExport:
         # Expect: (nSets, ...grid..., D, D)
         if Sigmas_sorted.ndim not in (5, 6):
             raise ValueError(
-                f"Sigmas_sorted must be 5D or 6D with shape (nSets, ...grid..., D, D); "
-                f"got shape {Sigmas_sorted.shape}."
+                f"Sigmas_sorted must be 5D or 6D with shape (nSets, ...grid..., D, D); got shape {Sigmas_sorted.shape}."
             )
 
         if Sigmas_sorted.shape[-1] != Sigmas_sorted.shape[-2]:
-            raise ValueError(
-                f"Cov matrices must be square; got {Sigmas_sorted.shape[-2:]}."
-            )
+            raise ValueError(f"Cov matrices must be square; got {Sigmas_sorted.shape[-2:]}.")
 
         nSets = Sigmas_sorted.shape[0]
         ndims_cov = Sigmas_sorted.shape[-1]
@@ -392,14 +377,11 @@ class DataExport:
 
         if len(df) != nG:
             raise ValueError(
-                f"Row mismatch for {out_path}: df has {len(df)} rows but expected {nG} "
-                f"(grid_shape={grid_shape})."
+                f"Row mismatch for {out_path}: df has {len(df)} rows but expected {nG} (grid_shape={grid_shape})."
             )
 
         if idx_desc.shape[0] != nSets:
-            raise ValueError(
-                f"idx_desc has length {len(idx_desc)} but need at least {nSets}."
-            )
+            raise ValueError(f"idx_desc has length {len(idx_desc)} but need at least {nSets}.")
 
         # Build all new columns first (fast; avoids fragmentation)
         new_cols = {}
@@ -423,9 +405,7 @@ class DataExport:
         df_out.to_csv(out_path, index=False)
 
     @staticmethod
-    def append_bootstrap_weights_columns(
-        weights_sorted, idx_desc, csv_path, decimals=8
-    ):
+    def append_bootstrap_weights_columns(weights_sorted, idx_desc, csv_path, decimals=8):
         """
         Append bootstrap weight columns (numeric) and write with fixed specified decimals,
         e.g. 0.2 -> 0.20000000 in the CSV text.
@@ -460,11 +440,8 @@ class DataExport:
         nTrials_AEPsych_sobol = int(sum(nTrials_strat[:-1]))
         nTrials_pregenSobol = int(nTrials_actual - nTrials_AEPsych)
 
-        trial_type = [
-            f"AEPsych_{i}_Sobol_{i}" for i in range(nTrials_AEPsych_sobol)
-        ] + [
-            f"AEPsych_{nTrials_AEPsych_sobol + j}_adaptive_{j}"
-            for j in range(nTrials_strat[-1])
+        trial_type = [f"AEPsych_{i}_Sobol_{i}" for i in range(nTrials_AEPsych_sobol)] + [
+            f"AEPsych_{nTrials_AEPsych_sobol + j}_adaptive_{j}" for j in range(nTrials_strat[-1])
         ]
 
         if nTrials_pregenSobol > 0:
@@ -478,8 +455,7 @@ class DataExport:
         Build TrialType strings for MOCS trials in (cond i, level j, repeat k) order.
         """
         return [
-            f"MOCS_{i * (nLevels_MOCS * nTrials_perLevel) + j * nTrials_perLevel + k}"
-            f"_cond_{i}_level_{j}_trial_{k}"
+            f"MOCS_{i * (nLevels_MOCS * nTrials_perLevel) + j * nTrials_perLevel + k}_cond_{i}_level_{j}_trial_{k}"
             for i in range(nRefs_MOCS)
             for j in range(nLevels_MOCS)
             for k in range(nTrials_perLevel)

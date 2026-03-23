@@ -35,16 +35,10 @@ class PlotPMFSettings(PlotSettingsBase):
     CI_area_label: str = "95% bootstrap CI of Weibull function"
     CI_thres_label: str = "95% bootstrap CI of threshold"
     Wishart_pred_lw: float = 0.2
-    Wishart_pred_lc: str | np.ndarray | list[float] = field(
-        default_factory=lambda: [0, 0, 0]
-    )
+    Wishart_pred_lc: str | np.ndarray | list[float] = field(default_factory=lambda: [0, 0, 0])
     Wishart_pred_label: str = "Wishart model predictions"
-    Wishart_indv_pred_label: str = (
-        "Predictions by Wishart Process (individual fit) model"
-    )
-    xlabel: str = (
-        "Euclidean distance between reference\nand comparison stimuli in model space"
-    )
+    Wishart_indv_pred_label: str = "Predictions by Wishart Process (individual fit) model"
+    xlabel: str = "Euclidean distance between reference\nand comparison stimuli in model space"
     ylabel: str = "Proportion correct"
     show_ref_in_title: bool = True
     anchor_legend_box: tuple[float, float] = (0.5, -0.8)
@@ -64,18 +58,14 @@ class PlotThresCompSettings(PlotSettingsBase):
     alpha: float = 0.8
     marker: str = "o"
     xlabel: str = (
-        "Predicted Euclidean distance between ref and comp \n"
-        "for 66.7% correct (MOCS trials, Weibull function)"
+        "Predicted Euclidean distance between ref and comp \nfor 66.7% correct (MOCS trials, Weibull function)"
     )
     ylabel: str = (
-        "Predicted Euclidean distance between ref and comp \n"
-        "for 66.7% correct (AEPsych trials, Wishart model)"
+        "Predicted Euclidean distance between ref and comp \nfor 66.7% correct (AEPsych trials, Wishart model)"
     )
     num_ticks: int = 6
     line_fit_CI_alpha: float = 0.1
-    line_fit_CI_lc: str | np.ndarray | list[float] = field(
-        default_factory=lambda: [0, 0, 0]
-    )
+    line_fit_CI_lc: str | np.ndarray | list[float] = field(default_factory=lambda: [0, 0, 0])
     line_fit_CI_label: str = "95% bootstrap CI of a line fit"
     line_fit_mean_lc: str | np.ndarray | list[float] = "grey"
     line_fit_mean_label: str = "Best line fit"
@@ -86,9 +76,7 @@ class PlotThresCompSettings(PlotSettingsBase):
 @dataclass
 class PlotCondSettings(PlotSettingsBase):
     fig_size: tuple[float, float] = (4, 4)  # Default figure size
-    ticks: np.ndarray = field(
-        default_factory=lambda: np.linspace(-0.6, 0.6, 5)
-    )  # Tick marks on axes
+    ticks: np.ndarray = field(default_factory=lambda: np.linspace(-0.6, 0.6, 5))  # Tick marks on axes
     title: str = "Isoluminant plane"  # Default title for 2D plots
     ref_ms: int = 100  # Marker size for reference stimulus
     ref_lw: int = 3  # Line width for reference
@@ -381,8 +369,7 @@ class MOCSTrialsVisualization(PlottingTools):
         if (corr_coef_org is not None) and (corr_coef_CI is not None):
             ax.text(
                 *settings.corr_text_loc,
-                f"Corr coef = {corr_coef_org:.2f}; 95% CI:"
-                f" [{corr_coef_CI[0]:.2f}, {corr_coef_CI[1]:.2f}]",
+                f"Corr coef = {corr_coef_org:.2f}; 95% CI: [{corr_coef_CI[0]:.2f}, {corr_coef_CI[1]:.2f}]",
                 fontsize=settings.fontsize - 1,
             )
             ax.text(
@@ -566,9 +553,7 @@ class MOCSConditionsVisualization(PlottingTools):
                     )
 
         self._update_axes_limits(ax, ndims=ndims)
-        self._update_axes_labels(
-            ax, settings.ticks, settings.ticks, nsteps=1, ndims=ndims
-        )
+        self._update_axes_labels(ax, settings.ticks, settings.ticks, nsteps=1, ndims=ndims)
         self._configure_labels_and_title(ax, title=settings.title, ndims=ndims)
         ax.grid(True, linewidth=0.2)
         # Add legend outside the plot at the bottom
@@ -585,9 +570,7 @@ class MOCSConditionsVisualization(PlottingTools):
             ax.set_box_aspect([1, 1, 1])  # Maintain equal aspect ratio
 
         plt.tight_layout()
-        plt.subplots_adjust(
-            left=0.05, right=0.9, top=0.95, bottom=0.3, wspace=-0.05, hspace=-0.05
-        )
+        plt.subplots_adjust(left=0.05, right=0.9, top=0.95, bottom=0.3, wspace=-0.05, hspace=-0.05)
         if settings.fig_dir and self.save_fig:
             self._save_figure(fig, settings.fig_name)
         return fig, ax

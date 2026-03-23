@@ -169,15 +169,11 @@ if not np.all(np.abs(np.sort(np.unique(grid)) - CIE_grid) < 1e-5):
 # SECTION 4: Visualize model predictions in model space
 # -------------------------------------------------------------------------
 output_figDir = os.path.join(
-    os.path.dirname(
-        input_fileDir_fits.replace("Experiment_DataFiles", "Experiment_FigFiles")
-    ),
+    os.path.dirname(input_fileDir_fits.replace("Experiment_DataFiles", "Experiment_FigFiles")),
     "comp_CIE",
 )
 os.makedirs(output_figDir, exist_ok=True)
-fig_name_part1 = (
-    f"Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_vs_{CIE_version}"
-)
+fig_name_part1 = f"Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_vs_{CIE_version}"
 pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=8)
 
 # specify figure name and path
@@ -197,9 +193,7 @@ pred2D_settings = replace(
     flag_rescale_axes_label=False,
 )
 
-wishart_pred_vis_set1 = WishartPredictionsVisualization(
-    None, mp.model, mp, color_thres_data, settings=pltSettings_base
-)
+wishart_pred_vis_set1 = WishartPredictionsVisualization(None, mp.model, mp, color_thres_data, settings=pltSettings_base)
 
 # visualize samples and model-estimated cov matrices
 # customize cmap for the isoluminant plane
@@ -275,9 +269,7 @@ grid_lab = W_to_Lab(grid[..., None])
 ell_min_lab = W_to_Lab(ell_min)
 ell_max_lab = W_to_Lab(ell_max)
 
-fig2, ax2 = plt.subplots(
-    1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi
-)
+fig2, ax2 = plt.subplots(1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi)
 for idx in np.ndindex(grid.shape[:-1]):
     lbl0 = "Model predictions given the original dataset" if idx == (0, 0) else None
     lbl1 = lbls1 if idx == (0, 0) else None

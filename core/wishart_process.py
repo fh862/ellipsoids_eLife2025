@@ -89,9 +89,7 @@ class WishartProcessModel:
         self.cheb_basis = chebyshev.chebyshev_basis(degree)
 
         if self.num_dims == 2:
-            basis_degrees = (
-                jnp.arange(self.degree)[:, None] + jnp.arange(self.degree)[None, :]
-            )
+            basis_degrees = jnp.arange(self.degree)[:, None] + jnp.arange(self.degree)[None, :]
 
         elif self.num_dims == 3:
             basis_degrees = (
@@ -240,10 +238,7 @@ class WishartProcessModel:
         U = U.reshape(-1, *U.shape[-2:])
 
         # Compute covariance matrix
-        S = (
-            jnp.einsum("ijk,ihk->ijh", U, U)
-            + self.diag_term * jnp.eye(self.num_dims_cov)[None, :, :]
-        )
+        S = jnp.einsum("ijk,ihk->ijh", U, U) + self.diag_term * jnp.eye(self.num_dims_cov)[None, :, :]
 
         # Reshape to original dimensions.
         return S.reshape(*shp, self.num_dims_cov, self.num_dims_cov)

@@ -103,9 +103,7 @@ class wishart_model_pred:
             self.grid_shape  # (g1, g2) or (g1, g2, g3)
         """
         # Split the leading grid dimensions from the trailing covariance dims
-        *grid_shape, self.ndims_cov, _ = (
-            self.Sigmas_noise_grid.shape
-        )  # (g1, g2) or (g1, g2, g3)
+        *grid_shape, self.ndims_cov, _ = self.Sigmas_noise_grid.shape  # (g1, g2) or (g1, g2, g3)
 
         # Sanity check: the number of spatial grid dimensions must match the
         # dimensionality of the basis functions (self.ndims).
@@ -119,8 +117,7 @@ class wishart_model_pred:
 
         # Ensure the covariance dimensionality matches the model specification
         assert self.ndims_cov == self.model.num_dims_cov, (
-            f"num_dims_cov mismatch: W_est has {self.ndims_cov}, "
-            f"model has {self.model.num_dims_cov}"
+            f"num_dims_cov mismatch: W_est has {self.ndims_cov}, model has {self.model.num_dims_cov}"
         )
 
         # Store the grid shape in its native form: (g1, g2) or (g1, g2, g3)
@@ -144,9 +141,7 @@ class wishart_model_pred:
             grid_color = UnitCircleGenerate(self.params["n_theta"])
         else:
             # 3D: directions on the unit sphere (elevation × azimuth)
-            grid_color = UnitCircleGenerate_3D(
-                self.params["n_theta"], self.params["n_phi"]
-            )
+            grid_color = UnitCircleGenerate_3D(self.params["n_theta"], self.params["n_phi"])
 
         self.params["grid_color"] = grid_color
 
@@ -163,18 +158,12 @@ class wishart_model_pred:
         """
         if self.ndims == 2:
             # 2D grid: create a (num_grid_pts1 x num_grid_pts2) array of empty lists
-            self.params_ell = [
-                [[] for _ in range(self.num_grid_pts2)]
-                for _ in range(self.num_grid_pts1)
-            ]
+            self.params_ell = [[[] for _ in range(self.num_grid_pts2)] for _ in range(self.num_grid_pts1)]
         elif self.ndims == 3:
             # 3D grid: create a (num_grid_pts1 x num_grid_pts2 x num_grid_pts3)
             # array of empty lists
             self.params_ell = [
-                [
-                    [[] for _ in range(self.num_grid_pts3)]
-                    for _ in range(self.num_grid_pts2)
-                ]
+                [[[] for _ in range(self.num_grid_pts3)] for _ in range(self.num_grid_pts2)]
                 for _ in range(self.num_grid_pts1)
             ]
         else:
@@ -198,8 +187,7 @@ class wishart_model_pred:
         if self.ndims_cov == 2:
             # 2D covariance: elliptical contours
             self.fitEll_scaled = np.full(
-                self.grid_shape
-                + (self.ndims_cov, self.params["nTheta"]),  # dense points on ellipse
+                self.grid_shape + (self.ndims_cov, self.params["nTheta"]),  # dense points on ellipse
                 np.nan,
             )
 
@@ -249,9 +237,7 @@ class wishart_model_pred:
 
         """
         # Generate a linearly spaced array of vector lengths within the specified bounds.
-        vecLength_grid = np.linspace(
-            *self.params["bds_bruteforce"], self.params["ngrid_bruteforce"]
-        )
+        vecLength_grid = np.linspace(*self.params["bds_bruteforce"], self.params["ngrid_bruteforce"])
 
         return vecLength_grid
 
@@ -344,10 +330,7 @@ class wishart_model_pred:
         if self.ndims_cov < self.ndims:
             # Remaining coordinates are treated as fixed across all simulations.
             # Shape: (nRepeats, ndims - ndims_cov)
-            w_ref_last_dim = (
-                np.ones((nRepeats, self.ndims - self.ndims_cov))
-                * w_ref[self.ndims_cov :][None, :]
-            )
+            w_ref_last_dim = np.ones((nRepeats, self.ndims - self.ndims_cov)) * w_ref[self.ndims_cov :][None, :]
 
             w_ref_rep_full = np.hstack((w_ref_rep, w_ref_last_dim))
             w_comp_rep_full = np.hstack((w_comp_rep, w_ref_last_dim))
@@ -364,18 +347,13 @@ class wishart_model_pred:
 
         # reshape the probability of choosing x1 from
         # (16000, ) to (16, 1000)
-        pChoosingX1_org = pChoosingX1.reshape(
-            (self.params["n_theta"], self.params["ngrid_bruteforce"])
-        )
+        pChoosingX1_org = pChoosingX1.reshape((self.params["n_theta"], self.params["ngrid_bruteforce"]))
         # Identify the vector length at the perceptual threshold for each direction.
         min_idx = np.argmin(np.abs(pChoosingX1_org - self.target_pC), axis=1)
         recover_vecLength = vecLength_org[np.arange(self.params["n_theta"]), min_idx]
 
         # Compute and store the comparison w component estimate
-        recover_w_comp_est = (
-            w_ref[: self.ndims_cov, None]
-            + self.params["grid_color"] * recover_vecLength[None, :]
-        )
+        recover_w_comp_est = w_ref[: self.ndims_cov, None] + self.params["grid_color"] * recover_vecLength[None, :]
 
         # Fit ellipses to the chromatic differences at the perceptual threshold.
         # fitEll_params: [xCenter, yCenter, majorAxis, minorAxis, theta]
@@ -392,11 +370,7 @@ class wishart_model_pred:
     def _convert_Sig_3DisothresholdContour_oddity(self, w_ref, vecLength_test):
 
         # Number of total simulations
-        nRepeats = (
-            self.params["n_phi"]
-            * self.params["n_theta"]
-            * self.params["ngrid_bruteforce"]
-        )
+        nRepeats = self.params["n_phi"] * self.params["n_theta"] * self.params["ngrid_bruteforce"]
 
         # Repeat the vector w_ref by nRepeats; final size = (nRepeats, 3)
         w_ref_rep = jnp.tile(w_ref[: self.ndims_cov], (nRepeats, 1))
@@ -409,12 +383,8 @@ class wishart_model_pred:
 
         vecDir_rep = vecDir_org.reshape((nRepeats, self.ndims_cov))
         # vector length (how far do we go along each chromatic direction)
-        vecLength_org = np.tile(
-            vecLength_test, (self.params["n_phi"], self.params["n_theta"], 1)
-        )
-        vecLength_rep = np.tile(
-            np.reshape(vecLength_org, (nRepeats, 1)), (1, self.ndims_cov)
-        )
+        vecLength_org = np.tile(vecLength_test, (self.params["n_phi"], self.params["n_theta"], 1))
+        vecLength_rep = np.tile(np.reshape(vecLength_org, (nRepeats, 1)), (1, self.ndims_cov))
         # comparison stimuli
         w_comp_rep = w_ref_rep + vecDir_rep * vecLength_rep
         # Compute the U matrices for reference and comparison stimuli.
@@ -435,20 +405,17 @@ class wishart_model_pred:
 
         # Compute and store the comparison component estimate
         recover_w_comp_est = (
-            w_ref[None, None, : self.ndims_cov]
-            + self.params["grid_color"] * recover_vecLength[:, :, None]
+            w_ref[None, None, : self.ndims_cov] + self.params["grid_color"] * recover_vecLength[:, :, None]
         )
 
         # fit an ellipse to the estimated comparison stimuli
-        fitEll_scaled, fitEll_unscaled, ellipsoidParams, _ = (
-            fit_3d_isothreshold_ellipsoid(
-                w_ref[: self.ndims_cov],
-                recover_w_comp_est,
-                nTheta=self.params["nTheta"],
-                nPhi=self.params["nPhi"],
-                ellipsoid_scaler=self.params["scaler_x1"],
-                flag_force_centered_ref=self.params["flag_force_centered_ref"],
-            )
+        fitEll_scaled, fitEll_unscaled, ellipsoidParams, _ = fit_3d_isothreshold_ellipsoid(
+            w_ref[: self.ndims_cov],
+            recover_w_comp_est,
+            nTheta=self.params["nTheta"],
+            nPhi=self.params["nPhi"],
+            ellipsoid_scaler=self.params["scaler_x1"],
+            flag_force_centered_ref=self.params["flag_force_centered_ref"],
         )
         return fitEll_scaled, fitEll_unscaled, ellipsoidParams
 
@@ -485,10 +452,8 @@ class wishart_model_pred:
             vecLength_test = self._set_up_grid_search()
 
             # Fit contour for this grid point
-            fit_scaled, fit_unscaled, params_ell = (
-                self._convert_Sig_2DisothresholdContour_oddity(
-                    w_ref_ijk, vecLength_test
-                )
+            fit_scaled, fit_unscaled, params_ell = self._convert_Sig_2DisothresholdContour_oddity(
+                w_ref_ijk, vecLength_test
             )
 
             # Save results into the arrays (handles both 2D and 3D via tuple indexing)
@@ -684,9 +649,9 @@ class wishart_model_pred:
         """
         # Vectorized computation of Mahalanobis distances across the batch
 
-        self.mahalanobis_distances = jax.vmap(
-            self.compute_Mahalanobis_distance_one_pair, in_axes=(0, 0, 0, 0)
-        )(xref_all, x1_all, Uref_all, U1_all)
+        self.mahalanobis_distances = jax.vmap(self.compute_Mahalanobis_distance_one_pair, in_axes=(0, 0, 0, 0))(
+            xref_all, x1_all, Uref_all, U1_all
+        )
 
 
 # %%

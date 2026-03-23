@@ -89,9 +89,7 @@ if load_actualData:
         subN = extract_sub_number(file_name)
         Wishart_full_path = os.path.join(fits_path, file_name)
     else:
-        raise ValueError(
-            "No 3D pilot data; Pilot interleaved 2D data will no longer be analyzed."
-        )
+        raise ValueError("No 3D pilot data; Pilot interleaved 2D data will no longer be analyzed.")
 # or load simulated MOCS data
 else:
     # === Scenario (2): Load 2D simulated data based on the Wishart model ===
@@ -185,9 +183,7 @@ for n in tqdm(range(nRefs), desc="Bootstrapping Progress"):
     # find the stimulus that corresponds to the threshold (defined as 66.7%)
     fit_PMF_MOCS_exptN.find_stim_at_targetPC_givenData()
     # bootstrap the data and refit
-    fit_PMF_MOCS_exptN.bootstrap_and_refit(
-        nBtst=numBtst, seed=subN * 100 + n if isinstance(subN, int) else 1
-    )
+    fit_PMF_MOCS_exptN.bootstrap_and_refit(nBtst=numBtst, seed=subN * 100 + n if isinstance(subN, int) else 1)
     # find the 95% confidence interval on the reconstructed PMF as well as the
     # stimulus that corresponds to the threshold
     fit_PMF_MOCS_exptN.compute_95btstCI()
@@ -225,9 +221,7 @@ for n in trange(nRefs):
     sorted_array = fit_PMF_MOCS[n].unique_stim[sorted_indices]
 
     # Generate a finely sampled set of stimulus points along the chromatic direction
-    finer_stim = sim_MOCS_trials.create_discrete_stim(
-        sorted_array[0], fit_PMF_MOCS[n].nGridPts, ndims=stim_dims
-    )
+    finer_stim = sim_MOCS_trials.create_discrete_stim(sorted_array[0], fit_PMF_MOCS[n].nGridPts, ndims=stim_dims)
 
     # Compute the probability of choosing x1 as the odd stimulus for each stimulus pair
     pChoosingX1_Wishart[n] = model_pred_Wishart._compute_pChoosingX1(
@@ -238,24 +232,18 @@ for n in trange(nRefs):
     # find the vector length that corresponds to 66.7% correct response
     # either based on the Wishart model or Weibull psychometric functions
     # NOTE: this is not the same as stimulus; we basically subtract the ref location from all the comp locations for this calculation
-    vecLen_at_targetPC_Wishart[n] = fit_PMF_MOCS[n]._find_stim_at_targetPC(
-        pChoosingX1_Wishart[n]
-    )
+    vecLen_at_targetPC_Wishart[n] = fit_PMF_MOCS[n]._find_stim_at_targetPC(pChoosingX1_Wishart[n])
     vecLen_at_targetPC_MOCS_btst[n] = fit_PMF_MOCS[n].stim_at_targetPC_btst
 
     # find the exact stimulus location (x,y coordinates)
-    vecLen_at_targetPC_MOCS[n] = fit_PMF_MOCS[n]._find_stim_at_targetPC(
-        fit_PMF_MOCS[n].fine_pC
-    )
+    vecLen_at_targetPC_MOCS[n] = fit_PMF_MOCS[n]._find_stim_at_targetPC(fit_PMF_MOCS[n].fine_pC)
 
     # the line below looks messy, but the idea is simple: retrieve the vector,
     # apply the vector length that corresponds to the threshold
     vec_midlevel = fit_PMF_MOCS[n].unique_stim[nLevels // 2]
     unit_vec = vec_midlevel / np.linalg.norm(vec_midlevel)
     stim_at_targetPC_MOCS[n] = vecLen_at_targetPC_MOCS[n] * unit_vec + xref_unique[n]
-    stim_at_targetPC_Wishart[n] = (
-        vecLen_at_targetPC_Wishart[n] * unit_vec + xref_unique[n]
-    )
+    stim_at_targetPC_Wishart[n] = vecLen_at_targetPC_Wishart[n] * unit_vec + xref_unique[n]
 
 # %%
 # ---------------------------------------------------------------------------
@@ -266,21 +254,15 @@ for n in trange(nRefs):
 Sigmas_est_xref_unique = model.compute_Sigmas(model.compute_U(W_est, xref_unique[None]))
 
 # Initialize the Wishart model prediction using various parameters.
-model_pred_Wishart_MOCS, _ = rerun_model_pred_wExisting_model(
-    xref_unique[None], model_pred_Wishart, color_thres_data
-)
+model_pred_Wishart_MOCS, _ = rerun_model_pred_wExisting_model(xref_unique[None], model_pred_Wishart, color_thres_data)
 
 # %%
 # ---------------------------------------------------------------------------
 # SECTION 6: Compute some summary stats
 # ---------------------------------------------------------------------------
 # fit a linear regression to the original dataset
-slope_modelPred_org, *_ = np.linalg.lstsq(
-    vecLen_at_targetPC_MOCS[:, None], vecLen_at_targetPC_Wishart, rcond=None
-)
-corr_coef_modelPred_org = np.corrcoef(
-    vecLen_at_targetPC_MOCS, vecLen_at_targetPC_Wishart
-)[0, 1]
+slope_modelPred_org, *_ = np.linalg.lstsq(vecLen_at_targetPC_MOCS[:, None], vecLen_at_targetPC_Wishart, rcond=None)
+corr_coef_modelPred_org = np.corrcoef(vecLen_at_targetPC_MOCS, vecLen_at_targetPC_Wishart)[0, 1]
 
 # Initialize arrays to store bootstrap results for slope and correlation coefficient
 slope_modelPred_btst = np.full((numBtst,), np.nan)
@@ -294,20 +276,14 @@ for n in range(numBtst):
     data_emp_n_reshape = data_emp_n.reshape(-1, 1)
 
     # Perform linear regression (no intercept) to compute the slope
-    slope_modelPred_btst_n, *_ = np.linalg.lstsq(
-        data_emp_n_reshape, vecLen_at_targetPC_Wishart, rcond=None
-    )
+    slope_modelPred_btst_n, *_ = np.linalg.lstsq(data_emp_n_reshape, vecLen_at_targetPC_Wishart, rcond=None)
     slope_modelPred_btst[n] = slope_modelPred_btst_n[0]
 
     # Compute the Pearson correlation coefficient between empirical and predicted data
-    corr_coef_modelPred_btst[n] = np.corrcoef(data_emp_n, vecLen_at_targetPC_Wishart)[
-        0, 1
-    ]
+    corr_coef_modelPred_btst[n] = np.corrcoef(data_emp_n, vecLen_at_targetPC_Wishart)[0, 1]
 
 # Compute 95% confidence intervals for slope and correlation coefficient
-idx_95CI = np.array(
-    [int(numBtst * 0.025), int(numBtst * 0.975) - 1]
-)  # Upper bound index (convert to 0-based indexing)
+idx_95CI = np.array([int(numBtst * 0.025), int(numBtst * 0.975) - 1])  # Upper bound index (convert to 0-based indexing)
 
 # Slope analysis
 slope_modelPred_btst_sorted = np.sort(slope_modelPred_btst)
@@ -327,9 +303,7 @@ pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=9.5)
 predPMF_settings = replace(PlotPMFSettings(), **pltSettings_base.__dict__)
 
 # visualization object
-vis_MOCS = MOCSTrialsVisualization(
-    fit_PMF_MOCS, settings=pltSettings_base, save_fig=False
-)
+vis_MOCS = MOCSTrialsVisualization(fit_PMF_MOCS, settings=pltSettings_base, save_fig=False)
 # initialize color map
 cmap_allref = []
 for n in range(nRefs):

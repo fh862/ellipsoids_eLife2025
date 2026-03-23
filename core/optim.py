@@ -30,9 +30,7 @@ def objective(
     # Scale the log posterior by the number of samples
     # so that the learning rate is easier to tune.
     return -1 * (
-        oddity_task.estimate_loglikelihood(
-            W, model, data, key, mc_samples, bandwidth, simulation_func
-        )
+        oddity_task.estimate_loglikelihood(W, model, data, key, mc_samples, bandwidth, simulation_func)
         + (model.logprior_density_W(W) / len(y))
     )
 
@@ -56,11 +54,7 @@ def objective_no_prior(
 
     # Scale the log posterior by the number of samples
     # so that the learning rate is easier to tune.
-    return -1 * (
-        oddity_task.estimate_loglikelihood(
-            W, model, data, key, mc_samples, bandwidth, simulation_func
-        )
-    )
+    return -1 * (oddity_task.estimate_loglikelihood(W, model, data, key, mc_samples, bandwidth, simulation_func))
 
 
 obj_and_grad_no_prior = jax.value_and_grad(objective_no_prior)
@@ -136,9 +130,7 @@ def optimize_posterior(
     """
 
     # Define and initialize optimization method.
-    optimizer = optax.sgd(
-        learning_rate=opt_params["learning_rate"], momentum=opt_params["momentum"]
-    )
+    optimizer = optax.sgd(learning_rate=opt_params["learning_rate"], momentum=opt_params["momentum"])
     opt_state = optimizer.init(W)
 
     iters = jnp.arange(0, total_steps, save_every)

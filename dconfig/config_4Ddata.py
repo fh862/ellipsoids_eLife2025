@@ -52,15 +52,9 @@ class DatasetConfig_4D:
 
     def __post_init__(self):
         # session suffix
-        if (
-            self.flag_load_datafile
-            and self.totalSessions is not None
-            and self.nSession is not None
-        ):
+        if self.flag_load_datafile and self.totalSessions is not None and self.nSession is not None:
             self.str_ext_s = (
-                f"_{self.nSession}of{self.totalSessions}sessions"
-                if self.nSession < self.totalSessions
-                else ""
+                f"_{self.nSession}of{self.totalSessions}sessions" if self.nSession < self.totalSessions else ""
             )
         else:
             self.str_ext_s = ""
@@ -70,25 +64,16 @@ class DatasetConfig_4D:
             if self.coloralg is None:
                 raise ValueError("coloralg must be provided for simulated data.")
             self.file_name = (
-                f"Sim4dTask_colorDiscrimination_EAVC_6000Trials_"
-                f"300_300_300_5100_sub{self.subN}_gt{self.coloralg}.pkl"
+                f"Sim4dTask_colorDiscrimination_EAVC_6000Trials_300_300_300_5100_sub{self.subN}_gt{self.coloralg}.pkl"
             )
 
         # build grid
         if self.num_grid_pts is not None:
-            self.grid_1d = jnp.linspace(
-                -self.grid_lim, self.grid_lim, self.num_grid_pts
-            )
-            self.grid = jnp.stack(
-                jnp.meshgrid(self.grid_1d, self.grid_1d, indexing="ij"), axis=-1
-            )
+            self.grid_1d = jnp.linspace(-self.grid_lim, self.grid_lim, self.num_grid_pts)
+            self.grid = jnp.stack(jnp.meshgrid(self.grid_1d, self.grid_1d, indexing="ij"), axis=-1)
         elif self.num_grid_pts1 is not None and self.num_grid_pts2 is not None:
-            self.grid_1 = jnp.linspace(
-                -self.grid_lim_1, self.grid_lim_1, self.num_grid_pts1
-            )
-            self.grid_2 = jnp.linspace(
-                -self.grid_lim_2, self.grid_lim_2, self.num_grid_pts2
-            )
+            self.grid_1 = jnp.linspace(-self.grid_lim_1, self.grid_lim_1, self.num_grid_pts1)
+            self.grid_2 = jnp.linspace(-self.grid_lim_2, self.grid_lim_2, self.num_grid_pts2)
             g1, g2 = jnp.meshgrid(self.grid_1, self.grid_2, indexing="ij")
             self.grid = jnp.stack([g1, g2], axis=-1)
         else:
@@ -172,9 +157,7 @@ class DatasetConfig_4D:
             flag_load_datafile=False,
             totalSessions=None,
             nSession=None,
-            path_str=os.path.join(
-                base_dir, "META_analysis", "Simulation_DataFiles", "4dTask", "CIE"
-            ),
+            path_str=os.path.join(base_dir, "META_analysis", "Simulation_DataFiles", "4dTask", "CIE"),
             plane_2D="Isoluminant plane",
             file_date="02242025",
             adaptation_cond_str="",

@@ -71,9 +71,7 @@ baseDir = "c:\\users\\brainardlab\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\
 # baseDir = '/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong'
 
 # Load transformation matrices to map between Wishart, DKL, and RGB spaces
-color_thres_data = color_thresholds(
-    COLOR_DIMENSION // 2, os.path.join(baseDir, "ELPS_analysis"), plane_2D=plane_2D
-)
+color_thres_data = color_thresholds(COLOR_DIMENSION // 2, os.path.join(baseDir, "ELPS_analysis"), plane_2D=plane_2D)
 color_thres_data.load_transformation_matrix()
 
 # --------------------------------------------------
@@ -99,9 +97,7 @@ try:
     expt_file_manager = ExperimentFileManager.load_state(path_metadata)
 except:
     # If no prior session exists, initialize a new experiment file manager
-    expt_file_manager = ExperimentFileManager(
-        subject_id, subject_init, networkDisk_path, is_practice=False
-    )
+    expt_file_manager = ExperimentFileManager(subject_id, subject_init, networkDisk_path, is_practice=False)
 
 # Create a new session file for the current session
 _, communicator_file_name = expt_file_manager.create_session_file(session_today)
@@ -167,9 +163,7 @@ file_name_pregenerated_trials = (
     "Sim2dTask_colorDiscrimination_Isoluminant plane_"
     + f"MOCSTrials_25refs_12levels_25trialsPerLevel_sub4_Sobol_seed{subject_seed_MOCS}.pkl"
 )
-fullpath_pregenerated_MOCS_trials = os.path.join(
-    path_pregenerated_trials, file_name_pregenerated_trials
-)
+fullpath_pregenerated_MOCS_trials = os.path.join(path_pregenerated_trials, file_name_pregenerated_trials)
 
 # Define the number of trials per session.
 # Once set in the first session, this value remains unchanged for subsequent sessions.
@@ -182,9 +176,7 @@ NTRIALS_MOCS_PERSESSION = 500
 MOCS_subset_trials, idxTrial_MOCS = LoadExptInfo.load_pregenerated_MOCS(
     fullpath_pregenerated_MOCS_trials, session_today, NTRIALS_MOCS_PERSESSION
 )
-Sobol_subset_trials = LoadExptInfo.load_pregenerated_Sobol(
-    fullpath_pregenerated_MOCS_trials, session_today
-)
+Sobol_subset_trials = LoadExptInfo.load_pregenerated_Sobol(fullpath_pregenerated_MOCS_trials, session_today)
 
 # --------------------------------------------------------------------
 # SECTION 4a: Set Up AEPsych Configuration and Interleave Trial Types
@@ -258,17 +250,13 @@ sim_interleaved_trial_sequence = ExperimentTrialSequence(
 
 # Generate the initial interleaved trial sequence using the defined random seed.
 subject_seed_interleaveTrials = subject_seed_MOCS + session_today
-sim_interleaved_trial_sequence.generate_init_sequence(
-    seed=subject_seed_interleaveTrials
-)
+sim_interleaved_trial_sequence.generate_init_sequence(seed=subject_seed_interleaveTrials)
 
 # --------------------------------------------------
 # SECTION 5: Use AEPsych for Trial Placement
 # --------------------------------------------------
 # Define the database file for storing experiment data specific to the subject.
-db_file_name = (
-    f"ColorDiscrimination_{COLOR_DIMENSION}dTask_{plane_2D}_sub{subject_id}.db"
-)
+db_file_name = f"ColorDiscrimination_{COLOR_DIMENSION}dTask_{plane_2D}_sub{subject_id}.db"
 server = AEPsychServer(database_path=os.path.join(path_sub, db_file_name))
 client = AEPsychClient(server=server)
 
@@ -325,10 +313,8 @@ else:
         path_sub,
         f"ColorDiscrimination_{COLOR_DIMENSION}dExpt_{plane_2D}_sub{subject_id}_session1.pkl",
     )
-    customized_sobol_scaler, idxTrial_AEPsych, _ = (
-        LoadExptInfo.load_pregenerated_val_scaler(
-            file_path_session1, session_today, NTRIALS_AEPSYCH_PERSESSION
-        )
+    customized_sobol_scaler, idxTrial_AEPsych, _ = LoadExptInfo.load_pregenerated_val_scaler(
+        file_path_session1, session_today, NTRIALS_AEPSYCH_PERSESSION
     )
 
 
@@ -400,20 +386,14 @@ ndims = COLOR_DIMENSION // 2
 idxTrial_AEPsych_list = list(range(idxTrial_AEPsych[0], idxTrial_AEPsych[-1]))
 data_vis_AEPsych = expt_data(
     server._strats[-1].x[idxTrial_AEPsych_list, 0:ndims],
-    server._strats[-1].x[idxTrial_AEPsych_list, 0:ndims]
-    + server._strats[-1].x[idxTrial_AEPsych_list, ndims:],
+    server._strats[-1].x[idxTrial_AEPsych_list, 0:ndims] + server._strats[-1].x[idxTrial_AEPsych_list, ndims:],
     server._strats[-1].y[idxTrial_AEPsych_list],
     None,
 )
 
 # organize MOCS trials
 xref_MOCS, x1_MOCS, y_MOCS = (
-    np.array(
-        [
-            sim_interleaved_trial_sequence.data_MOCS[n][key]
-            for n in range(NTRIALS_MOCS_PERSESSION)
-        ]
-    )
+    np.array([sim_interleaved_trial_sequence.data_MOCS[n][key] for n in range(NTRIALS_MOCS_PERSESSION)])
     for key in ["xref", "x1", "binaryResp"]
 )
 # Store the extracted data into a structured object
@@ -439,9 +419,7 @@ for str_vis, data_vis in zip(["AEPsych", "MOCS"], [data_vis_AEPsych, data_vis_MO
         fig_name=fig_name,
     )
 
-    fig, ax = plt.subplots(
-        1, 1, figsize=pltSampSettings.fig_size, dpi=pltSampSettings.dpi
-    )
+    fig, ax = plt.subplots(1, 1, figsize=pltSampSettings.fig_size, dpi=pltSampSettings.dpi)
     sampling_vis = SamplingRefCompPairVisualization(
         COLOR_DIMENSION // 2, color_thres_data, settings=pltSampSettings, save_fig=True
     )
@@ -540,6 +518,4 @@ trial_seq_analyzer.plot_shift_figure(
     output_figDir=sims_path,
 )
 
-trial_seq_analyzer.plot_presentation_order_heatmap(
-    save_fig=True, output_figDir=sims_path
-)
+trial_seq_analyzer.plot_presentation_order_heatmap(save_fig=True, output_figDir=sims_path)

@@ -180,9 +180,7 @@ class ExperimentFileManager:
         # create subject directory if not exists
         if self.is_practice:
             self.str_ext = "_practice"
-            self.path_sub = os.path.join(
-                self.networkDisk_path, f"sub{subject_id}", "practice"
-            )
+            self.path_sub = os.path.join(self.networkDisk_path, f"sub{subject_id}", "practice")
         else:
             self.str_ext = ""
             self.path_sub = os.path.join(self.networkDisk_path, f"sub{subject_id}")
@@ -211,12 +209,8 @@ class ExperimentFileManager:
 
         If found, do nothing. If not, raise an error.
         """
-        pattern_practice = re.compile(
-            rf"sub{self.subject_id}_{self.subject_init}_practice_session1.*\.txt$"
-        )
-        pattern = re.compile(
-            rf"sub{self.subject_id}_{self.subject_init}_session1.*\.txt$"
-        )
+        pattern_practice = re.compile(rf"sub{self.subject_id}_{self.subject_init}_practice_session1.*\.txt$")
+        pattern = re.compile(rf"sub{self.subject_id}_{self.subject_init}_session1.*\.txt$")
 
         # Walk through all files in self.path_sub and its subdirectories
         for root, _, files in os.walk(self.path_sub):
@@ -273,9 +267,7 @@ class ExperimentFileManager:
                         key_aborted_session = f"{session_num}_aborted_{timestamp_str}"
 
                         print(key_aborted_session)
-                        self.session_data[key_aborted_session] = self.session_data[
-                            session_num
-                        ]
+                        self.session_data[key_aborted_session] = self.session_data[session_num]
             elif session_num != (max(past_session_num) + 1):
                 raise ValueError(
                     f"Previous session numbers are: {past_session_num}. "
@@ -288,10 +280,7 @@ class ExperimentFileManager:
 
         # Generate the file name and path:
         date_time = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
-        file_name = (
-            f"sub{self.subject_id}_{self.subject_init}{self.str_ext}_"
-            + f"session{session_num}_{date_time}.txt"
-        )
+        file_name = f"sub{self.subject_id}_{self.subject_init}{self.str_ext}_" + f"session{session_num}_{date_time}.txt"
         file_path = os.path.join(self.path_sub, file_name)
 
         # Create the file with metadata
@@ -335,9 +324,7 @@ class ExperimentFileManager:
 
         # Validate the status
         if status not in valid_statuses:
-            raise ValueError(
-                f"Invalid status: {status}. Valid options are {valid_statuses}."
-            )
+            raise ValueError(f"Invalid status: {status}. Valid options are {valid_statuses}.")
 
         # Check if there is at least one session
         if not self.session_data:
@@ -350,9 +337,7 @@ class ExperimentFileManager:
 
             # Select only integers and exclude strings
             # if a key is a string, it means it's an aborted session
-            past_session_num = [
-                num for num in past_session_keys if isinstance(num, int)
-            ]
+            past_session_num = [num for num in past_session_keys if isinstance(num, int)]
             session_num = max(past_session_num)  # Get the latest session number
 
         # update the status
@@ -387,9 +372,7 @@ class ExperimentFileManager:
 
             # Select only integers and exclude strings
             # if a key is a string, it means it's an aborted session
-            past_session_num = [
-                num for num in past_session_keys if isinstance(num, int)
-            ]
+            past_session_num = [num for num in past_session_keys if isinstance(num, int)]
 
             session_num = max(past_session_num)  # Get the latest session number
 
@@ -500,11 +483,7 @@ class ExperimentFileManager:
 
                     # Left-justify each string to its column width
                     aligned_row = " | ".join(
-                        (
-                            item.ljust(column_widths[i])
-                            if i < len(column_widths)
-                            else item
-                        )
+                        (item.ljust(column_widths[i]) if i < len(column_widths) else item)
                         for i, item in enumerate(list_status)
                     )
 
@@ -593,9 +572,7 @@ class CommunicateViaTextFile:
             except OSError:
                 # Check if timeout has been exceeded
                 if time.time() - start_time > self.timeout:
-                    raise TimeoutError(
-                        f"Timeout: Unable to write to file within {self.timeout} seconds."
-                    )
+                    raise TimeoutError(f"Timeout: Unable to write to file within {self.timeout} seconds.")
 
                 # Pause before retrying
                 time.sleep(self.retry_delay)
@@ -625,9 +602,7 @@ class CommunicateViaTextFile:
             except OSError:
                 # Check if timeout has been exceeded
                 if time.time() - start_time > self.timeout:
-                    raise TimeoutError(
-                        f"Timeout: Unable to read file within {self.timeout} seconds."
-                    )
+                    raise TimeoutError(f"Timeout: Unable to read file within {self.timeout} seconds.")
 
                 # Pause before retrying
                 time.sleep(self.retry_delay)
@@ -693,27 +668,17 @@ class CommunicateViaTextFile:
         """
         try:
             # Find the RGB part in the message
-            rgb_part = input_string.split(" ")[
-                -2
-            ]  # Extract the part before "Image_Display"
+            rgb_part = input_string.split(" ")[-2]  # Extract the part before "Image_Display"
 
             # Extract individual R, G, B values
-            r_value = float(
-                rgb_part.split("_")[0][1:]
-            )  # Remove 'R' and convert to float
-            g_value = float(
-                rgb_part.split("_")[1][1:]
-            )  # Remove 'G' and convert to float
-            b_value = float(
-                rgb_part.split("_")[2][1:]
-            )  # Remove 'B' and convert to float
+            r_value = float(rgb_part.split("_")[0][1:])  # Remove 'R' and convert to float
+            g_value = float(rgb_part.split("_")[1][1:])  # Remove 'G' and convert to float
+            b_value = float(rgb_part.split("_")[2][1:])  # Remove 'B' and convert to float
 
             # Return as a NumPy array
             return np.array([r_value, g_value, b_value])
         except Exception as e:
-            raise ValueError(
-                f"Failed to extract RGB values from input: {input_string}. Error: {e}"
-            )
+            raise ValueError(f"Failed to extract RGB values from input: {input_string}. Error: {e}")
 
     def initialize_communication(self):
         """
@@ -729,18 +694,14 @@ class CommunicateViaTextFile:
         start_time = time.time()
         # Wait for Unity to send back "Ready_To_Communicate"
         while True:
-            is_ready_to_communicate = self.check_last_word_in_file(
-                "Ready_To_Communicate"
-            )
+            is_ready_to_communicate = self.check_last_word_in_file("Ready_To_Communicate")
             is_trial_requested = self.check_last_word_in_file("Trial_requested")
             if is_ready_to_communicate or is_trial_requested:
                 break
 
             # Check if the timeout duration has been exceeded
             if time.time() - start_time > self.timeout:
-                raise TimeoutError(
-                    f"Timeout: Did not receive 'Ready_To_Communicate' within {self.timeout} seconds."
-                )
+                raise TimeoutError(f"Timeout: Did not receive 'Ready_To_Communicate' within {self.timeout} seconds.")
             # Pause for a short period to prevent CPU overload
             time.sleep(self.retry_delay)
 
@@ -759,24 +720,18 @@ class CommunicateViaTextFile:
 
         # Wait for Unity to send back a message indicating the image has been displayed
         while True:
-            is_image_confirmed = self.check_last_word_in_file(
-                "Change_Background_Confirmed"
-            )
+            is_image_confirmed = self.check_last_word_in_file("Change_Background_Confirmed")
             if is_image_confirmed:
                 break
 
             # Check if the timeout duration has been exceeded
             if time.time() - start_time > self.timeout:
-                raise TimeoutError(
-                    "Timeout: the recipient did not confirm the RGB values in time."
-                )
+                raise TimeoutError("Timeout: the recipient did not confirm the RGB values in time.")
 
             # Pause for a short period to prevent CPU overload
             time.sleep(self.retry_delay)
 
-    def send_RGBvals(
-        self, trial_info, ref_RGB, comp_RGB, comp2_RGB=None, background_RGB=None
-    ):
+    def send_RGBvals(self, trial_info, ref_RGB, comp_RGB, comp2_RGB=None, background_RGB=None):
         """
         Sends the current RGB values for display to a shared file and waits for confirmation
         from the recipient (e.g., Unity) that the image has been displayed.
@@ -802,9 +757,7 @@ class CommunicateViaTextFile:
         # If a second comparison RGB value is provided, we assume the suprathreshold task.
         # Otherwise, we default to the oddity task.
         if comp2_RGB is not None:
-            str_comp2 = (
-                f"Comp2_R{comp2_RGB[0]:.8f}_G{comp2_RGB[1]:.8f}_B{comp2_RGB[2]:.8f} "
-            )
+            str_comp2 = f"Comp2_R{comp2_RGB[0]:.8f}_G{comp2_RGB[1]:.8f}_B{comp2_RGB[2]:.8f} "
         else:
             str_comp2 = ""
 
@@ -834,9 +787,7 @@ class CommunicateViaTextFile:
 
             # Check if the timeout duration has been exceeded
             if time.time() - start_time > self.timeout:
-                raise TimeoutError(
-                    "Timeout: the recipient did not confirm the RGB values in time."
-                )
+                raise TimeoutError("Timeout: the recipient did not confirm the RGB values in time.")
 
             # Pause for a short period to prevent CPU overload
             time.sleep(self.retry_delay)
@@ -880,15 +831,11 @@ class CommunicateViaTextFile:
 
             # Validate that the response is binary (0 or 1)
             if resp not in [0, 1, 2]:
-                raise ValueError(
-                    "The extracted response is not binary. Expected values are 0, 1 or 2."
-                )
+                raise ValueError("The extracted response is not binary. Expected values are 0, 1 or 2.")
 
             return resp
         except Exception as e:
-            raise ValueError(
-                f"Failed to extract the response from input: {input_string}. Error: {e}"
-            )
+            raise ValueError(f"Failed to extract the response from input: {input_string}. Error: {e}")
 
     # %% The following methods are used by the recipient system, which is written in C#.
     # These Python methods are solely for testing purposes to verify proper functionality
@@ -898,9 +845,7 @@ class CommunicateViaTextFile:
         start_time = time.time()
         # Wait for command
         while True:
-            is_set_up_to_communicate = self.check_last_word_in_file(
-                "Set_Up_to_Communicate"
-            )
+            is_set_up_to_communicate = self.check_last_word_in_file("Set_Up_to_Communicate")
             if is_set_up_to_communicate:
                 # Append the message to the file
                 self.append_message_to_file("Ready_To_Communicate")
@@ -908,9 +853,7 @@ class CommunicateViaTextFile:
 
             # Check if the timeout duration has been exceeded
             if time.time() - start_time > self.timeout:
-                raise TimeoutError(
-                    f"Timeout: Did not receive 'Set_Up_to_Communicate' within {self.timeout} seconds."
-                )
+                raise TimeoutError(f"Timeout: Did not receive 'Set_Up_to_Communicate' within {self.timeout} seconds.")
             # Pause for a short period to prevent CPU overload
             time.sleep(self.retry_delay)
 
@@ -952,9 +895,7 @@ class CommunicateViaTextFile:
         )
 
         # Compute the probability of correctly identifying the odd stimulus
-        pX1 = oddity_task.approx_cdf_one_trial(
-            0.0, signed_diff, gt_Wishart.opt_params["bandwidth"]
-        )
+        pX1 = oddity_task.approx_cdf_one_trial(0.0, signed_diff, gt_Wishart.opt_params["bandwidth"])
 
         # Generate a random response based on the predicted probability
         binaryResp = int(np.random.rand() < pX1)
@@ -1012,9 +953,7 @@ class CommunicateViaTextFile:
         )
 
         # Compute the probability of correctly identifying the odd stimulus using the signed difference.
-        pX2 = oddity_task.approx_cdf_one_trial(
-            0.0, signed_diff, gt_Wishart.opt_params["bandwidth"]
-        )
+        pX2 = oddity_task.approx_cdf_one_trial(0.0, signed_diff, gt_Wishart.opt_params["bandwidth"])
 
         # Generate a random response based on the predicted probability
         # response = 2: comp2 is judged to be more different relative to ref
@@ -1055,16 +994,12 @@ class CommunicateViaTextFile:
 
         # compute the geodesic path from z0 and z1
         keys_z01 = jax.random.split(keys[3], z0.shape[0])
-        best_v0s_z0z1 = geodesics.batch_estimate_v0(
-            z0, z1, keys_z01, popsize=popsize, num_generations=numgen
-        )
+        best_v0s_z0z1 = geodesics.batch_estimate_v0(z0, z1, keys_z01, popsize=popsize, num_generations=numgen)
         paths_z0z1, dists_z0z1 = geodesics.batch_paths_and_dists(z0, best_v0s_z0z1)
 
         # compute the geodesic path from z0 and z2
         keys_z02 = jax.random.split(keys[4], z0.shape[0])
-        best_v0s_z0z2 = geodesics.batch_estimate_v0(
-            z0, z2, keys_z02, popsize=popsize, num_generations=numgen
-        )
+        best_v0s_z0z2 = geodesics.batch_estimate_v0(z0, z2, keys_z02, popsize=popsize, num_generations=numgen)
         paths_z0z2, dists_z0z2 = geodesics.batch_paths_and_dists(z0, best_v0s_z0z2)
 
         if dists_z0z2 - dists_z0z1 > 0:
@@ -1095,9 +1030,7 @@ class CommunicateViaTextFile:
             last_line = self.extract_last_line()
             last_word = self.extract_last_word_in_file(last_line=last_line)
 
-            is_image_display = self.check_last_word_in_file(
-                "Image_Display", last_word=last_word
-            )
+            is_image_display = self.check_last_word_in_file("Image_Display", last_word=last_word)
             is_done = self.check_last_word_in_file("Done", last_word=last_word)
             is_break = self.check_last_word_in_file("Break", last_word=last_word)
 
@@ -1124,9 +1057,7 @@ class CommunicateViaTextFile:
                         # Project RGBs into 2D model space and simulate response using ground truth Wishart model
                         xref = color_thres.M_RGBTo2DW @ ref_rgb
                         x1 = color_thres.M_RGBTo2DW @ comp_rgb
-                        response = self.predict_probability_correct_Wishart(
-                            gt_Wishart, xref[:2], x1[:2]
-                        )
+                        response = self.predict_probability_correct_Wishart(gt_Wishart, xref[:2], x1[:2])
                     else:
                         response = self.predict_probability_correct_random()
 
@@ -1139,16 +1070,12 @@ class CommunicateViaTextFile:
                         xref = color_thres.M_RGBTo2DW @ ref_rgb
                         x1 = color_thres.M_RGBTo2DW @ comp_rgb
                         x2 = color_thres.M_RGBTo2DW @ comp2_rgb
-                        response = self.predict_comp_geodesics_M1(
-                            gt_Wishart, xref[:2], x1[:2], x2[:2]
-                        )
+                        response = self.predict_comp_geodesics_M1(gt_Wishart, xref[:2], x1[:2], x2[:2])
                     else:
                         xref = color_thres.N_unit_to_W_unit(ref_rgb)
                         x1 = color_thres.N_unit_to_W_unit(comp_rgb)
                         x2 = color_thres.N_unit_to_W_unit(comp2_rgb)
-                        response = self.predict_comp_geodesics_M1(
-                            gt_Wishart, xref, x1, x2
-                        )
+                        response = self.predict_comp_geodesics_M1(gt_Wishart, xref, x1, x2)
                     str_comp2 = f"Comp2_R{comp2_rgb[0]:.8f}_G{comp2_rgb[1]:.8f}_B{comp2_rgb[2]:.8f} "
 
                 # Wait before sending response (simulate processing time)
@@ -1168,9 +1095,7 @@ class CommunicateViaTextFile:
 
             # If no valid command received within timeout, raise an error
             if time.time() - start_time > self.timeout:
-                raise TimeoutError(
-                    "Timeout: the sender did not send out the RGB values in time."
-                )
+                raise TimeoutError("Timeout: the sender did not send out the RGB values in time.")
 
             # Sleep briefly to avoid busy-waiting
             time.sleep(self.retry_delay)
@@ -1222,9 +1147,7 @@ class CommunicateViaTextFile:
 
             # Ensure required fields are present
             if not ref_match or not comp_match:
-                raise ValueError(
-                    "Failed to find required 'Ref' or 'Comp' RGB values in the input string."
-                )
+                raise ValueError("Failed to find required 'Ref' or 'Comp' RGB values in the input string.")
 
             # Parse RGB values into NumPy arrays
             ref_rgb = CommunicateViaTextFile.parse_rgb_match(ref_match)
@@ -1238,6 +1161,4 @@ class CommunicateViaTextFile:
                 return trial_type, ref_rgb, comp_rgb
 
         except Exception as e:
-            raise ValueError(
-                f"Failed to extract data from input: {input_string}. Error: {e}"
-            )
+            raise ValueError(f"Failed to extract data from input: {input_string}. Error: {e}")

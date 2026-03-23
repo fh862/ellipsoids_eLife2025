@@ -38,9 +38,7 @@ class PlotGegenfurtner(PlotSettingsBase):
     grid_lw: float = 0.1
     ell_fullgrid_lw: float = 1  # Add type annotation
     xticks_DKL: list[float] = field(default_factory=lambda: [-0.03, 0.03])
-    xticks_W: list[float] | np.ndarray = field(
-        default_factory=lambda: np.linspace(-0.7, 0.7, 3)
-    )
+    xticks_W: list[float] | np.ndarray = field(default_factory=lambda: np.linspace(-0.7, 0.7, 3))
     xlabel_W: str = "Model space dimension 1"
     ylabel_W: str = "Model space dimension 2"
     xlabel_DKL: str = "DKL L-M"
@@ -95,13 +93,9 @@ class DKLRelatedSpacesVisualization(PlottingTools):
         """
         super().__init__(settings, save_fig, save_format)
         self.modelpred = modelpred  # predicted threshold ellipses across a grid
-        self.Gcomp = (
-            Gcomp  # precomputed ellipses and references from Gegenfurtner’s data
-        )
+        self.Gcomp = Gcomp  # precomputed ellipses and references from Gegenfurtner’s data
         self.color_thres = color_thres  # contains color transformation matrices
-        self.Grefs = Gcomp["ref_pts_W"].shape[
-            1
-        ]  # number of reference stimuli used in Gegenfurtner’s data
+        self.Grefs = Gcomp["ref_pts_W"].shape[1]  # number of reference stimuli used in Gegenfurtner’s data
         self._construct_cmap_Grefs()  # generate color mapping for each reference based on model space
 
     def _construct_cmap_Grefs(self):
@@ -159,9 +153,7 @@ class DKLRelatedSpacesVisualization(PlottingTools):
         ax.add_patch(box)
         return box
 
-    def plot_Gegenfurtner_Wishart_space(
-        self, settings: PlotGegenfurtner, ax=None, flag_plot_ref=True
-    ):
+    def plot_Gegenfurtner_Wishart_space(self, settings: PlotGegenfurtner, ax=None, flag_plot_ref=True):
         """
         Plot threshold ellipses at Gegenfurtner’s reference locations in model (Wishart) space.
 
@@ -244,9 +236,7 @@ class DKLRelatedSpacesVisualization(PlottingTools):
 
         return fig, ax, ax_ub
 
-    def plot_Gegenfurtner_Wishart_space_zoomed_out(
-        self, box_ub, settings: PlotGegenfurtner, ax=None
-    ):
+    def plot_Gegenfurtner_Wishart_space_zoomed_out(self, box_ub, settings: PlotGegenfurtner, ax=None):
         """
         Plot subplot (2): Zoomed-out view of the model (Wishart) space with ellipses
         across the full reference grid.
@@ -271,9 +261,7 @@ class DKLRelatedSpacesVisualization(PlottingTools):
             ax.plot(*ell[n], c=self.cmap_Wrefs[n], lw=settings.ell_fullgrid_lw)
 
         # Overlay Gegenfurtner's ellipses (without reference markers)
-        self.plot_Gegenfurtner_Wishart_space(
-            ax=ax, settings=settings, flag_plot_ref=False
-        )
+        self.plot_Gegenfurtner_Wishart_space(ax=ax, settings=settings, flag_plot_ref=False)
 
         # Draw a black square box indicating the region used in subplot (1)
         # The extent of the square box that will be overlaid to highlight the region
@@ -311,19 +299,14 @@ class DKLRelatedSpacesVisualization(PlottingTools):
             )
 
             # Plot the threshold ellipse centered at the reference point
-            fine_ell_DKL_n = (
-                self.Gcomp["fine_ell_DKL"][n, :]
-                + self.Gcomp["ref_pts_DKL"][:, n][:, np.newaxis]
-            )
+            fine_ell_DKL_n = self.Gcomp["fine_ell_DKL"][n, :] + self.Gcomp["ref_pts_DKL"][:, n][:, np.newaxis]
             ax.plot(*fine_ell_DKL_n, c=self.cmap_Grefs[n], lw=settings.modelpred_lw)
 
         # Plot the ellipse at the achromatic center
         ax.plot(*self.Gcomp["fine_ell_grey_DKL"], c="grey", lw=settings.modelpred_lw)
 
         # Plot a '+' marker at the origin (achromatic point)
-        ax.scatter(
-            0, 0, color=settings.ref_lc, marker=settings.ref_marker, s=settings.ref_ms
-        )
+        ax.scatter(0, 0, color=settings.ref_lc, marker=settings.ref_marker, s=settings.ref_ms)
 
         # Set axis properties
         ax.set_aspect("equal", adjustable="box")  # Keep axes square
@@ -365,10 +348,7 @@ class DKLRelatedSpacesVisualization(PlottingTools):
                 )
 
             # Plot the threshold ellipse centered at the reference point
-            fine_ell_sDKL_n = (
-                self.Gcomp["fine_ell_sDKL"][n]
-                + self.Gcomp["sDKL_circle_pts"][:, n][:, np.newaxis]
-            )
+            fine_ell_sDKL_n = self.Gcomp["fine_ell_sDKL"][n] + self.Gcomp["sDKL_circle_pts"][:, n][:, np.newaxis]
             ax.plot(*fine_ell_sDKL_n, c=self.cmap_Grefs[n], lw=settings.modelpred_lw)
 
         # Plot the ellipse at the achromatic center (gray ellipse)
@@ -394,9 +374,7 @@ class DKLRelatedSpacesVisualization(PlottingTools):
 
         return fig, ax
 
-    def plot_sDKL_zoomed_out(
-        self, grid_sDKL, fine_ell_sDKL_grid, settings: PlotGegenfurtner, ax=None
-    ):
+    def plot_sDKL_zoomed_out(self, grid_sDKL, fine_ell_sDKL_grid, settings: PlotGegenfurtner, ax=None):
         """
         Plot subplot (5): Zoomed-out view of the stretched DKL (sDKL) space with ellipses
         over the entire reference grid.
@@ -436,20 +414,12 @@ class DKLRelatedSpacesVisualization(PlottingTools):
         DKLRelatedSpacesVisualization.draw_square_box(ax, settings.G_ax_ub)
 
         # Compute axis bounds based on data range, and set square layout
-        ax_ub = (
-            np.ceil(np.max(np.abs(fine_ell_sDKL_grid + grid_sDKL[..., np.newaxis])) / 2)
-            * 2
-            + 2
-        )
-        DKLRelatedSpacesVisualization.set_square_axis(
-            ax, ax_ub, np.linspace(-ax_ub, ax_ub, 5)
-        )
+        ax_ub = np.ceil(np.max(np.abs(fine_ell_sDKL_grid + grid_sDKL[..., np.newaxis])) / 2) * 2 + 2
+        DKLRelatedSpacesVisualization.set_square_axis(ax, ax_ub, np.linspace(-ax_ub, ax_ub, 5))
 
         return fig, ax
 
-    def plot_Gegenfurtner_comparison(
-        self, grid_sDKL, grid_W, fine_ell_sDKL_grid, settings: PlotGegenfurtner
-    ):
+    def plot_Gegenfurtner_comparison(self, grid_sDKL, grid_W, fine_ell_sDKL_grid, settings: PlotGegenfurtner):
         """
         Generate a 2x3 panel figure comparing threshold ellipses across different color spaces,
         including those used in Gegenfurtner's study and in our model predictions.
@@ -503,9 +473,7 @@ class DKLRelatedSpacesVisualization(PlottingTools):
         _, _, box_ub = self.plot_Gegenfurtner_Wishart_space(settings=settings, ax=ax1)
 
         # Panel 2: Zoomed-out model space with full grid context
-        self.plot_Gegenfurtner_Wishart_space_zoomed_out(
-            box_ub, settings=settings, ax=ax2
-        )
+        self.plot_Gegenfurtner_Wishart_space_zoomed_out(box_ub, settings=settings, ax=ax2)
 
         # Panel 3: Gegenfurtner ellipses in DKL space
         self.plot_DKL_space(settings=settings, ax=ax3)
@@ -514,9 +482,7 @@ class DKLRelatedSpacesVisualization(PlottingTools):
         self.plot_sDKL_space(settings=settings, ax=ax4)
 
         # Panel 5: Zoomed-out stretched DKL space with full grid
-        self.plot_sDKL_zoomed_out(
-            grid_sDKL, fine_ell_sDKL_grid, settings=settings, ax=ax5
-        )
+        self.plot_sDKL_zoomed_out(grid_sDKL, fine_ell_sDKL_grid, settings=settings, ax=ax5)
 
         # Adjust layout to avoid overlaps
         plt.tight_layout()

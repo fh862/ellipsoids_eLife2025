@@ -2,9 +2,7 @@ import jax
 import jax.numpy as jnp
 
 
-def estimate_loglikelihood(
-    W, model, data, key, num_samples, bandwidth, simulation_func
-):
+def estimate_loglikelihood(W, model, data, key, num_samples, bandwidth, simulation_func):
     """
     Parameters
     ----------
@@ -321,11 +319,7 @@ def approx_cdf_one_trial(x, xs, h):
 # Use jax.vmap to make a function that simulates many trials.
 # ===========
 simulate_oddity = jax.vmap(simulate_oddity_one_trial, ((0, 0, 0, 0), 0, None, None), 0)
-simulate_oddity_suprathres = jax.vmap(
-    simulate_oddity_suprathres_one_trial, ((0, 0, 0, 0, 0, 0), 0, None, None), 0
-)
-simulate_oddity_reference = jax.vmap(
-    simulate_oddity_one_trial_reference, ((0, 0, 0, 0), 0, None, None), 0
-)
+simulate_oddity_suprathres = jax.vmap(simulate_oddity_suprathres_one_trial, ((0, 0, 0, 0, 0, 0), 0, None, None), 0)
+simulate_oddity_reference = jax.vmap(simulate_oddity_one_trial_reference, ((0, 0, 0, 0), 0, None, None), 0)
 approx_cdf = jax.vmap(approx_cdf_one_trial, (None, 0, None), 0)
 # ===========

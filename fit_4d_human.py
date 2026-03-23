@@ -75,9 +75,7 @@ from plotting.wishart_predictions_plotting import (
 # -----------------------------------------------------------
 # Base directory where data lives. On HPC, prefer paths relative to the script.
 base_dir = (
-    os.path.dirname(__file__)
-    if flag_running_on_hpc
-    else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
+    os.path.dirname(__file__) if flag_running_on_hpc else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
 )
 
 stim_dims = 2
@@ -137,14 +135,12 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
 
     if dcfg.flag_load_datafile:
         # Get file paths for all session data of the subject
-        session_files, session_file_name_part1 = (
-            load_expt_data.get_all_sessions_file_names(
-                subN,
-                nSession,
-                dcfg.path_str,
-                exptCond=dcfg.exptCond,
-                str_ext=f"{dcfg.adaptation_cond_str}_copy",
-            )
+        session_files, session_file_name_part1 = load_expt_data.get_all_sessions_file_names(
+            subN,
+            nSession,
+            dcfg.path_str,
+            exptCond=dcfg.exptCond,
+            str_ext=f"{dcfg.adaptation_cond_str}_copy",
         )
 
         # Load session data from the files
@@ -155,8 +151,8 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
         # trials as there is no need to validate our approach again.
         try:
             # Extract and concatenate MOCS data across all sessions
-            xref_MOCS_list, x1_MOCS_list, y_MOCS_list, xref_MOCS, x1_MOCS, y_MOCS = (
-                load_expt_data.load_MOCS_data(data_allSessions)
+            xref_MOCS_list, x1_MOCS_list, y_MOCS_list, xref_MOCS, x1_MOCS, y_MOCS = load_expt_data.load_MOCS_data(
+                data_allSessions
             )
 
             # Organize MOCS trials by unique reference stimulus conditions
@@ -176,9 +172,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
             print("MOCS trials are not found in this dataset.")
 
         # Extract and concatenate AEPsych data across all sessions
-        aepsych_data, sobol_data, combined_data = (
-            load_expt_data.load_combine_AEPsych_pregSobol(data_allSessions)
-        )
+        aepsych_data, sobol_data, combined_data = load_expt_data.load_combine_AEPsych_pregSobol(data_allSessions)
         (
             xref_AEPsych_list,
             x1_AEPsych_list,
@@ -207,9 +201,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
 
         xref_combined = jnp.array(vars_dict["AEPsych_trial_given_Wishart_gt"].xref_all)
         x1_combined = jnp.array(vars_dict["AEPsych_trial_given_Wishart_gt"].x1_all)
-        y_combined = jnp.array(
-            vars_dict["AEPsych_trial_given_Wishart_gt"].binaryResp_all
-        )
+        y_combined = jnp.array(vars_dict["AEPsych_trial_given_Wishart_gt"].binaryResp_all)
 
     # Pack the processed data into a tuple for further use.
     if flag_btst_AEPsych:
@@ -251,9 +243,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
     ]
 
     # Loop over the selected data points to generate and visualize each corresponding figure.
-    for i, (lb_i, ub_i) in enumerate(
-        zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)
-    ):
+    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
         # Construct a filename for each figure based on the plane and number of experiments.
         str_idx = f"{ub_i:05}total" if lb_i == 0 else f"{ub_i:05}total_from{lb_i:05}"
         fig_name = (
@@ -280,9 +270,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
         )
         ax.set_title(color_thres_data.plane_2D)
         # Save the figure as a PDF
-        fig.savefig(
-            os.path.join(output_figDir_fits, f"{fig_name}.pdf"), bbox_inches="tight"
-        )
+        fig.savefig(os.path.join(output_figDir_fits, f"{fig_name}.pdf"), bbox_inches="tight")
         plt.show()
 
     # %
@@ -315,9 +303,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
     # Loop through each random initialization
     for i in range(nRepeats):
         # Generate random keys for initializing parameters, data, and optimizer
-        W_INIT_KEY_i = jax.random.PRNGKey(
-            random_seeds[i, 0]
-        )  # Key to initialize `W_est`.
+        W_INIT_KEY_i = jax.random.PRNGKey(random_seeds[i, 0])  # Key to initialize `W_est`.
         OPT_KEY_i = jax.random.PRNGKey(random_seeds[i, 1])  # Key passed to optimizer.
 
         # Fit model, initialized at a random W sampled from the prior distribution
@@ -381,9 +367,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
     Sigmas_noise_x1 = model.compute_Sigmas(model.compute_U(W_est, x1_jnp))
 
     # compute mahalanobis distance
-    model_pred_Wishart.compute_Mahalanobis_distance_batch(
-        xref_jnp, x1_jnp, Sigmas_noise_xref, Sigmas_noise_x1
-    )
+    model_pred_Wishart.compute_Mahalanobis_distance_batch(xref_jnp, x1_jnp, Sigmas_noise_xref, Sigmas_noise_x1)
     # %
     # -----------------------------------------
     # SECTION 6: Visualize model predictions
@@ -416,9 +400,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
 
     # visualize samples and model-estimated cov matrices
     # customize cmap for the isoluminant plane
-    fig1, ax1 = plt.subplots(
-        1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi
-    )
+    fig1, ax1 = plt.subplots(1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi)
     wishart_pred_vis.plot_2D(grid, settings=pred2D_settings, ax=ax1)
     ax1.set_title(color_thres_data.plane_2D)
     # Save the figure as a PDF

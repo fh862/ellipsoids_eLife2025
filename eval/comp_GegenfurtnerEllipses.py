@@ -76,9 +76,7 @@ from plotting.wishart_predictions_plotting import WishartPredictionsVisualizatio
 
 # Base directory where data lives. On HPC, prefer paths relative to the script.
 base_dir = (
-    os.path.dirname(__file__)
-    if flag_running_on_hpc
-    else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
+    os.path.dirname(__file__) if flag_running_on_hpc else "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
 )
 
 # %% step 1
@@ -112,9 +110,9 @@ else:
     subN = extract_sub_number(file_name_fits)
 
     # output figure dir
-    output_figDir_fits = re.sub(
-        r"(sub\d+)(/.*)?$", r"\1/Gegenfurtner_ellipses", input_fileDir_fits
-    ).replace("DataFiles", "FigFiles")
+    output_figDir_fits = re.sub(r"(sub\d+)(/.*)?$", r"\1/Gegenfurtner_ellipses", input_fileDir_fits).replace(
+        "DataFiles", "FigFiles"
+    )
     os.makedirs(output_figDir_fits, exist_ok=True)
 
 # Load the model fit data
@@ -152,14 +150,12 @@ if key_pred not in vars_dict:
     ell_params_grey_W = model_pred_Wishart.params_ell[idx_row][idx_col]
 
     # Convert the ellipse parameters from W space to a covariance matrix in DKL space
-    covMat_ell_grey_DKL = GegenfurtnerEll.convert_ellParamsW_to_covMatDKL(
-        *ell_params_grey_W[2:], M_2DWToDKL
-    )
+    covMat_ell_grey_DKL = GegenfurtnerEll.convert_ellParamsW_to_covMatDKL(*ell_params_grey_W[2:], M_2DWToDKL)
 
     # step 3
     # Compute the stretching matrices for transforming between DKL space and unit space
-    stretchingMat_DKL_to_sDKL, stretchingMat_sDKL_to_DKL = (
-        GegenfurtnerEll.stretchingMat_from_covMatDKL(covMat_ell_grey_DKL)
+    stretchingMat_DKL_to_sDKL, stretchingMat_sDKL_to_DKL = GegenfurtnerEll.stretchingMat_from_covMatDKL(
+        covMat_ell_grey_DKL
     )
 
     # step 4
@@ -168,9 +164,7 @@ if key_pred not in vars_dict:
     # condition in Krauskopf & Gegenfurtner (1992)
     nPts_sDKL_circle = 16
     scaler = 6.5
-    sDKL_circle_pts = (np.eye(2) * scaler) @ UnitCircleGenerate(nPts_sDKL_circle + 1)[
-        :, :-1
-    ]
+    sDKL_circle_pts = (np.eye(2) * scaler) @ UnitCircleGenerate(nPts_sDKL_circle + 1)[:, :-1]
 
     # Transform sDKL circle points from sDKL space to DKL space
     ref_pts_DKL = stretchingMat_sDKL_to_DKL @ sDKL_circle_pts
@@ -180,9 +174,7 @@ if key_pred not in vars_dict:
 
     # Extract original W space coordinates for the reference points
     ref_pts_W_trunc_trans = ref_pts_W[:-1].T  # Shape: (nPts_sDKL_circle, 2)
-    ref_pts_W_org = ref_pts_W_trunc_trans[
-        np.newaxis
-    ]  # Add an extra dimension for batch processing
+    ref_pts_W_org = ref_pts_W_trunc_trans[np.newaxis]  # Add an extra dimension for batch processing
 
     model_pred_Wishart_Gegenfurtner, _ = rerun_model_pred_wExisting_model(
         ref_pts_W_org, model_pred_Wishart, color_thres_data
@@ -191,12 +183,8 @@ if key_pred not in vars_dict:
     # -----------------------------------------------------------
     # Process the gray stimulus at the center
     # Convert the ellipse parameters to covariance matrices in DKL and stretched DKL spaces
-    covMat_grey_DKL = GegenfurtnerEll.convert_ellParamsW_to_covMatDKL(
-        *ell_params_grey_W[2:], M_2DWToDKL
-    )
-    covMat_grey_sDKL = GegenfurtnerEll.normalize_ellipse_axes(
-        stretchingMat_DKL_to_sDKL, covMat_ell_grey_DKL
-    )
+    covMat_grey_DKL = GegenfurtnerEll.convert_ellParamsW_to_covMatDKL(*ell_params_grey_W[2:], M_2DWToDKL)
+    covMat_grey_sDKL = GegenfurtnerEll.normalize_ellipse_axes(stretchingMat_DKL_to_sDKL, covMat_ell_grey_DKL)
 
     # Reconstruct the threshold contours for the gray stimulus
     fine_ell_grey_DKL = convert_2Dcov_to_points_on_ellipse(covMat_grey_DKL)
@@ -348,9 +336,7 @@ for n in range(nBtst):
         model_pred_Wishart_Gegenfurtner_btst_n, _ = rerun_model_pred_wExisting_model(
             ref_pts_W_org, model_pred_Wishart_btst_n, color_thres_data
         )
-        model_pred_Wishart_Gegenfurtner_btst.append(
-            model_pred_Wishart_Gegenfurtner_btst_n
-        )
+        model_pred_Wishart_Gegenfurtner_btst.append(model_pred_Wishart_Gegenfurtner_btst_n)
 
         if flag_append_data:
             vars_dict_btst[key_pred] = model_pred_Wishart_Gegenfurtner_btst_n
@@ -372,18 +358,14 @@ idx_cutoff = int(nBtst * 0.95)
 idx_CI = idx_descending[:idx_cutoff]
 
 # Subset both prediction lists to the selected bootstrap indices
-model_pred_Wishart_Gegenfurtner_btst_CI = [
-    model_pred_Wishart_Gegenfurtner_btst[i] for i in idx_CI
-]
+model_pred_Wishart_Gegenfurtner_btst_CI = [model_pred_Wishart_Gegenfurtner_btst[i] for i in idx_CI]
 model_pred_Wishart_btst_CI = [model_pred_Wishart_btst[i] for i in idx_CI]
 
 # %%
 fine_ell_sDKL_grid = np.full(grid_Wishart.shape + (nDir,), np.nan)
 grid_Wishart_reshape = np.reshape(grid_Wishart, (grid_pts**ndims, 2))
 grid_sDKL_temp = stretchingMat_DKL_to_sDKL @ M_2DWToDKL @ grid_Wishart_reshape.T
-grid_sDKL = np.transpose(
-    np.reshape(grid_sDKL_temp, (ndims, grid_pts, grid_pts)), (1, 2, 0)
-)
+grid_sDKL = np.transpose(np.reshape(grid_sDKL_temp, (ndims, grid_pts, grid_pts)), (1, 2, 0))
 # Iterate over each point on the sDKL circle
 for n in range(grid_pts):
     for m in range(grid_pts):
@@ -401,9 +383,7 @@ for n in range(grid_pts):
         )
 
         # Reconstruct the threshold contours in DKL and sDKL spaces
-        fine_ell_sDKL_grid[n, m] = convert_2Dcov_to_points_on_ellipse(
-            covMat_around_ref_sDKL_nm
-        )
+        fine_ell_sDKL_grid[n, m] = convert_2Dcov_to_points_on_ellipse(covMat_around_ref_sDKL_nm)
 
 # %%
 # ---------------------------------------------------------------------
@@ -429,14 +409,10 @@ ellParams_sDKL_btst = np.full_like(ellParams_W_btst, np.nan)
 for n in range(idx_cutoff):
     # Gegenfurtner reference set (all refs on the sDKL circle), stored in model predictions
     # NOTE: params_ell[0] is expected to contain one ellipse per reference.
-    ellParams_W_btst[:-1, n, :] = np.asarray(
-        model_pred_Wishart_Gegenfurtner_btst_CI[n].params_ell[0]
-    )
+    ellParams_W_btst[:-1, n, :] = np.asarray(model_pred_Wishart_Gegenfurtner_btst_CI[n].params_ell[0])
 
     # Add the central gray reference ellipse (from the original model-grid predictions)
-    ellParams_W_btst[-1, n, :] = np.asarray(
-        model_pred_Wishart_btst_CI[n].params_ell[idx_row][idx_col]
-    )
+    ellParams_W_btst[-1, n, :] = np.asarray(model_pred_Wishart_btst_CI[n].params_ell[idx_row][idx_col])
 
     # Convert each ellipse from W-space -> DKL covariance -> sDKL
     #     and then back into ellipse parameters in sDKL coordinates
@@ -448,9 +424,7 @@ for n in range(idx_cutoff):
         )
 
         # Apply stretching/normalization to express the ellipse in stretched DKL (sDKL)
-        covMat_sDKL_nm = GegenfurtnerEll.normalize_ellipse_axes(
-            stretchingMat_DKL_to_sDKL, covMat_DKL_nm
-        )
+        covMat_sDKL_nm = GegenfurtnerEll.normalize_ellipse_axes(stretchingMat_DKL_to_sDKL, covMat_DKL_nm)
 
         # Convert covariance matrix back to ellipse parameters (a, b, theta) in sDKL
         _, _, ab, theta = covMat_to_ellParamsQ(covMat_sDKL_nm)
@@ -507,9 +481,7 @@ if not flag_running_on_hpc:
             cm_n = "gray"
         else:
             cm_n = color_thres_data.W2D_to_rgb(ref_pts_W_org[0, n - 1])
-        WishartPredictionsVisualization.add_CI_ellipses(
-            ell_min_W[n], ell_max_W[n], cm=cm_n, alpha=0.4, ax=ax1
-        )
+        WishartPredictionsVisualization.add_CI_ellipses(ell_min_W[n], ell_max_W[n], cm=cm_n, alpha=0.4, ax=ax1)
 
     _, _, box_ub = Gegenfurtner_vis.plot_Gegenfurtner_Wishart_space(plt_st, ax=ax1)
     fig1.savefig(
@@ -525,14 +497,10 @@ if not flag_running_on_hpc:
             cm_n = "gray"
         else:
             cm_n = color_thres_data.W2D_to_rgb(ref_pts_W_org[0, n - 1])
-        WishartPredictionsVisualization.add_CI_ellipses(
-            ell_min_sDKL[n], ell_max_sDKL[n], cm=cm_n, alpha=0.4, ax=ax2
-        )
+        WishartPredictionsVisualization.add_CI_ellipses(ell_min_sDKL[n], ell_max_sDKL[n], cm=cm_n, alpha=0.4, ax=ax2)
     Gegenfurtner_vis.plot_sDKL_space(plt_st, ax=ax2)
     fig2.savefig(
-        os.path.join(
-            output_figDir_fits, f"Comp_GegenfurtnerEllipses_sub{subN}_sDKL.pdf"
-        ),
+        os.path.join(output_figDir_fits, f"Comp_GegenfurtnerEllipses_sub{subN}_sDKL.pdf"),
         format="pdf",
         bbox_inches="tight",
     )

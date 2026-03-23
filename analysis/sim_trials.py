@@ -62,9 +62,7 @@ class SimulateTrialGivenWishart:
         """
 
         if expt_dim not in (2, 3, 4, 6):
-            raise ValueError(
-                "Color discrimination experiment must be either 2, 3, 4 or 6d."
-            )
+            raise ValueError("Color discrimination experiment must be either 2, 3, 4 or 6d.")
         self.expt_dim = expt_dim
         self.gt_Wishart = gt_Wishart
         self.config_all = config_all
@@ -73,15 +71,11 @@ class SimulateTrialGivenWishart:
 
         # Validate the need for reference stimuli in 2D and 3D setups
         if (self.expt_dim == 2 or self.expt_dim == 3) and self.ref is None:
-            raise ValueError(
-                "If the experiment has fixed ref stimulus, you need to specify ref stimuli!"
-            )
+            raise ValueError("If the experiment has fixed ref stimulus, you need to specify ref stimuli!")
 
         # Retrieve parameter names, strategy names, and trial numbers
         self.parnames = self._extract_field_vals("common", "parnames", strsplit=True)
-        self.strat_names = self._extract_field_vals(
-            "common", "strategy_names", strsplit=True
-        )
+        self.strat_names = self._extract_field_vals("common", "strategy_names", strsplit=True)
 
         # Read per-strategy trial quotas from the config.
         # Exactly ONE of these fields is used in a given config:
@@ -96,14 +90,9 @@ class SimulateTrialGivenWishart:
         # We support both by trying `min_asks` first and falling back to
         # `min_total_tells` if the field is not present in the config.
         try:
-            self.nTrials_strat = [
-                int(self._extract_field_vals(s, "min_asks")) for s in self.strat_names
-            ]
+            self.nTrials_strat = [int(self._extract_field_vals(s, "min_asks")) for s in self.strat_names]
         except Exception:
-            self.nTrials_strat = [
-                int(self._extract_field_vals(s, "min_total_tells"))
-                for s in self.strat_names
-            ]
+            self.nTrials_strat = [int(self._extract_field_vals(s, "min_total_tells")) for s in self.strat_names]
 
         self.nTrials_cumsum = np.cumsum(np.array(self.nTrials_strat))
         self.nTrials = self.nTrials_cumsum[-1]
@@ -118,9 +107,7 @@ class SimulateTrialGivenWishart:
         self._init_trial_lists()
 
         # Validate and assign scaling factors, defaulting to 1 if not provided
-        if (
-            customized_val_scaler is not None
-        ):  # customized (shuffled) sobol scalers are prioritized
+        if customized_val_scaler is not None:  # customized (shuffled) sobol scalers are prioritized
             self.customized_val_scaler = customized_val_scaler
             self.val_scaler = None
         else:
@@ -265,9 +252,7 @@ class SimulateTrialGivenWishart:
                 config_name=f"{self.expt_dim}d_colorDiscrimination_idx{config_index}",
             )
         else:
-            client.resume(
-                config_name=f"{self.expt_dim}d_colorDiscrimination_idx{config_index}"
-            )
+            client.resume(config_name=f"{self.expt_dim}d_colorDiscrimination_idx{config_index}")
 
     def _derive_xref_x1(self, trial_counter, trial_val, config_index=None):
         """
@@ -301,9 +286,7 @@ class SimulateTrialGivenWishart:
             # Separate the reference and comparison values for higher dimensions.
             trial_val_ref = trial_val[: self.expt_dim // 2]
             trial_val_delta_comp = trial_val[(self.expt_dim // 2) :]
-            trial_val_delta_comp_scaled = self._apply_val_scaling(
-                trial_counter, trial_val_delta_comp
-            )
+            trial_val_delta_comp_scaled = self._apply_val_scaling(trial_counter, trial_val_delta_comp)
             # put reference and delta values to a list and report it back to the client
             trial_val_report = trial_val_ref + trial_val_delta_comp_scaled  # lists
             xref = jnp.array(trial_val_ref)
@@ -329,9 +312,7 @@ class SimulateTrialGivenWishart:
 
         # Determine the scaling factor index based on how many trials have been completed.
         if self.customized_val_scaler is None:
-            val_scaler_idx = np.searchsorted(
-                self.nTrials_cumsum, trial_counter, side="right"
-            )
+            val_scaler_idx = np.searchsorted(self.nTrials_cumsum, trial_counter, side="right")
             val_scaler_i = self.val_scaler[val_scaler_idx]
         else:
             val_scaler_i = self.customized_val_scaler[trial_counter]
@@ -377,9 +358,7 @@ class SimulateTrialGivenWishart:
             self.gt_Wishart.model.diag_term,
         )
         # Compute the probability of correctly identifying the odd stimulus using the signed difference.
-        pX1 = oddity_task.approx_cdf_one_trial(
-            0.0, signed_diff, self.gt_Wishart.opt_params["bandwidth"]
-        )
+        pX1 = oddity_task.approx_cdf_one_trial(0.0, signed_diff, self.gt_Wishart.opt_params["bandwidth"])
 
         # Generate a random response based on the predicted probability and send feedback to the client
         randNum = np.random.rand()
@@ -453,35 +432,25 @@ class SimulateTrialGivenWishart:
             else:
                 # Stack only if there are no None values in the list
                 if all(v is not None for v in list_values):
-                    setattr(
-                        self, array_attr_name, jnp.stack(list_values, axis=stacking_ax)
-                    )
+                    setattr(self, array_attr_name, jnp.stack(list_values, axis=stacking_ax))
                 else:
                     # Skip stacking if any None is found
                     continue
 
-    def _monitor_time_insert_pregenerated_trials(
-        self, start_time, max_wait_time, pregenerated_trials, stop_event
-    ):
+    def _monitor_time_insert_pregenerated_trials(self, start_time, max_wait_time, pregenerated_trials, stop_event):
         # Function to monitor elapsed time and perform side tasks
         while not stop_event.is_set():  # Exit if stop_event is set
             elapsed_time = time.time() - start_time
             if elapsed_time > max_wait_time:
-                print(
-                    f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated trial..."
-                )
+                print(f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated trial...")
 
                 # Get the stimulus information
                 xref = pregenerated_trials["xref"][self.pregenerated_trial_counter]
                 x1 = pregenerated_trials["x1"][self.pregenerated_trial_counter]
 
                 # Simulate response based on the reference and comparison stimuli
-                Uref, U1, signed_diff, pX1, binaryResp = (
-                    self._predict_probability_correct(xref, x1)
-                )
-                print(
-                    f"Simulated responses (#trial {self.pregenerated_trial_counter}): {binaryResp}"
-                )
+                Uref, U1, signed_diff, pX1, binaryResp = self._predict_probability_correct(xref, x1)
+                print(f"Simulated responses (#trial {self.pregenerated_trial_counter}): {binaryResp}")
 
                 # store simulated responses
                 self._update_trial_lists(
@@ -591,14 +560,10 @@ class SimulateTrialGivenWishart:
                     trial_val.append(trial_AEPsych["config"][s][0])
 
                 # Compute xref and x1
-                xref, x1, trial_val_report = self._derive_xref_x1(
-                    trial_counter, trial_val, ii
-                )
+                xref, x1, trial_val_report = self._derive_xref_x1(trial_counter, trial_val, ii)
 
                 # Simulate one single trial
-                Uref, U1, signed_diff, pX1, binaryResp = (
-                    self._predict_probability_correct(xref, x1)
-                )
+                Uref, U1, signed_diff, pX1, binaryResp = self._predict_probability_correct(xref, x1)
 
                 # Report back to AEPsych client
                 client.tell(
@@ -606,20 +571,13 @@ class SimulateTrialGivenWishart:
                     outcome=binaryResp,
                 )
 
-                self._update_trial_lists(
-                    xref, x1, binaryResp, Uref, U1, signed_diff, pX1
-                )
+                self._update_trial_lists(xref, x1, binaryResp, Uref, U1, signed_diff, pX1)
 
                 # calculate elapsed time
                 if flag_insert_pregen:
                     pregenerated_trial_counter_after = self.pregenerated_trial_counter
-                    used_pregenerated_trial = (
-                        pregenerated_trial_counter_after
-                        - pregenerated_trial_counter_before
-                    )
-                    trial_duration = (
-                        end_time - start_time - used_pregenerated_trial * max_wait_time
-                    )
+                    used_pregenerated_trial = pregenerated_trial_counter_after - pregenerated_trial_counter_before
+                    trial_duration = end_time - start_time - used_pregenerated_trial * max_wait_time
                 else:
                     trial_duration = end_time - start_time
                 time_elapsed.append(trial_duration)  # Record the time for this trial
@@ -676,16 +634,12 @@ class SimulateTrialGivenWishart:
         num_bumped_up_MOCS = 0
         while not stop_event.is_set():  # Exit if stop_event is set
             elapsed_time = time.time() - start_time
-            max_wait_time_ii = (
-                max_wait_time[0] if num_bumped_up_MOCS == 0 else max_wait_time[-1]
-            )
+            max_wait_time_ii = max_wait_time[0] if num_bumped_up_MOCS == 0 else max_wait_time[-1]
 
             # if the time elapsed exceeds the max wait time
             if elapsed_time > max_wait_time_ii:
                 # find the next available MOCS trial in the list
-                print(
-                    f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated MOCS trial..."
-                )
+                print(f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated MOCS trial...")
                 (
                     trial_replacement_idx_MOCSlist,
                     trial_placement_idx_originallist,
@@ -693,28 +647,18 @@ class SimulateTrialGivenWishart:
                 ) = trial_sequence.bump_up_one_MOCS_trial(expt_counter, trial_counter)
 
                 # Get the stimulus information
-                xref = trial_sequence.pregenerated_MOCS["xref"][
-                    trial_replacement_idx_MOCSlist
-                ]
-                x1 = trial_sequence.pregenerated_MOCS["x1"][
-                    trial_replacement_idx_MOCSlist
-                ]
+                xref = trial_sequence.pregenerated_MOCS["xref"][trial_replacement_idx_MOCSlist]
+                x1 = trial_sequence.pregenerated_MOCS["x1"][trial_replacement_idx_MOCSlist]
 
                 # Simulate response based on the reference and comparison stimuli
                 _, _, _, _, binaryResp = self._predict_probability_correct(xref, x1)
-                print(
-                    f"Simulated responses (#trial {trial_replacement_idx_MOCSlist}): {binaryResp}"
-                )
+                print(f"Simulated responses (#trial {trial_replacement_idx_MOCSlist}): {binaryResp}")
 
                 # Store simulated responses
-                trial_sequence.update_data_MOCS(
-                    trial_replacement_idx_MOCSlist, xref, x1, binaryResp
-                )
+                trial_sequence.update_data_MOCS(trial_replacement_idx_MOCSlist, xref, x1, binaryResp)
                 # Set the status of the MOCS trial to 'completed'
                 # it is trial counter because the sequence has been updated
-                trial_sequence.set_trial_status(
-                    expt_counter, trial_placement_idx_originallist, "Completed"
-                )
+                trial_sequence.set_trial_status(expt_counter, trial_placement_idx_originallist, "Completed")
 
                 # Set the flag to indicate a MOCS trial was run
                 mocs_triggered.set()
@@ -729,9 +673,7 @@ class SimulateTrialGivenWishart:
 
         # %%
 
-    def run_simulation_wMOCSinserted(
-        self, client, trial_sequence, max_wait_time=[2.4, 3.6]
-    ):
+    def run_simulation_wMOCSinserted(self, client, trial_sequence, max_wait_time=[2.4, 3.6]):
         """
         Simulates color-discrimination responses using AEPsych and ground truth data.
         Ground truth can be based on Wishart fits to pilot data or CIELAB thresholds.
@@ -754,26 +696,17 @@ class SimulateTrialGivenWishart:
         while trial_counter < trial_sequence.nTrials_total:
             for expt_idx in range(self.numConfig):
                 # Check if the trial is already completed
-                current_trial_status = trial_sequence.trial_status[expt_idx][
-                    trial_counter
-                ]
-                if (
-                    "Completed" in current_trial_status
-                    or "Completed_in_time" in current_trial_status
-                ):
+                current_trial_status = trial_sequence.trial_status[expt_idx][trial_counter]
+                if "Completed" in current_trial_status or "Completed_in_time" in current_trial_status:
                     # If already completed, mark as skipped and move to the next trial
                     print(f"Skipping trial {trial_counter} as it is already completed.")
                     new_status = current_trial_status + ["Skipped"]
-                    trial_sequence.trial_status[expt_idx][trial_counter] = list(
-                        new_status
-                    )
+                    trial_sequence.trial_status[expt_idx][trial_counter] = list(new_status)
                     trial_counter += 1
                     continue
 
                 # Retrieve trial identity (e.g., 'MOCS_1', 'AEPsych_1')
-                trial_identity = trial_sequence.updated_sequence[expt_idx][
-                    trial_counter
-                ]
+                trial_identity = trial_sequence.updated_sequence[expt_idx][trial_counter]
                 # Extract trial type ('MOCS' or 'AEPsych') and trial index
                 trial_type, trial_idx = trial_identity.split("_")
                 trial_idx = int(trial_idx)
@@ -789,9 +722,7 @@ class SimulateTrialGivenWishart:
                     # Update the MOCS trial data with the simulated response
                     trial_sequence.update_data_MOCS(trial_idx, xref, x1, binaryResp)
                     # Mark the trial as completed within the time window
-                    trial_sequence.set_trial_status(
-                        expt_idx, trial_counter, "Completed_in_time"
-                    )
+                    trial_sequence.set_trial_status(expt_idx, trial_counter, "Completed_in_time")
 
                 elif trial_type == "AEPsych":
                     # Retrieve the trial order for AEPsych
@@ -831,9 +762,7 @@ class SimulateTrialGivenWishart:
                     # Extract stimulus dimensions for the trial
                     trial_val = [trial_AEPsych["config"][s][0] for s in self.parnames]
                     # Simulate the trial
-                    xref, x1, trial_val_report = self._derive_xref_x1(
-                        trial_idx, trial_val, ii
-                    )
+                    xref, x1, trial_val_report = self._derive_xref_x1(trial_idx, trial_val, ii)
                     _, _, _, _, binaryResp = self._predict_probability_correct(xref, x1)
 
                     # Report the result back to AEPsych
@@ -856,13 +785,9 @@ class SimulateTrialGivenWishart:
                             trial_counter,
                             f"Elapsed_time_{trial_duration:.4f}",
                         )
-                        trial_sequence.set_trial_status(
-                            expt_idx, trial_counter, "Completed"
-                        )
+                        trial_sequence.set_trial_status(expt_idx, trial_counter, "Completed")
                     else:
-                        trial_sequence.set_trial_status(
-                            expt_idx, trial_counter, "Completed_in_time"
-                        )
+                        trial_sequence.set_trial_status(expt_idx, trial_counter, "Completed_in_time")
 
                 # Record the actual trial sequence that was executed
                 trial_sequence.final_sequence[expt_idx].append(trial_identity)
@@ -912,9 +837,7 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
 
         # For 2D or 3D experiments, a fixed comp1 must be provided
         if self.expt_dim in (2, 3) and self.comp1 is None:
-            raise ValueError(
-                "comp1 must be provided for 2D or 3D suprathreshold experiments."
-            )
+            raise ValueError("comp1 must be provided for 2D or 3D suprathreshold experiments.")
 
     def _create_pseudorandom_order(self):
         """
@@ -1043,9 +966,7 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
             else:
                 # Stack only if there are no None values in the list
                 if all(v is not None for v in list_values):
-                    setattr(
-                        self, array_attr_name, jnp.stack(list_values, axis=stacking_ax)
-                    )
+                    setattr(self, array_attr_name, jnp.stack(list_values, axis=stacking_ax))
                 else:
                     # Skip stacking if any None is found
                     continue
@@ -1076,9 +997,7 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
         if self.expt_dim == 2 or self.expt_dim == 3:
             xref = jnp.array(self.ref[config_index])
             x1 = jnp.array(self.comp1[config_index])
-            trial_val_delta_comp2_scaled = self._apply_val_scaling(
-                trial_counter, trial_val
-            )
+            trial_val_delta_comp2_scaled = self._apply_val_scaling(trial_counter, trial_val)
             x2 = jnp.array(trial_val_delta_comp2_scaled) + xref
             trial_val_report = list(trial_val_delta_comp2_scaled)
 
@@ -1089,13 +1008,9 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
             # Separate the reference and comparison values for higher dimensions.
             trial_val_delta_comp1 = trial_val[: self.expt_dim // 2]
             trial_val_delta_comp2 = trial_val[(self.expt_dim // 2) :]
-            trial_val_delta_comp2_scaled = self._apply_val_scaling(
-                trial_counter, trial_val_delta_comp2
-            )
+            trial_val_delta_comp2_scaled = self._apply_val_scaling(trial_counter, trial_val_delta_comp2)
             # put reference and delta values to a list and report it back to the client
-            trial_val_report = (
-                trial_val_delta_comp1 + trial_val_delta_comp2_scaled
-            )  # lists
+            trial_val_report = trial_val_delta_comp1 + trial_val_delta_comp2_scaled  # lists
 
             # Add deltas on top of the ref stimulus to derive comparison stimulus
             x1 = jnp.array(trial_val_delta_comp1) + xref
@@ -1132,9 +1047,7 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
             self.gt_Wishart.model.diag_term,
         )
         # Compute the probability of correctly identifying the odd stimulus using the signed difference.
-        pX2 = oddity_task.approx_cdf_one_trial(
-            0.0, signed_diff, self.gt_Wishart.opt_params["bandwidth"]
-        )
+        pX2 = oddity_task.approx_cdf_one_trial(0.0, signed_diff, self.gt_Wishart.opt_params["bandwidth"])
 
         # Generate a random response based on the predicted probability and send feedback to the client
         randNum = np.random.rand()
@@ -1188,14 +1101,10 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
                     trial_val.append(trial_AEPsych["config"][s][0])
 
                 # Compute xref and x1
-                xref, x1, x2, trial_val_report = self._derive_xref_x1_x2(
-                    trial_counter, trial_val, ii
-                )
+                xref, x1, x2, trial_val_report = self._derive_xref_x1_x2(trial_counter, trial_val, ii)
 
                 # Simulate one single trial
-                Uref, U1, U2, signed_diff, pX2, binaryResp = (
-                    self._predict_probability_correct(xref, x1, x2)
-                )
+                Uref, U1, U2, signed_diff, pX2, binaryResp = self._predict_probability_correct(xref, x1, x2)
 
                 # Report back to AEPsych client
                 # 1: pick comp#2 as more different; 0: pick comp#1 as more different
@@ -1204,9 +1113,7 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
                     outcome=binaryResp,
                 )
 
-                self._update_trial_lists(
-                    xref, x1, x2, binaryResp, Uref, U1, U2, signed_diff, pX2
-                )
+                self._update_trial_lists(xref, x1, x2, binaryResp, Uref, U1, U2, signed_diff, pX2)
 
                 # calculate elapsed time
                 trial_duration = end_time - start_time

@@ -117,9 +117,7 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
         #
         # For the fixed Lab dimension, values are filled using the fixed value(s)
         # specified by `cfg` for that slice.
-        self.fitEll_unscaled_WPPM = np.full(
-            shape_base + (self.ndims_lab, self.params["nTheta"]), np.nan
-        )
+        self.fitEll_unscaled_WPPM = np.full(shape_base + (self.ndims_lab, self.params["nTheta"]), np.nan)
         self.fitEll_unscaled_CLab = np.full(self.fitEll_unscaled_WPPM.shape, np.nan)
 
         # Same ellipses, scaled for visualization only (e.g., clearer overlays).
@@ -128,12 +126,8 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
 
         # Threshold *points* (unscaled) sampled along directions before ellipse fit.
         # Shape matches ellipse arrays but stores raw contour samples.
-        self.Lab_thres_unscaled_WPPM = np.full(
-            shape_base + (self.ndims_lab, self.params["n_theta"]), np.nan
-        )
-        self.Lab_thres_unscaled_CLab = np.full(
-            self.Lab_thres_unscaled_WPPM.shape, np.nan
-        )
+        self.Lab_thres_unscaled_WPPM = np.full(shape_base + (self.ndims_lab, self.params["n_theta"]), np.nan)
+        self.Lab_thres_unscaled_CLab = np.full(self.Lab_thres_unscaled_WPPM.shape, np.nan)
 
         # Threshold points after applying the visualization scaler.
         self.Lab_thres_scaled_WPPM = np.full(self.Lab_thres_unscaled_WPPM.shape, np.nan)
@@ -264,18 +258,14 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
         # Broadcast directions across radii for vectorized ops
         #   vecDir_org:   (2, n_theta, ngrid_bruteforce)
         #   vecDir_trans: (ngrid_bruteforce, n_theta, 2)
-        vecDir_org = np.tile(
-            grid_chromdir[:, :, None], (1, 1, self.params["ngrid_bruteforce"])
-        )
+        vecDir_org = np.tile(grid_chromdir[:, :, None], (1, 1, self.params["ngrid_bruteforce"]))
         vecDir_trans = np.transpose(vecDir_org, [1, 2, 0])
 
         # Insert a zero component along the fixed dimension to lift (2D → 3D) in Lab
         # fill_zeros:      (ngrid_bruteforce, n_theta, 1)
         # vecDir_concat:   (ngrid_bruteforce, n_theta, 3)
         fill_zeros = np.full(vecDir_trans.shape[:2], 0)[:, :, None]
-        vecDir_concat = CLabTool.fill_in_vals(
-            self.cfg.fixed_dim, vecDir_trans, fill_zeros
-        )
+        vecDir_concat = CLabTool.fill_in_vals(self.cfg.fixed_dim, vecDir_trans, fill_zeros)
 
         # Collapse to a flat list of 3D direction vectors
         # Shape: (R, 3) where R = n_theta * ngrid_bruteforce
@@ -331,9 +321,7 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
         if M.ndim != 2:
             raise ValueError(f"M must be 2D (m, N). Got shape {M.shape}.")
         if not (0 <= idx <= M.shape[0]):
-            raise IndexError(
-                f"idx must be between 0 and {M.shape[0]} (inclusive). Got {idx}."
-            )
+            raise IndexError(f"idx must be between 0 and {M.shape[0]} (inclusive). Got {idx}.")
 
         # Create the fixed row
         F = np.full((1, M.shape[1]), fixed_val, dtype=M.dtype)
@@ -421,9 +409,7 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
 
         # If the best point is at the boundary, the search range is likely too tight.
         if min_idx in (0, self.params["ngrid_bruteforce"] - 1):
-            raise ValueError(
-                "Threshold hit the grid-search boundary. Consider expanding bds_bruteforce."
-            )
+            raise ValueError("Threshold hit the grid-search boundary. Consider expanding bds_bruteforce.")
 
         # Convert threshold candidate back to Lab
         w_comp_thres = w_comp_rep[min_idx]  # (3,)
@@ -436,9 +422,7 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
 
         return comp_thres_unscaled, comp_thres_scaled
 
-    def convert_Sig_2DisothresholdContour_oddity_inLab(
-        self, Lab_ref, CLabTool, ell_vis_scaler=1
-    ):
+    def convert_Sig_2DisothresholdContour_oddity_inLab(self, Lab_ref, CLabTool, ell_vis_scaler=1):
         """
         Compute the 2D isothreshold contour (oddity task) in a CIELAB slice around a
         single reference.
@@ -475,8 +459,8 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
             Lab_comp_rep         : (R, 3)         All comparison stimuli in Lab.
         """
         # Build dense comparison set around Lab_ref (vectorized over directions × radii)
-        w_ref, w_ref_rep, w_comp_rep, rgb_ref, rgb_comp_rep, Lab_comp_rep = (
-            self.setup_bruteforce_comp(Lab_ref, CLabTool)
+        w_ref, w_ref_rep, w_comp_rep, rgb_ref, rgb_comp_rep, Lab_comp_rep = self.setup_bruteforce_comp(
+            Lab_ref, CLabTool
         )
 
         # Model choice probability for oddity task: P(choose X1 as odd)
@@ -514,15 +498,11 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
 
         # Fit an ellipse to the threshold points in the slice.
         #   center = Lab_ref projected onto the same 2D slice
-        fitEll_scaled, fitEll_unscaled, ellParams, Lab_comp_thres_scaled = (
-            fit_2d_isothreshold_contour(
-                Lab_ref[vd],
-                Lab_comp_thres[
-                    vd
-                ],  # 2×n_theta threshold samples (naming kept for compatibility)
-                ellipse_scaler=ell_vis_scaler,
-                flag_force_centered_ref=True,
-            )
+        fitEll_scaled, fitEll_unscaled, ellParams, Lab_comp_thres_scaled = fit_2d_isothreshold_contour(
+            Lab_ref[vd],
+            Lab_comp_thres[vd],  # 2×n_theta threshold samples (naming kept for compatibility)
+            ellipse_scaler=ell_vis_scaler,
+            flag_force_centered_ref=True,
         )
 
         # insert the fixed dimension
@@ -645,18 +625,14 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
                     self.Lab_thres_unscaled_WPPM[i, j],
                     self.w_ref[i, j],
                     self.rgb_ref[i, j],
-                ) = self.convert_Sig_2DisothresholdContour_oddity_inLab(
-                    Lab_ref[i, j], CLabTool, ell_vis_scaler
-                )
+                ) = self.convert_Sig_2DisothresholdContour_oddity_inLab(Lab_ref[i, j], CLabTool, ell_vis_scaler)
 
                 # Optionally compute threshold along the fixed Lab dimension
                 if flag_compute_thres_fd:
                     (
                         self.Lab_thres_at_fd_unscaled_WPPM[i, j],
                         self.Lab_thres_at_fd_scaled_WPPM[i, j],
-                    ) = self.compute_thres_for_fixed_dim_inLab(
-                        Lab_ref[i, j], CLabTool, vis_scaler=ell_vis_scaler
-                    )
+                    ) = self.compute_thres_for_fixed_dim_inLab(Lab_ref[i, j], CLabTool, vis_scaler=ell_vis_scaler)
 
     def convert_Sig_2DisothresholdContour_oddity_batch_LabPred(
         self, Lab_ref, CLabTool, target_deltaE=2.5, coloralg="CIE1994", ell_vis_scaler=1
@@ -743,15 +719,9 @@ class wishart_model_pred_inCIELab(wishart_model_pred):
                 fd = self.cfg.fixed_dim.value
                 fv = Lab_ref_ij[fd].item()
 
-                self.fitEll_scaled_CLab[i, j] = self.fill_in_fixed_dim(
-                    fitEll_scaled_CLab_ij, fd, fv
-                )
-                self.fitEll_unscaled_CLab[i, j] = self.fill_in_fixed_dim(
-                    fitEll_unscaled_CLab_ij, fd, fv
-                )
-                self.Lab_thres_scaled_CLab[i, j] = self.fill_in_fixed_dim(
-                    Lab_thres_scaled_CLab_ij, fd, fv
-                )
+                self.fitEll_scaled_CLab[i, j] = self.fill_in_fixed_dim(fitEll_scaled_CLab_ij, fd, fv)
+                self.fitEll_unscaled_CLab[i, j] = self.fill_in_fixed_dim(fitEll_unscaled_CLab_ij, fd, fv)
+                self.Lab_thres_scaled_CLab[i, j] = self.fill_in_fixed_dim(Lab_thres_scaled_CLab_ij, fd, fv)
 
 
 # %%

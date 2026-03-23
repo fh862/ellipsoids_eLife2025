@@ -19,9 +19,7 @@ from analysis.utils_load import find_files_with_prefix
 
 # %%
 class TrialSequenceAnalyzer:
-    def __init__(
-        self, expt_file_info, interleaved_trial_sequence, nBlocks, nTrials_perBlock
-    ):
+    def __init__(self, expt_file_info, interleaved_trial_sequence, nBlocks, nTrials_perBlock):
         """
         Initializes the class with a given interleaved trial sequence.
 
@@ -40,12 +38,8 @@ class TrialSequenceAnalyzer:
         then computes the shift in trial positions.
         """
         # Retrieve indices for MOCS trials
-        self.indices_MOCS_initial = self.sim_sequence.indices_trial_type(
-            self.sim_sequence.original_sequence[0], "MOCS"
-        )
-        self.indices_MOCS_final = self.sim_sequence.indices_trial_type(
-            self.sim_sequence.final_sequence[0], "MOCS"
-        )
+        self.indices_MOCS_initial = self.sim_sequence.indices_trial_type(self.sim_sequence.original_sequence[0], "MOCS")
+        self.indices_MOCS_final = self.sim_sequence.indices_trial_type(self.sim_sequence.final_sequence[0], "MOCS")
 
         # Retrieve indices for AEPsych trials
         self.indices_AEPsych_initial = self.sim_sequence.indices_trial_type(
@@ -56,12 +50,8 @@ class TrialSequenceAnalyzer:
         )
 
         # Compute shift in trial positions
-        self.MOCS_indices_shift = np.array(self.indices_MOCS_initial) - np.array(
-            self.indices_MOCS_final
-        )
-        self.AEPsych_indices_shift = np.array(self.indices_AEPsych_initial) - np.array(
-            self.indices_AEPsych_final
-        )
+        self.MOCS_indices_shift = np.array(self.indices_MOCS_initial) - np.array(self.indices_MOCS_final)
+        self.AEPsych_indices_shift = np.array(self.indices_AEPsych_initial) - np.array(self.indices_AEPsych_final)
 
     def retrieve_list_trial_order(self, file_path):
         # Clean up the data
@@ -110,9 +100,7 @@ class TrialSequenceAnalyzer:
         # cast to float so we can pad with NaN
         trial_ids_pad, n_subplots = self._pad_trial_ids_to_full_panels(nTrials_perplot)
 
-        fig, axes = plt.subplots(
-            n_subplots, 1, figsize=(13, 1.7 * n_subplots + 1), dpi=1024
-        )
+        fig, axes = plt.subplots(n_subplots, 1, figsize=(13, 1.7 * n_subplots + 1), dpi=1024)
         if not isinstance(axes, np.ndarray):
             axes = np.array([axes])
 
@@ -120,9 +108,7 @@ class TrialSequenceAnalyzer:
 
         # Define discrete colormap for 0, 1, 2
         cmap_all = plt.get_cmap("Accent")  # the second arg forces N discrete colors
-        cmap = plt.matplotlib.colors.ListedColormap(
-            [cmap_all(0), cmap_all(7), cmap_all(3)]
-        )  # pick 3 discrete colors
+        cmap = plt.matplotlib.colors.ListedColormap([cmap_all(0), cmap_all(7), cmap_all(3)])  # pick 3 discrete colors
         bounds = np.arange(len(self.trial_types_dict.keys()) + 1) - 0.5
         norm = BoundaryNorm(bounds, cmap.N)
 
@@ -132,9 +118,7 @@ class TrialSequenceAnalyzer:
             ub = (n + 1) * nTrials_perplot
             chunk = trial_ids_pad[lb:ub].astype(float)  # cast so NaN is allowed
 
-            img = axes[n].imshow(
-                chunk[np.newaxis, :], cmap=cmap, norm=norm, aspect="auto"
-            )
+            img = axes[n].imshow(chunk[np.newaxis, :], cmap=cmap, norm=norm, aspect="auto")
             last_im = img
 
             axes[n].set_yticks([])
@@ -146,9 +130,7 @@ class TrialSequenceAnalyzer:
         # Horizontal colorbar spanning full figure width
         if last_im is not None:
             cbar_ax = fig.add_axes([0.1, 0.05, 0.8, 0.03])
-            cbar = fig.colorbar(
-                last_im, cax=cbar_ax, orientation="horizontal", ticks=[0, 1, 2]
-            )
+            cbar = fig.colorbar(last_im, cax=cbar_ax, orientation="horizontal", ticks=[0, 1, 2])
             cbar.ax.set_xticklabels(["AEPsych", "MOCS", "Sobol"])
             cbar.set_label("Trial Type")
 
@@ -180,9 +162,7 @@ class TrialSequenceAnalyzer:
             colorbar_label (str): Label for the colorbar.
         """
         # Create the figure and subplots
-        fig, axes = plt.subplots(
-            n_subplots, 1, figsize=(13, 1.7 * n_subplots), dpi=1024
-        )
+        fig, axes = plt.subplots(n_subplots, 1, figsize=(13, 1.7 * n_subplots), dpi=1024)
         plt.rcParams["font.sans-serif"] = ["Arial"]
 
         for n in range(n_subplots):
@@ -300,9 +280,7 @@ class TrialSequenceAnalyzer:
 
         # Create a GridSpec layout
         fig4 = plt.figure(figsize=(14, 4), dpi=1024)
-        gs = GridSpec(
-            2, 2, width_ratios=[12, 1], height_ratios=[1, 1], figure=fig4, wspace=0.1
-        )
+        gs = GridSpec(2, 2, width_ratios=[12, 1], height_ratios=[1, 1], figure=fig4, wspace=0.1)
 
         # Main heatmap axes
         ax_main1 = fig4.add_subplot(gs[0, 0])

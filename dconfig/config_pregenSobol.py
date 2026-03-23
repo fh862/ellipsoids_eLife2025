@@ -88,9 +88,7 @@ class PregenSobolConfig:
 
         # Validate catch trial configuration
         if self.flag_addCatchTrials and self.delta_catchTrials_unique is None:
-            raise ValueError(
-                "Catch trials enabled but delta_catchTrials_unique not provided"
-            )
+            raise ValueError("Catch trials enabled but delta_catchTrials_unique not provided")
 
     # --------------------------------------------------
     # factory constructors

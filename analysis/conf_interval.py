@@ -60,9 +60,7 @@ def find_inner_outer_contours_for_gridRefs(p_ell, nTheta=1000):
         # Handle missing values (NaNs) in ellipse parameters:
         # - Remove any bootstrap samples where the first parameter (center_x) is NaN
         # - This ensures only valid ellipses are used to compute confidence intervals
-        nan_rows = np.any(
-            np.isnan(params_ij), axis=1
-        )  # boolean mask of rows with at least 1 NaN
+        nan_rows = np.any(np.isnan(params_ij), axis=1)  # boolean mask of rows with at least 1 NaN
         params_ij_removeNaN = params_ij[~nan_rows]
 
         if params_ij.shape[0] != params_ij_removeNaN.shape[0]:
@@ -267,9 +265,7 @@ def find_inner_outer_contours_nonellipse(pts_list, central_fraction=0.95):
         valid_indices.append(i)
 
     if len(polys) < 2:
-        raise ValueError(
-            "After discarding degenerate contours, fewer than 2 valid contours remain."
-        )
+        raise ValueError("After discarding degenerate contours, fewer than 2 valid contours remain.")
 
     n = len(polys)
     poly_ref = polys[0]
@@ -309,9 +305,7 @@ def find_inner_outer_contours_nonellipse(pts_list, central_fraction=0.95):
     return np.array(xu), np.array(yu), np.array(xi), np.array(yi)
 
 
-def find_btst_dataset_within_CI(
-    metric_score, fitEll_btst, CI_percent=0.95, sort_order="descending"
-):
+def find_btst_dataset_within_CI(metric_score, fitEll_btst, CI_percent=0.95, sort_order="descending"):
     """
     Select bootstrap datasets whose metric scores fall within the specified
     confidence interval fraction.
