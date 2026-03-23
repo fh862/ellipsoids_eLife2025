@@ -20,6 +20,11 @@ dependencies = [
     "colour-science",
     "scikit-image",
     "shapely",
+    # JAX ecosystem — required by core/ modules
+    "optax",       # core/optim.py
+    "diffrax",     # core/geodesics.py
+    "optimistix",  # core/geodesics.py
+    "evosax",      # core/geodesics.py
 ]
 
 [project.optional-dependencies]
