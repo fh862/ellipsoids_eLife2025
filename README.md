@@ -93,9 +93,36 @@ from analysis.color_thres import color_thresholds
 
 ## AEPsych-dependent code
 
-The scripts under `aepsych/expt/` and `aepsych/sim/` require `aepsych==0.7.3`, which is not compatible with the JAX environment above.  A separate virtual environment and install procedure are needed for running or simulating experiments.
+The scripts under `aepsych/expt/` and `aepsych/sim/` require `aepsych==0.7.3`.  AEPsych pins `numpy<2.0`, which is incompatible with JAX 0.5+, so a **separate virtual environment** is needed.
 
-*(Setup instructions to be added.)*
+### 1. Create a new virtual environment (separate from the JAX one)
+
+```bash
+python -m venv .venv-aepsych
+source .venv-aepsych/bin/activate
+```
+
+### 2. Install AEPsych and compatible JAX
+
+```bash
+pip install -e ./aepsych
+```
+
+This installs `aepsych==0.7.3`, its dependencies (torch, botorch, numpy 1.x, …), and `jax<0.5` (the latest JAX compatible with numpy 1.x).  For NVIDIA GPU support replace the JAX install afterwards:
+
+```bash
+pip install "jax[cuda12]<0.5"
+```
+
+### 3. Make the analysis and plotting modules importable
+
+The `aepsych/` scripts import from `analysis.*`, `plotting.*`, etc.  Install the package source without reinstalling its JAX dependencies (which would conflict with numpy 1.x):
+
+```bash
+pip install --no-deps -e .
+```
+
+After this, `from analysis.color_thres import color_thresholds` and similar imports work in the AEPsych environment.  Features that require JAX (model fitting, certain statistics) are available via the `jax<0.5` install above.
 
 ---
 
