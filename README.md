@@ -126,6 +126,12 @@ After this, `from analysis.color_thres import color_thresholds` and similar impo
 
 ---
 
+## Note for conda users
+
+If you manage environments with conda, substitute `conda create` / `conda activate` for the `python -m venv` / `source .venv/bin/activate` steps above.  The `pip install` commands are identical once the environment is activated — conda environments and pip-installed packages coexist without conflict.
+
+---
+
 ## Pre-commit hooks
 
 This repository uses [pre-commit](https://pre-commit.com) for basic file hygiene.
