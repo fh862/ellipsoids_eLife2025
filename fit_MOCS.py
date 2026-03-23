@@ -94,7 +94,7 @@ if load_actualData:
 else:
     # === Scenario (2): Load 2D simulated data based on the Wishart model ===
     # 'ELPS_analysis/Simulation_DataFiles/MOCS/gt_CIE'
-    # 'Sim2dTask_colorDiscrimination_Isoluminant plane_MOCStrials_25refs_12levels_20trialsPerLevel_subCIE1994_Sobol_seed2000.pkl'
+    # 'Sim2dTask_colorDiscrimination_Isoluminant plane_MOCStrials_25refs_12levels_20trialsPerLevel_subCIE1994_Sobol_seed2000.pkl'  # noqa: E501
     fits_path, file_name_fits = select_file_and_get_path()
     MOCS_full_path = os.path.join(fits_path, file_name_fits)
     subN = file_name_fits.split("sub")[1].split("_Sobol")[0]  # CIE1994
@@ -231,7 +231,7 @@ for n in trange(nRefs):
 
     # find the vector length that corresponds to 66.7% correct response
     # either based on the Wishart model or Weibull psychometric functions
-    # NOTE: this is not the same as stimulus; we basically subtract the ref location from all the comp locations for this calculation
+    # NOTE: this is not the same as stimulus; we basically subtract the ref location from all the comp locations for this calculation  # noqa: E501
     vecLen_at_targetPC_Wishart[n] = fit_PMF_MOCS[n]._find_stim_at_targetPC(pChoosingX1_Wishart[n])
     vecLen_at_targetPC_MOCS_btst[n] = fit_PMF_MOCS[n].stim_at_targetPC_btst
 
@@ -375,7 +375,7 @@ vis_MOCS.plot_comparison_thres(
 # %% save data
 try:
     str_ext = file_name.split("sub{subN}")[1].split(".pkl")[0]
-except:
+except:  # noqa: E722
     str_ext = ""
 str_end = re.search(r"(decayRate.*)\.pkl", file_name).group(1)
 output_file = (

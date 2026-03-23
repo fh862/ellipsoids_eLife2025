@@ -170,7 +170,7 @@ subject_list = [1, 2, 4, 6, 7, 8, 10, 11]  # Only used if loading other subjects
 
 # Option 3 (simulated subject based on CIE1994):
 # 'META_analysis/ModelFitting_DataFiles/4dTask/CIE/sub1/decayRate0.4'
-# 'Fitted_byWishart_Isoluminant plane_4DExpt_300_300_300_5100_AEPsychSampling_EAVC_decayRate0.4_nBasisDeg5_sub1_btst_AEPsych[0].pkl'
+# 'Fitted_byWishart_Isoluminant plane_4DExpt_300_300_300_5100_AEPsychSampling_EAVC_decayRate0.4_nBasisDeg5_sub1_btst_AEPsych[0].pkl'  # noqa: E501
 
 # Option 4
 # 'ELPS_analysis/Experiment_DataFiles/4D_Expt_varyingBackground/sub12/fits'
@@ -364,7 +364,7 @@ if flag_load_gt:
     #
     # Example:
     #   'ELPS_analysis/ModelFitting_DataFiles/2D_oddity_task/Isoluminant plane'
-    #   'Fitted_isothreshold_Isoluminant plane_CIE1994_sim18000total_samplingNearContour_jitter0.3_seed0_bandwidth0.005_decay0.4_oddity.pkl'
+    #   'Fitted_isothreshold_Isoluminant plane_CIE1994_sim18000total_samplingNearContour_jitter0.3_seed0_bandwidth0.005_decay0.4_oddity.pkl'  # noqa: E501
     gt_fileDir_fits, gt_file_name = select_file_and_get_path()
     gt_full_path = os.path.join(gt_fileDir_fits, gt_file_name)
 
@@ -456,7 +456,7 @@ for idx in np.ndindex(grid.shape[:-1]):
             lbl = f"95% bootstrap CI ({nDatasets} datasets)"
     else:
         lbl = None
-    # adapting_bg_2DW = np.array([-0.218, 0.5461, 0.9652])  #np.array([-0.0021, 0.0023, 0.9652]) np.array([-0.218, 0.5461, 0.9652])
+    # adapting_bg_2DW = np.array([-0.218, 0.5461, 0.9652])  #np.array([-0.0021, 0.0023, 0.9652]) np.array([-0.218, 0.5461, 0.9652])  # noqa: E501
     # adapting_bg_rgb = color_thres_data.M_2DWToRGB @ adapting_bg_2DW
     # ax.scatter(*adapting_bg_2DW[:2], marker = '*', color = adapting_bg_rgb,
     #           edgecolor = 'k',lw = 0.2, s = 30,

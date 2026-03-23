@@ -140,7 +140,7 @@ _, _, _ = DataExport.export_weights_csv(W_org, "i,j,k,l", "W_org", out_path=path
 # SECTION 3: Load WPPM/Wishart fits for bootstrap datasets
 # -----------------------------------------------------------
 # ELPS_analysis/Experiment_DataFiles/pilot2/sub1/fits/AEPsych_btst/decayRate0.5'
-# e.g. 'Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_decayRate0.4_varScaler0.0003_nBasisDeg5_btst_AEPsych[0].pkl'
+# e.g. 'Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_decayRate0.4_varScaler0.0003_nBasisDeg5_btst_AEPsych[0].pkl'  # noqa: E501
 btst_fileDir_fits, btst_file_name = select_file_and_get_path()
 nBtst = 120
 
@@ -458,7 +458,7 @@ if flag_debug_plot:
     ]
 
     # Loop over the selected data points to generate and visualize each corresponding figure.
-    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
+    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):  # noqa: B905
         pltSettings_tp = replace(
             pltSettings_tp,
             ref_markeralpha=marker_alpha[i],

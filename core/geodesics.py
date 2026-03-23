@@ -83,7 +83,7 @@ def estimate_geodesic(P, x0, x1, key, dt0=0.1, num_restarts=10, tol=1e-3):
     ode_solver = Dopri5()
     optimizer = LevenbergMarquardt(tol * 0.1, tol * 0.1)
     resids = jax.jit(lambda v0, args: (x1 - exponential_map(x0, v0, term, ode_solver, dt0=dt0)).ravel())
-    z = (x1 - x0) / jnp.linalg.norm(x1 - x0)
+    z = (x1 - x0) / jnp.linalg.norm(x1 - x0)  # noqa: F841
     min_speed = jnp.inf
     best_v0 = None
     for k in tqdm(jax.random.split(key, num_restarts)):
@@ -152,7 +152,7 @@ def estimate_v0(
     emap = jax.vmap(shooting_geodesic, in_axes=(None, 0, None))
 
     # Run evolutionary strategy
-    for t in trange(num_generations):
+    for t in trange(num_generations):  # noqa: B007
         key, key_gen, key_eval = jax.random.split(key, 3)
         v0, state = strategy.ask(key_gen, state, es_params)
         x1e = emap(x0, v0, precision_field)[0][:, -1, :]

@@ -412,7 +412,7 @@ def slice_ellipsoid_byPlane(center, radii, eigenvectors, plane_v1, plane_v2, cov
 
     Returns:
     - sliced_ellipse: A numpy array of shape (3, 100) representing the 3D coordinates of the elliptical contour.
-    """
+    """  # noqa: E501
 
     # Normalize the input vectors that define the plane
     v1 = plane_v1 / np.linalg.norm(plane_v1)

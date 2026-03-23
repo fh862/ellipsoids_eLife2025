@@ -326,7 +326,7 @@ MOCS_x1_unshuffled = np.reshape(compStimulus, shape_flat)
 # Create a shuffled array for levels within each reference condition
 rng = np.random.default_rng(sobol_seed_success)  # Create a random number generator with a seed
 shuffled_list = []
-for n in range(nRefs):
+for n in range(nRefs):  # noqa: B007
     #  Create a 2D array of levels (nLevels x trials_per_level)
     shuffled_array_n = np.tile(np.arange(nLevels)[:, None], (1, trials_per_level))
 

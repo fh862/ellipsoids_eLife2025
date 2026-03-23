@@ -39,7 +39,7 @@ base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/ELPS_analysis
 # SECTION 1: load simulated data
 # --------------------------------------------------------------------------
 # Navigate to the directory: 'ELPS_analysis/Simulation_DataFiles/MOCS/gt_CIE/'
-#'Fitted_weibull_psychometric_func_Isoluminant plane_240totalTrials_25refs_MOCS_subCIE1994_decayRate0.4_varScaler0.0003_nBasisDeg5.pkl'
+#'Fitted_weibull_psychometric_func_Isoluminant plane_240totalTrials_25refs_MOCS_subCIE1994_decayRate0.4_varScaler0.0003_nBasisDeg5.pkl'  # noqa: E501
 input_fileDir_fits, file_name = select_file_and_get_path()
 
 # Construct the full path to the selected file

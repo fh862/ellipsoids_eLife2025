@@ -205,7 +205,7 @@ opt_params = {
     "learning_rate": 1e-4,  # Step size for gradient-based optimization
     "momentum": 0.2,  # Momentum factor for the optimizer
     "mc_samples": 2000,  # Number of Monte Carlo samples used to approximate the likelihood function
-    "bandwidth": 5e-3,  # Bandwidth used in the logistic density function (affects the smoothness of the likelihood surface)
+    "bandwidth": 5e-3,  # Bandwidth used in the logistic density function (affects the smoothness of the likelihood surface)  # noqa: E501
 }
 
 # Repeat optimization from multiple random initializations to reduce the risk of
@@ -303,7 +303,7 @@ for var_name in variable_names:
 
 # %% Start hyperparameter sweeps
 if flag_running_on_hpc:
-    for d, val in enumerate(hyper_param_arr):
+    for d, val in enumerate(hyper_param_arr):  # noqa: B007
         # Construct output filename based on number of folds and subject/session identifier
         output_file_d = (
             f"CrossValidation{total_folds}folds_{nRepeats}reptitions_"
@@ -354,7 +354,7 @@ if flag_running_on_hpc:
                         OPT_KEY,
                         copy.deepcopy(opt_params),
                         oddity_task.simulate_oddity,
-                        total_steps=1500,  # NOTE that we might have to increase this value for some hyperparameter values
+                        total_steps=1500,  # NOTE that we might have to increase this value for some hyperparameter values  # noqa: E501
                         save_every=1,
                         show_progress=True,
                     )
@@ -488,7 +488,7 @@ if flag_running_on_hpc:
 if not flag_running_on_hpc:
     # Prompt user to select a cross-validation results file.
     # Navigate to ELPS_analysis/Experiment_DataFiles/sub#/fits/sweep_variance_scale
-    # 'CrossValidation5folds_3reptitions_varyingVarianceScale0.000001_ColorDiscrimination_4dExpt_Isoluminant plane_sub8.pkl'
+    # 'CrossValidation5folds_3reptitions_varyingVarianceScale0.000001_ColorDiscrimination_4dExpt_Isoluminant plane_sub8.pkl'  # noqa: E501
     # or
     # ELPS_analysis/Experiment_DataFiles/sub#/fits/sweep_decay_rate
     # 'CrossValidation5folds_3reptitions_varyingDecayRate0.1500_ColorDiscrimination_4dExpt_Isoluminant plane_sub8.pkl'
@@ -538,7 +538,7 @@ if not flag_running_on_hpc:
                     nLP_training_allreps[i] = var_dfi["nPL_training_data"].item()
                     nLL_training_allreps[i] = var_dfi["nLL_training_data"].item()
                     nLL_test_allreps[i] = var_dfi["nLL_heldout_data"].item()
-                except:
+                except:  # noqa: E722
                     print("Not found.")
 
             # Use the repetition with the lowest nLP on training data
@@ -553,7 +553,7 @@ if not flag_running_on_hpc:
             var_dfi_min_nLP = vars_dict_set_d[f"{hyper_param}{val:.{decimals}f}_CVfold{f}_rep{idx_i + 1}"]
             # Extract ellipse parameters at each grid point
             for k in range(NUM_GRID_PTS):
-                for l in range(NUM_GRID_PTS):
+                for l in range(NUM_GRID_PTS):  # noqa: E741
                     # Format: (x0, y0, a, b, theta)
                     params_ell[d, f, k, l] = var_dfi["model_pred_Wishart"].params_ell[k][l]
 

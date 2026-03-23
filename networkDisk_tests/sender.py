@@ -35,7 +35,7 @@ try:
     path_metadata = os.path.join(path_sub, expt_info)
     # Load the existing state of the experiment file manager
     expt_file_manager = ExperimentFileManager.load_state(path_metadata)
-except:
+except:  # noqa: E722
     # If loading fails (e.g., file not found), initialize a new ExperimentFileManager
     expt_file_manager = ExperimentFileManager(subject_id, subject_init, networkDisk_path)
 # Create a new session file for the current session
@@ -69,7 +69,7 @@ if not flag_load_rgb:
     ref_rgb_values = np.random.rand(10, 3)  # Generate 10 random RGB values
     comp_rgb_values = np.random.rand(10, 3)
 else:
-    stim_at_thres_path = r"c:\Users\brainardlab\Aguirre-Brainard Lab Dropbox\Fangfang Hong\ELPS_analysis\Experiment_DataFiles\pilot2\sub1\fits\Stim_at_thres_for_image_generation_sub1.pkl"
+    stim_at_thres_path = r"c:\Users\brainardlab\Aguirre-Brainard Lab Dropbox\Fangfang Hong\ELPS_analysis\Experiment_DataFiles\pilot2\sub1\fits\Stim_at_thres_for_image_generation_sub1.pkl"  # noqa: E501
     # Load the dictionary from the pickle file
     with open(stim_at_thres_path, "rb") as f:
         stim_at_thres_dict = pickle.load(f)
@@ -79,7 +79,7 @@ else:
     trial_type_final = [f"MOCS_{i}" for i in range(1, ref_rgb_values.shape[0] + 1)]
 
 # run it
-for i, (trial, ref_rgb, comp_rgb) in enumerate(zip(trial_type_final, ref_rgb_values, comp_rgb_values), start=1):
+for i, (trial, ref_rgb, comp_rgb) in enumerate(zip(trial_type_final, ref_rgb_values, comp_rgb_values), start=1):  # noqa: B905
     print(f"Sending reference and comparison pair {i}...")
     communicator.send_RGBvals(trial, ref_rgb.tolist(), comp_rgb.tolist())
     print(f"RGB values {i} confirmed.")

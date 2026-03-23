@@ -128,7 +128,7 @@ pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=8)
 btst_seed = [None]  # + list(range(10))
 flag_btst = [False]  # + [True]*10
 
-for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
+for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):  # noqa: B905
     str_ext = dcfg.str_ext_s
     if flag_btst_AEPsych:
         str_ext += f"_btst_AEPsych[{ll}]"
@@ -168,7 +168,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
                 _,
                 _,
             ) = load_expt_data.org_MOCS_by_condition(xref_MOCS, x1_MOCS, y_MOCS)
-        except:
+        except:  # noqa: E722
             print("MOCS trials are not found in this dataset.")
 
         # Extract and concatenate AEPsych data across all sessions
@@ -243,7 +243,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
     ]
 
     # Loop over the selected data points to generate and visualize each corresponding figure.
-    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
+    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):  # noqa: B905
         # Construct a filename for each figure based on the plane and number of experiments.
         str_idx = f"{ub_i:05}total" if lb_i == 0 else f"{ub_i:05}total_from{lb_i:05}"
         fig_name = (

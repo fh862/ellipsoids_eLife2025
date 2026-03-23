@@ -76,7 +76,7 @@ class ModelPerformance:
         while the ground-truth ellipses/ellipsoids are in the N space [0,1].
         """
         try:
-            for l in range(self.nLevels):
+            for l in range(self.nLevels):  # noqa: E741
                 ellParams_l = ellParams_set[l]
                 for ii in range(self.nRefs):
                     if self.ndims == 2:
@@ -99,7 +99,7 @@ class ModelPerformance:
                         print(f"{ii}:")
                         print(f"Ground truths: {np.sort(radii_gt)}")
                         print(f"W Model preds: {np.sort(radii_ii)}")
-        except:
+        except:  # noqa: E722
             print(f"l: {l}; ii: {ii}")
             print("Cannot find ell parameters.")
 
@@ -206,7 +206,7 @@ class ModelPerformance:
         """
         BW_distance = np.full((self.nLevels,), np.nan)
         LU_distance = np.full((self.nLevels,), np.nan)
-        for l in range(self.nLevels):
+        for l in range(self.nLevels):  # noqa: E741
             BW_distance[l] = self.compute_Bures_Wasserstein_distance(covMat_gt, covMat_modelPred[l])
             LU_distance[l] = self.log_operator_norm_distance(covMat_gt, covMat_modelPred[l])
         return BW_distance, LU_distance
@@ -280,7 +280,7 @@ class ModelPerformance:
                 self.BW_distance[:, idx], self.LU_distance[:, idx] = self.compare_gt_model_pred_one_instance(
                     self.covMat_gt[idx], self.covMat_modelPred[:, idx]
                 )
-            except:
+            except:  # noqa: E722
                 print("Cannot find ellipse parameters for reference index", idx)
 
     def concatenate_benchamrks(self):

@@ -42,7 +42,7 @@ class SimThresCIELab:
     def __init__(
         self,
         background_rgb,
-        plane_2D_list=["GB plane", "RB plane", "RG plane"],
+        plane_2D_list=["GB plane", "RB plane", "RG plane"],  # noqa: B006
         file_date="02242025",
     ):
         """
@@ -66,7 +66,7 @@ class SimThresCIELab:
 
         # Note that if plane_2D_list is 'Isoluminant plane', some of the following methods are not applicable
         # come back to this class in the future and refine the code to be more generalizable
-        self.plane_2D_dict = dict(zip(self.plane_2D_list, list(range(self.nPlanes))))
+        self.plane_2D_dict = dict(zip(self.plane_2D_list, list(range(self.nPlanes))))  # noqa: B905
         if self.nPlanes == 3:
             self.varying_dims = [[1, 2], [0, 2], [0, 1]]
         elif self.nPlanes == 1:
@@ -327,7 +327,7 @@ class SimThresCIELab:
 
         # The lambda function computes the absolute difference between the
         # deltaE obtained from compute_deltaE function and the target deltaE.
-        deltaE_func = lambda d: abs(self.compute_deltaE(ref_RGB_test, vecDir_test, d, method=coloralg) - deltaE)
+        deltaE_func = lambda d: abs(self.compute_deltaE(ref_RGB_test, vecDir_test, d, method=coloralg) - deltaE)  # noqa: E731
 
         # Generate initial points for the optimization algorithm within the bounds.
         init = np.random.rand(N_opt) * (ub_opt - lb_opt) + lb_opt
@@ -428,10 +428,10 @@ class SimThresCIELab:
         self,
         fixedVal,
         fixedDim,
-        rgb_bds=[0, 1],
+        rgb_bds=[0, 1],  # noqa: B006
         num_dir_pts=360,
         bruteforce_scaler_bds=(1, 200),
-        vectors_centroid=np.array([0, 0]),
+        vectors_centroid=np.array([0, 0]),  # noqa: B008
         bruteforce_num_scalers=1000,
     ):
         """

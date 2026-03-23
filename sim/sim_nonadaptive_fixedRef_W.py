@@ -64,8 +64,8 @@ nSims = 200  # number of comparison samples per reference
 jitter = 0.3  # Gaussian noise level (scaled by ref→threshold distance in the sampler)
 
 # Select a pre-fit WPPM/Wishart model file:
-#   - 2D isoluminant-plane fit (4D experiment): 'Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_decayRate0.4_varScaler0.0003_nBasisDeg5.pkl'
-#   - 3D RGB-cube fit (6D experiment):          'Fitted_ColorDiscrimination_6dExpt_RGBcube_sub1_decayRate0.4_nBasisDeg5.pkl'
+#   - 2D isoluminant-plane fit (4D experiment): 'Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_decayRate0.4_varScaler0.0003_nBasisDeg5.pkl'  # noqa: E501
+#   - 3D RGB-cube fit (6D experiment):          'Fitted_ColorDiscrimination_6dExpt_RGBcube_sub1_decayRate0.4_nBasisDeg5.pkl'  # noqa: E501
 file_dir, file_name = select_file_and_get_path()
 subN = extract_sub_number(file_name)
 gt_file_path = os.path.join(file_dir, file_name)

@@ -52,7 +52,7 @@ base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
 
 def find_file_path(file_name, base_dir):
     """Recursively search for a file in base_dir and return its full path."""
-    for root, dirs, files in os.walk(base_dir):
+    for root, dirs, files in os.walk(base_dir):  # noqa: B007
         if file_name in files:
             return os.path.join(root, file_name)
     raise FileNotFoundError(f"Data files directory not found for file {file_name}.")

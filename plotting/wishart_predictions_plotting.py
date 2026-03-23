@@ -796,8 +796,8 @@ class WishartPredictionsVisualization(PlottingTools):
                 model_pred_cov_2d_slice = np.transpose(temp, (1, 0, 2, 3, 4, 5))
 
         NUM_GRID_PTS = grid_est.shape[0]
-        for k, fixedRGB_val_scaled_k in zip(list(range(NUM_GRID_PTS)), settings.fixedRGB_val_scaled):
-            for _idx, fixedPlane, _idx_varying, varyingPlanes in zip(
+        for k, fixedRGB_val_scaled_k in zip(list(range(NUM_GRID_PTS)), settings.fixedRGB_val_scaled):  # noqa: B905
+            for _idx, fixedPlane, _idx_varying, varyingPlanes in zip(  # noqa: B905
                 settings.dim_indices,
                 settings.dim_labels,
                 settings.orthogonal_pairs,
@@ -1115,7 +1115,7 @@ class WishartPredictionsVisualization(PlottingTools):
             CI_bounds_values = list(CI_bounds.values())
             # append
             CI_bounds_all.append(CI_bounds)
-            for c, alpha, k, (lb_idx, ub_idx) in zip(list(range(2)), [0.4, 0.2], key_list, CI_bounds_values):
+            for c, alpha, k, (lb_idx, ub_idx) in zip(list(range(2)), [0.4, 0.2], key_list, CI_bounds_values):  # noqa: B905
                 if settings.visualize_68CI_95CI[c]:
                     x_CI_lb = (Maha_data["M_D_sorted"][i][lb_idx],)
                     x_CI_ub = Maha_data["M_D_sorted"][i][ub_idx]
@@ -1228,7 +1228,7 @@ class WishartPredictionsVisualization(PlottingTools):
                 key_list = list(CI_bounds_all[i].keys())
                 CI_bounds_values = list(CI_bounds_all[i].values())
 
-                for c, alpha, k, (lb_idx, ub_idx) in zip(list(range(2)), [0.9, 0.9], key_list, CI_bounds_values):
+                for c, alpha, k, (lb_idx, ub_idx) in zip(list(range(2)), [0.9, 0.9], key_list, CI_bounds_values):  # noqa: B007, B905
                     if settings.visualize_68CI_95CI[c]:
                         x_CI_lb = Maha_data["M_D_sorted"][i][lb_idx]
                         x_CI_ub = Maha_data["M_D_sorted"][i][ub_idx]

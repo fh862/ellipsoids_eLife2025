@@ -97,7 +97,7 @@ try:
         _,
         _,
     ) = load_expt_data.org_MOCS_by_condition(xref_MOCS, x1_MOCS, y_MOCS)
-except:
+except:  # noqa: E722
     print("MOCS trials not found in this dataset.")
 
 # Concatenate AEPsych trials across sessions, and also load any pre-generated Sobol block
@@ -184,7 +184,7 @@ y_for_tests = [y_aeSobol, y_aeEAVC, y_pregenSobol]
 
 # Create one BinnedPC object per subset and run theta-binning
 binner_list = []
-for ii, (xref_ii, x1_ii, y_ii) in enumerate(zip(xref_for_tests, x1_for_tests, y_for_tests)):
+for ii, (xref_ii, x1_ii, y_ii) in enumerate(zip(xref_for_tests, x1_for_tests, y_for_tests)):  # noqa: B905
     # Some datasets may not include the pre-generated Sobol block; skip if missing
     if xref_ii is None:
         continue

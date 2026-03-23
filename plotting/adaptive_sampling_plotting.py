@@ -182,7 +182,7 @@ class SamplingRefCompPairVisualization(PlottingTools):
         )
 
         # Drawing lines connecting reference and comparison points.
-        for l in range(xref.shape[0]):
+        for l in range(xref.shape[0]):  # noqa: E741
             ax.plot(
                 [xref[l, 0], xcomp[l, 0]],
                 [xref[l, 1], xcomp[l, 1]],
@@ -270,7 +270,7 @@ class SamplingRefCompPairVisualization(PlottingTools):
         )
 
         # Optionally draw lines between reference and comparison points.
-        for l in range(xref.shape[0]):
+        for l in range(xref.shape[0]):  # noqa: E741
             ax.plot(
                 [xref[l, 0], xcomp[l, 0]],
                 [xref[l, 1], xcomp[l, 1]],

@@ -135,7 +135,7 @@ pltStimSettings = replace(PlotStimAtThresSettings(), **pltSettings_base.__dict__
 fig_name_part1 = ["MOCS_thres"] * nRefs + ["MOCS_catch"] * nRefs + ["Wishart_thres"] * nRefs
 fig_name_part2 = list(range(1, nRefs + 1)) * 3
 fig_name_supra = [f"supra_thres_{i}" for i in range(xref_supra.shape[0])] if flag_add_stim_supra else []
-fig_name = fig_name_supra + [f"{s1}_{s2}" for s1, s2 in zip(fig_name_part1, fig_name_part2)]
+fig_name = fig_name_supra + [f"{s1}_{s2}" for s1, s2 in zip(fig_name_part1, fig_name_part2)]  # noqa: B905
 
 # Plot each reference + target stimulus pair as a small figure
 for i in range(12):  # MOCS_xref_cat.shape[0]

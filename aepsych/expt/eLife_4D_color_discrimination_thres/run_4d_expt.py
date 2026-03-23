@@ -95,7 +95,7 @@ try:
 
     # Load the experiment state if the file exists
     expt_file_manager = ExperimentFileManager.load_state(path_metadata)
-except:
+except:  # noqa: E722
     # If no prior session exists, initialize a new experiment file manager
     expt_file_manager = ExperimentFileManager(subject_id, subject_init, networkDisk_path, is_practice=False)
 
@@ -213,7 +213,7 @@ strat_names = config_gen._string_to_list("common", "strategy_names")
 NTRIALS_STRAT = [300, 300, 300, 6600]
 
 # Update the configuration file with the specified number of trials per strategy.
-for strat_n, nT in zip(strat_names, NTRIALS_STRAT):
+for strat_n, nT in zip(strat_names, NTRIALS_STRAT):  # noqa: B905
     config_gen.modify_configurations(strat_n, "min_asks", str(nT))
 
 # Compute the total number of trials across all strategies.
@@ -401,7 +401,7 @@ data_vis_MOCS = expt_data(xref_MOCS, x1_MOCS, y_MOCS, None)
 
 # visualization class
 pltSettings_base = PlotSettingsBase(fig_dir=sims_path, fontsize=8)
-for str_vis, data_vis in zip(["AEPsych", "MOCS"], [data_vis_AEPsych, data_vis_MOCS]):
+for str_vis, data_vis in zip(["AEPsych", "MOCS"], [data_vis_AEPsych, data_vis_MOCS]):  # noqa: B905
     # Construct a filename for each figure based on the plane and number of experiments.
     fig_name = (
         f"Sims_isothreshold_{plane_2D}_{COLOR_DIMENSION}DExpt_"

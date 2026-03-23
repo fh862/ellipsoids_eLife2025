@@ -300,7 +300,7 @@ def covMat3D_to_2DsurfaceSlice(covMat):
         # [1,2]: GB plane with collapsed R
         # [0,2]: RB plane with collapsed G
         # [0,1]: RG plane with collapsed B
-        for _idx, _idx_varying in zip([0, 1, 2], [[1, 2], [0, 2], [0, 1]]):
+        for _idx, _idx_varying in zip([0, 1, 2], [[1, 2], [0, 2], [0, 1]]):  # noqa: B905
             idx = np.array(_idx_varying)
             # Invert the 3D covariance matrix to get the precision matrix
             precision_matrix = np.linalg.inv(covMat[*ijk])

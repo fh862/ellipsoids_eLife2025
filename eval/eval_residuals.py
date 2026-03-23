@@ -60,7 +60,7 @@ nRefs = 25  # Number of reference stimuli per subject
 
 # OR
 #'ELPS_analysis/Simulation_DataFiles/MOCS/gt_CIE'
-#'Fitted_weibull_psychometric_func_Isoluminant plane_240totalTrials_25refs_MOCS_subCIE1994_decayRate0.4_varScaler0.0003_nBasisDeg5.pkl'
+#'Fitted_weibull_psychometric_func_Isoluminant plane_240totalTrials_25refs_MOCS_subCIE1994_decayRate0.4_varScaler0.0003_nBasisDeg5.pkl'  # noqa: E501
 input_fileDir_fits_others, file_name_others = select_file_and_get_path()
 
 # Initialize storage arrays for extracted values

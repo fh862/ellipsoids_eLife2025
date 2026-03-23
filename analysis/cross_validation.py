@@ -179,7 +179,7 @@ class CrossValidation:
 
         data_org["lb_idx"] = row_lb_list
         data_org["ub_idx"] = row_ub_list
-        data_org["heldout_nTrials"] = [ub - lb for ub, lb in zip(row_ub_list, row_lb_list)]
+        data_org["heldout_nTrials"] = [ub - lb for ub, lb in zip(row_ub_list, row_lb_list)]  # noqa: B905
         data_org["keep_nTrials"] = [nTrials_total - m for m in data_org["heldout_nTrials"]]
 
         for n in range(total_folds):
@@ -448,7 +448,7 @@ class TrialDistribution:
         data_trunc_list = []
 
         # Truncate each dataset according to the number of trials specified
-        for d, n in zip(data_list, nTrials_includsion_list):
+        for d, n in zip(data_list, nTrials_includsion_list):  # noqa: B905
             d_y, d_xref, d_x1 = d
             data_trunc_list.append((d_y[:n], d_xref[:n], d_x1[:n]))
 
@@ -477,11 +477,11 @@ class TrialDistribution:
         grid_w = len(model.params_ell[0])
         params_ell_grid = np.zeros((grid_h, grid_w, 5))
         for k in range(grid_h):
-            for l in range(grid_w):
+            for l in range(grid_w):  # noqa: E741
                 params_ell_grid[k, l] = model.params_ell[k][l]
         return params_ell_grid
 
-    def load_trial_efficiency_results(flag_btst=[False], btst_seed=[None]):
+    def load_trial_efficiency_results(flag_btst=[False], btst_seed=[None]):  # noqa: B006
         """
         Loads performance and model prediction results across multiple bootstrap seeds and trial counts.
 
@@ -528,8 +528,8 @@ class TrialDistribution:
             print("Included trial numbers:", nTrials_inclusion)
 
             # Sort paths and trial counts together
-            sorted_pairs = sorted(zip(nTrials_inclusion, full_path_set))
-            nTrials_inclusion, sorted_paths = zip(*sorted_pairs)
+            sorted_pairs = sorted(zip(nTrials_inclusion, full_path_set))  # noqa: B905
+            nTrials_inclusion, sorted_paths = zip(*sorted_pairs)  # noqa: B905
             nSets = len(sorted_paths)
             nSeeds = len(flag_btst)
 
@@ -542,11 +542,11 @@ class TrialDistribution:
             )
             vars_dict_all_list = []
 
-            for idx, path in enumerate(sorted_paths):
+            for idx, path in enumerate(sorted_paths):  # noqa: B007
                 model_pred_idx_list, BWD_sum_seed_list, BWD_seed_list = [], [], []
                 vars_dict_list = []
 
-                for flag_btst_AEPsych, seed in zip(flag_btst, btst_seed):
+                for flag_btst_AEPsych, seed in zip(flag_btst, btst_seed):  # noqa: B905
                     str_ext = f"_btst_AEPsych[{seed}]" if flag_btst_AEPsych else ""
                     full_path = f"{path[:-4]}{str_ext}.pkl"
 
@@ -562,7 +562,7 @@ class TrialDistribution:
                     model_pred_idx_list.append(model_pred_idx)
 
                     # Infer grid size and extract ellipse parameters
-                    params_ell_grid = TrialDistribution.extract_params_ell_grid(model_pred_idx)
+                    params_ell_grid = TrialDistribution.extract_params_ell_grid(model_pred_idx)  # noqa: F841
 
                 BWD_sum_all_list.append(BWD_sum_seed_list)
                 BWD_all_list.append(BWD_seed_list)
@@ -572,7 +572,7 @@ class TrialDistribution:
             # Convert to arrays
             BWD_sum_all = np.array(BWD_sum_all_list)  # (nSets, nSeeds)
             BWD_all = np.array(BWD_all_list)  # (nSets, nSeeds, grid, grid)
-            params_ell = np.array(params_ell_list)  # (nSets, nSeeds, grid, grid, 5)
+            params_ell = np.array(params_ell_list)  # (nSets, nSeeds, grid, grid, 5)  # noqa: F841
 
             # Post-processing
             BWD_sum_all_org = BWD_sum_all[:, 0]

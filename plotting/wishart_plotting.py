@@ -162,7 +162,7 @@ class PlottingTools:
         full_path = os.path.join(self.st.fig_dir, fig_name)
         fig.savefig(full_path, dpi=self.st.dpi, bbox_inches=bbox_inches, pad_inches=pad_inches)
 
-    def _update_axes_limits(self, ax, lim=[-1, 1], ndims=2):
+    def _update_axes_limits(self, ax, lim=[-1, 1], ndims=2):  # noqa: B006
         """
         Sets uniform limits for axes of a plot, extending to 3D if applicable.
 
@@ -635,7 +635,7 @@ class WishartModelBasicsVisualization(PlottingTools):
         nbins = M.shape[0]  # Number of bins (slices) in the third dimension.
         ndim1 = M.shape[-2]
         ndim2 = M.shape[-1]
-        for l in range(nbins):
+        for l in range(nbins):  # noqa: E741
             # Create a new figure with 3D subplots for each time point.
             fig, ax = plt.subplots(
                 ndim1,
@@ -668,7 +668,7 @@ class WishartModelBasicsVisualization(PlottingTools):
                 self._save_figure(fig, f"{settings.fig_name}_slice{l:02}")
 
     # %%
-    def plot_W_selected_slice(self, W, settings: PlotWSettings, basis_orders=None, slc_slice=[0]):
+    def plot_W_selected_slice(self, W, settings: PlotWSettings, basis_orders=None, slc_slice=[0]):  # noqa: B006
         """
         Plots selected slices of the weight matrix for 2D or 3D Chebyshev polynomial basis functions.
 
@@ -692,7 +692,7 @@ class WishartModelBasicsVisualization(PlottingTools):
         slc_slice : list of int, optional
             Indices specifying the slice of the last two dimensions of W to be visualized. Defaults to [0].
 
-        """
+        """  # noqa: E501
         cmap_bds = settings.cmap_bds if settings.cmap_bds else self._configure_colormap(W)
 
         degree = W.shape[0]

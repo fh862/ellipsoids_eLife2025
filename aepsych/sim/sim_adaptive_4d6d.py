@@ -144,11 +144,11 @@ print(ub_all)
 NTRIALS_STRAT = [300, 300, 300, 1100]  # [1500, 1500, 1500, 25500]
 
 # Update the minimum number of trials for each strategy
-for strat_n, nT in zip(strat_names, NTRIALS_STRAT):
+for strat_n, nT in zip(strat_names, NTRIALS_STRAT):  # noqa: B905
     config_gen.modify_configurations(strat_n, "min_asks", str(nT))
 
 # Map strategy names to their corresponding number of trials
-strat_dict = dict(zip(strat_names, NTRIALS_STRAT))
+strat_dict = dict(zip(strat_names, NTRIALS_STRAT))  # noqa: B905
 
 # Total number of trials across all strategies
 NTRIALS = np.sum(np.array(NTRIALS_STRAT))
@@ -220,7 +220,7 @@ slc_datapoints_to_show_lb = np.concatenate(([0], np.cumsum(NTRIALS_STRAT)[:-1]))
 slc_datapoints_to_show_ub = np.cumsum(NTRIALS_STRAT)
 
 # Loop over the selected data points to generate and visualize each corresponding figure.
-for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
+for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):  # noqa: B905
     # Construct a filename indicating the total number of trials shown
     # and, if applicable, the starting index of the block
     str_trial_idx = f"{ub_i:05}total" if lb_i == 0 else f"{ub_i:05}total_from{lb_i:05}"

@@ -324,7 +324,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
         if bg is not None and room is not None:
             self.communicator.change_background(bg, room)
 
-    def run_experiment_wMOCSinserted(self, client, trial_sequence, max_wait_time=[2.9, 4.1]):
+    def run_experiment_wMOCSinserted(self, client, trial_sequence, max_wait_time=[2.9, 4.1]):  # noqa: B006
         """
         This method can be used to run or simulates color-discrimination responses
             using AEPsych.
@@ -468,7 +468,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
 
                     # Report the result back to AEPsych
                     client.tell(
-                        config=dict(zip(self.parnames, trial_val_report)),
+                        config=dict(zip(self.parnames, trial_val_report)),  # noqa: B905
                         outcome=binaryResp,
                     )
 

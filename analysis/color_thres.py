@@ -85,8 +85,8 @@ class ModelFitFilenames:
     base_2d_filename: str = (
         "Fitted_isothreshold_{plane}_sim240perCond_samplingNearContour_jitter0.1_seed0_bandwidth0.005_oddity.pkl"
     )
-    isoluminant_filename: str = "Fitted_isothreshold_Isoluminant plane{cie}_sim18000total_samplingNearContour_jitter0.3_seed0_bandwidth0.005_decay0.4_oddity.pkl"
-    ellipsoid_3d_filename: str = "Fitted_isothreshold_ellipsoids_sim240perCond_samplingNearContour_jitter0.3_seed0{cie}_bandwidth0.005_oddity.pkl"
+    isoluminant_filename: str = "Fitted_isothreshold_Isoluminant plane{cie}_sim18000total_samplingNearContour_jitter0.3_seed0_bandwidth0.005_decay0.4_oddity.pkl"  # noqa: E501
+    ellipsoid_3d_filename: str = "Fitted_isothreshold_ellipsoids_sim240perCond_samplingNearContour_jitter0.3_seed0{cie}_bandwidth0.005_oddity.pkl"  # noqa: E501
 
     @staticmethod
     def get_filename(
@@ -199,7 +199,7 @@ class color_thresholds:
         """
         Searches for the exact path of a specified file within the base directory.
         """
-        for root, dirs, files in os.walk(self.base_path):
+        for root, dirs, files in os.walk(self.base_path):  # noqa: B007
             if file_name in files:
                 return os.path.join(root, file_name)
         raise FileNotFoundError(f"Data files directory not found for file {file_name}.")
@@ -445,7 +445,7 @@ class color_thresholds:
                 f"rgb_to_2DW: homogeneous coordinate deviates from 1 by up to {max_dev:.3g} "
                 f"(tol={tol}). Example indices: {bad[:5].tolist()}."
             )
-            warnings.warn(msg, RuntimeWarning)
+            warnings.warn(msg, RuntimeWarning)  # noqa: B028
 
         return W[:, :2] if return_2DW else W
 
@@ -506,10 +506,10 @@ class color_thresholds:
         if max_violation > tol:
             bad = np.where((rgb < -tol) | (rgb > 1.0 + tol))
             nbad = bad[0].size
-            warnings.warn(
+            warnings.warn(  # noqa: B028
                 f"W2D_to_rgb: out-of-gamut RGB values detected (min={rgb_min:.4g}, max={rgb_max:.4g}, tol={tol}). "
                 f"{nbad} entries exceed [0,1] by more than tol. Clipping to [0,1]. "
-                f"Example indices (row, channel): {list(zip(bad[0][:5].tolist(), bad[1][:5].tolist()))}.",
+                f"Example indices (row, channel): {list(zip(bad[0][:5].tolist(), bad[1][:5].tolist()))}.",  # noqa: B905
                 RuntimeWarning,
             )
 

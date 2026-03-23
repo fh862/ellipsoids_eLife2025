@@ -63,7 +63,7 @@ class StimConfig_isoluminant:
     M_2DWToRGB: np.ndarray = field(default_factory=lambda: np.eye(3))
 
 
-StimConfig = Union[StimConfig_RGBslices, StimConfig_isoluminant]
+StimConfig = Union[StimConfig_RGBslices, StimConfig_isoluminant]  # noqa: UP007
 
 
 @dataclass
@@ -103,7 +103,7 @@ class StimConfig_isoluminant_sobolref:
     M_2DWToRGB: np.ndarray = field(default_factory=lambda: np.eye(3))
 
 
-StimConfig_sobolref = Union[StimConfig_RGBslices_sobolref, StimConfig_isoluminant_sobolref]
+StimConfig_sobolref = Union[StimConfig_RGBslices_sobolref, StimConfig_isoluminant_sobolref]  # noqa: UP007
 
 
 @dataclass

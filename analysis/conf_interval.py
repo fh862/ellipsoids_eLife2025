@@ -91,7 +91,7 @@ def find_inner_outer_contours_for_gridRefs(p_ell, nTheta=1000):
     return ell_min, ell_max
 
 
-def find_distance_to_ellipse_boundary_for_gridRef(p_ell, chromDir, bds_idx=[0, -1]):
+def find_distance_to_ellipse_boundary_for_gridRef(p_ell, chromDir, bds_idx=[0, -1]):  # noqa: B006
     """
     Computes the bootstrapped confidence intervals on threshold distances
     along a given chromatic direction for each grid point.

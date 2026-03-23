@@ -128,7 +128,7 @@ class ConfigGenerator:
         Raises:
             FileNotFoundError: If the file is not found within the directory.
         """
-        for root, dirs, files in os.walk(self.base_path):
+        for root, dirs, files in os.walk(self.base_path):  # noqa: B007
             if self.load_file_name in files:
                 return os.path.join(root, self.load_file_name)
         raise FileNotFoundError(f"File {self.load_file_name} not found in directory {self.base_path}.")
@@ -154,7 +154,7 @@ class ConfigGenerator:
 
         Returns:
             list: The list obtained from the config string.
-        """
+        """  # noqa: E501
         param_str = self.config_parser.get(section, field)
         # remove surrrounding square brakets and split the string in to a list
         param_split = param_str.strip("[]").split(",")

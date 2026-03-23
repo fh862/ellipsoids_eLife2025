@@ -15,7 +15,7 @@ class ExperimentTrialSequence:
         nTrials_AEPsych,
         pregenerated_MOCS=None,
         nBlocks=1,
-        break_trials=[],
+        break_trials=[],  # noqa: B006
         pregenerated_Sobol=None,
     ):
         """
@@ -259,7 +259,7 @@ class ExperimentTrialSequence:
 
             # Initialize a randomized list to store trial assignments
             list_randomized = []
-            for n in range(self.nBlocks):
+            for n in range(self.nBlocks):  # noqa: B007
                 # Ensure AEPsych and MOCS trials are evenly split across blocks
                 temp_list = [0] * self.nTrials_AEPsych_perBlock + [1] * self.nTrials_MOCS_perBlock
                 rng.shuffle(temp_list)  # Shuffle the trial assignments within the block
@@ -509,7 +509,7 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
             U2 (float, optional): Utility value for the comparison stimulus (simulation only).
             signed_diff (float, optional): Signed difference between stimuli (simulation only).
             pX2 (float, optional): Probability of identifying the comp#2 as more different from the reference (simulation only).
-        """
+        """  # noqa: E501
         # Choose key type depending on whether there are multiple experiments
         if getattr(self, "nExpt", 1) == 1:
             key = trial_idx
@@ -567,7 +567,7 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
 
             # Initialize a randomized list to store trial assignments
             list_randomized = []
-            for n in range(self.nBlocks):
+            for n in range(self.nBlocks):  # noqa: B007
                 # Ensure AEPsych and MOCS trials are evenly split across blocks
                 temp_list = [0] * self.nTrials_AEPsych_perBlock + [1] * self.nTrials_MOCS_perBlock
                 rng.shuffle(temp_list)  # Shuffle the trial assignments within the block

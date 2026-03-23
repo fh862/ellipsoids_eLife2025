@@ -196,7 +196,7 @@ class SimulateTrialGivenWishart:
                     # If there are more trials than scalers, extend val_scaler with 1s
                     self.val_scaler = val_scaler + [1] * len_diff
                     # Use warnings.warn to issue a warning
-                    warnings.warn(
+                    warnings.warn(  # noqa: B028
                         f"The number of val scalers ({len(val_scaler)}) is less"
                         + " than the expected number ({len(self.nTrials_cumsum)})."
                     )
@@ -204,7 +204,7 @@ class SimulateTrialGivenWishart:
                 else:
                     # If there are fewer trials than scalers, truncate val_scaler
                     self.val_scaler = val_scaler[: len(self.nTrials_cumsum)]
-                    warnings.warn(
+                    warnings.warn(  # noqa: B028
                         f"The number of val scalers ({len(val_scaler)}) is greater"
                         + " than the expected number ({len(self.nTrials_cumsum)})."
                     )
@@ -567,7 +567,7 @@ class SimulateTrialGivenWishart:
 
                 # Report back to AEPsych client
                 client.tell(
-                    config=dict(zip(self.parnames, trial_val_report)),
+                    config=dict(zip(self.parnames, trial_val_report)),  # noqa: B905
                     outcome=binaryResp,
                 )
 
@@ -673,7 +673,7 @@ class SimulateTrialGivenWishart:
 
         # %%
 
-    def run_simulation_wMOCSinserted(self, client, trial_sequence, max_wait_time=[2.4, 3.6]):
+    def run_simulation_wMOCSinserted(self, client, trial_sequence, max_wait_time=[2.4, 3.6]):  # noqa: B006
         """
         Simulates color-discrimination responses using AEPsych and ground truth data.
         Ground truth can be based on Wishart fits to pilot data or CIELAB thresholds.
@@ -767,7 +767,7 @@ class SimulateTrialGivenWishart:
 
                     # Report the result back to AEPsych
                     client.tell(
-                        config=dict(zip(self.parnames, trial_val_report)),
+                        config=dict(zip(self.parnames, trial_val_report)),  # noqa: B905
                         outcome=binaryResp,
                     )
 
@@ -1109,7 +1109,7 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
                 # Report back to AEPsych client
                 # 1: pick comp#2 as more different; 0: pick comp#1 as more different
                 client.tell(
-                    config=dict(zip(self.parnames, trial_val_report)),
+                    config=dict(zip(self.parnames, trial_val_report)),  # noqa: B905
                     outcome=binaryResp,
                 )
 

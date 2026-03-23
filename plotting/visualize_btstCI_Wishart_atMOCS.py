@@ -218,7 +218,7 @@ else:
 
 # OR
 #'META_analysis/ModelFitting_DataFiles/4dTask/CIE/sub1/decayRate0.4'
-#'Fitted_byWishart_Isoluminant plane_4DExpt_300_300_300_5100_AEPsychSampling_EAVC_decayRate0.4_nBasisDeg5_sub1_btst_AEPsych[0].pkl'
+#'Fitted_byWishart_Isoluminant plane_4DExpt_300_300_300_5100_AEPsychSampling_EAVC_decayRate0.4_nBasisDeg5_sub1_btst_AEPsych[0].pkl'  # noqa: E501
 
 input_fileDir_fits_btst = os.path.join(input_fileDir_fits, "AEPsych_btst", f"decayRate{decay_rate}")
 file_name_btst = f"{file_name[:-4]}_btst_AEPsych[0].pkl"

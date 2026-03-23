@@ -167,7 +167,7 @@ if flag_running_on_hpc:
     )
 
     # set path
-    for flag_btst, btst_seed in zip(flag_btst_list, btst_seed_list):
+    for flag_btst, btst_seed in zip(flag_btst_list, btst_seed_list):  # noqa: B905
         str_ext = f"_btst_AEPsych[{btst_seed}]" if flag_btst else ""
         output_file = (
             f"Fitted_{session_file_name_part1}_decayRate{model.decay_rate}" + f"_nBasisDeg{model.degree}{str_ext}.pkl"
@@ -461,7 +461,7 @@ if not flag_running_on_hpc and not flag_btst:
     ]
 
     # Loop over the selected data points to generate and visualize each corresponding figure.
-    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
+    for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):  # noqa: B905
         # Construct a filename for each figure based on the plane and number of experiments.
         str_idx = f"{ub_i:05}total" if lb_i == 0 else f"{ub_i:05}total_from{lb_i:05}"
         fig_name = f"TrialPlacement_isothreshold_{psyfield_dims}DExpt_{str_idx}_sub{subN}"

@@ -291,7 +291,7 @@ class fit_PMF_MOCS_trials:
         bestfit_result = None
 
         # Perform multiple random initializations
-        for n in range(self.nInitializations):
+        for n in range(self.nInitializations):  # noqa: B007
             # Draw random initialization within the specified bounds
             initial_params_n = [
                 np.random.uniform(*self.bounds[0]),
@@ -625,7 +625,7 @@ class fit_PMF_MOCS_trials:
         return modelp.mahalanobis_distances
 
     # %% Geodesic-distance specific methods
-    def set_geodesic_params(self, num_gen=30, pop_size=50, key=jax.random.PRNGKey(1), tol=1e-4):
+    def set_geodesic_params(self, num_gen=30, pop_size=50, key=jax.random.PRNGKey(1), tol=1e-4):  # noqa: B008
         """
         Set parameters for geodesic distance calculations.
 
@@ -757,7 +757,7 @@ class fit_PMF_MOCS_trials:
         # Sample indices within each block, with replacement
         indices_parts = [
             rng.integers(start, end, size=count)
-            for start, end, count in zip(cumsum_starts, cumsum_ends, nTrials_perStim)
+            for start, end, count in zip(cumsum_starts, cumsum_ends, nTrials_perStim)  # noqa: B905
         ]
         return np.concatenate(indices_parts)
 
@@ -1043,7 +1043,7 @@ class sim_MOCS_trials:
         stacked_grids = []
 
         # Generate grids for each boundary and corresponding number of points
-        for bd, num_pts in zip(bds, num_grid_pts):
+        for bd, num_pts in zip(bds, num_grid_pts):  # noqa: B905
             # Generate a list of linspace arrays for each dimension
             linspaces = [np.linspace(-bd, bd, num_pts) for _ in range(ndims)]
             grid = np.stack(np.meshgrid(*linspaces, indexing="ij"), axis=-1)  # 'ij' ensures correct order in any dim

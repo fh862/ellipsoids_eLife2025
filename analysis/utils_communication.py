@@ -213,7 +213,7 @@ class ExperimentFileManager:
         pattern = re.compile(rf"sub{self.subject_id}_{self.subject_init}_session1.*\.txt$")
 
         # Walk through all files in self.path_sub and its subdirectories
-        for root, _, files in os.walk(self.path_sub):
+        for root, _, files in os.walk(self.path_sub):  # noqa: B007
             for filename in files:
                 print(f"Checking file: {filename}")  # Debugging line
                 if pattern_practice.match(filename) or pattern.match(filename):
@@ -426,7 +426,7 @@ class ExperimentFileManager:
         self,
         file_name,
         sim_interleaved_trial_sequence,
-        column_widths=[24, 30, 30, 30, 20, 20],
+        column_widths=[24, 30, 30, 30, 20, 20],  # noqa: B006
         shuffled_order=None,
     ):
         """
@@ -572,7 +572,7 @@ class CommunicateViaTextFile:
             except OSError:
                 # Check if timeout has been exceeded
                 if time.time() - start_time > self.timeout:
-                    raise TimeoutError(f"Timeout: Unable to write to file within {self.timeout} seconds.")
+                    raise TimeoutError(f"Timeout: Unable to write to file within {self.timeout} seconds.")  # noqa: B904
 
                 # Pause before retrying
                 time.sleep(self.retry_delay)
@@ -602,7 +602,7 @@ class CommunicateViaTextFile:
             except OSError:
                 # Check if timeout has been exceeded
                 if time.time() - start_time > self.timeout:
-                    raise TimeoutError(f"Timeout: Unable to read file within {self.timeout} seconds.")
+                    raise TimeoutError(f"Timeout: Unable to read file within {self.timeout} seconds.")  # noqa: B904
 
                 # Pause before retrying
                 time.sleep(self.retry_delay)
@@ -635,7 +635,7 @@ class CommunicateViaTextFile:
             # If the file is empty, return False and an empty string
             return False, ""
         except OSError:
-            raise OSError("Failed to open file for reading.")
+            raise OSError("Failed to open file for reading.")  # noqa: B904
 
     def check_last_word_in_file(self, word, last_word=None):
         """
@@ -678,7 +678,7 @@ class CommunicateViaTextFile:
             # Return as a NumPy array
             return np.array([r_value, g_value, b_value])
         except Exception as e:
-            raise ValueError(f"Failed to extract RGB values from input: {input_string}. Error: {e}")
+            raise ValueError(f"Failed to extract RGB values from input: {input_string}. Error: {e}")  # noqa: B904
 
     def initialize_communication(self):
         """
@@ -823,7 +823,7 @@ class CommunicateViaTextFile:
             # Check if the substring starts with 'Resp'
             if not resp_str.startswith("Resp"):
                 raise ValueError(
-                    "The substring at the specified index does not contain the 'Resp' keyword. Please verify the input string and index."
+                    "The substring at the specified index does not contain the 'Resp' keyword. Please verify the input string and index."  # noqa: E501
                 )
 
             # Extract the last character of the 'Resp' substring and convert it to an integer
@@ -835,7 +835,7 @@ class CommunicateViaTextFile:
 
             return resp
         except Exception as e:
-            raise ValueError(f"Failed to extract the response from input: {input_string}. Error: {e}")
+            raise ValueError(f"Failed to extract the response from input: {input_string}. Error: {e}")  # noqa: B904
 
     # %% The following methods are used by the recipient system, which is written in C#.
     # These Python methods are solely for testing purposes to verify proper functionality
@@ -1161,4 +1161,4 @@ class CommunicateViaTextFile:
                 return trial_type, ref_rgb, comp_rgb
 
         except Exception as e:
-            raise ValueError(f"Failed to extract data from input: {input_string}. Error: {e}")
+            raise ValueError(f"Failed to extract data from input: {input_string}. Error: {e}")  # noqa: B904

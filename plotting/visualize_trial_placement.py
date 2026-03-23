@@ -61,7 +61,7 @@ Case 3: META_analysis/ModelFitting_DataFiles/4dTask/CIE/sub#/decayRate0.5
 
 Case 4: ELPS_analysis/Simulation_DataFiles/Isoluminant plane/MOCS/gt_CIE
     'Sim2dTask_colorDiscrimination_Isoluminant plane_MOCStrials_25refs_12levels_20trialsPerLevel_subCIE1994_Sobol_seed2000.pkl'
-"""
+"""  # noqa: E501
 input_fileDir_fits, file_name = select_file_and_get_path()
 
 # Construct the full path to the selected file
@@ -92,7 +92,7 @@ if flag_load_MOCS:
         nUnique_cond = vars_dict["nRefs"] * vars_dict["nLevels"]
         xref = vars_dict["MOCS_xref_shuffled"][:nUnique_cond]
         x1 = vars_dict["MOCS_x1_shuffled"][:nUnique_cond]
-    except:  # experimental data
+    except:  # experimental data  # noqa: E722
         subN = extract_sub_number(file_name)
         # take the first 12 unique levels
         xref_temp = [
@@ -106,7 +106,7 @@ else:
     try:  # experimental data
         expt_trial = vars_dict["expt_trial"]
         NTRIALS_STRAT = [300, 300, 300, 5100]  # vars_dict['NTRIALS_STRAT']
-    except:  # simulated data
+    except:  # simulated data  # noqa: E722
         expt_trial = vars_dict["AEPsych_trial_given_Wishart_gt"]
         strat_dict = vars_dict["strat_dict"]
         NTRIALS_STRAT = list(vars_dict["strat_dict"].values())
@@ -143,7 +143,7 @@ else:
     str_ext = ""
 
 # Loop over the selected data points to generate and visualize each corresponding figure.
-for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):
+for i, (lb_i, ub_i) in enumerate(zip(slc_datapoints_to_show_lb, slc_datapoints_to_show_ub)):  # noqa: B905
     # Construct a filename for each figure based on the plane and number of experiments.
     str_idx = f"{ub_i:05}total" if lb_i == 0 else f"{ub_i:05}total_from{lb_i:05}"
     fig_name = f"TrialPlacement{str_ext}_isothreshold_Isoluminant plane_{COLOR_DIMENSION}DExpt_{str_idx}_sub{subN}"

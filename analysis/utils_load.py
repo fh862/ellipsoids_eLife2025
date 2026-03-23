@@ -271,7 +271,7 @@ class load_expt_data:
 
         return xref_MOCS_list, x1_MOCS_list, y_MOCS_list, xref_MOCS, x1_MOCS, y_MOCS
 
-    def org_MOCS_by_condition(xref_MOCS, x1_MOCS, y_MOCS, leave_out_conditions=[]):
+    def org_MOCS_by_condition(xref_MOCS, x1_MOCS, y_MOCS, leave_out_conditions=[]):  # noqa: B006
         """
         Organize MOCS data by unique reference stimulus conditions.
 
@@ -509,7 +509,7 @@ class load_expt_data:
                 [xref_combined, x1_combined, y_combined],
             )
 
-        except:
+        except:  # noqa: E722
             print("No pre-generated Sobol trials found for this participant.")
 
             # Return AEPsych data only
@@ -530,7 +530,7 @@ class load_expt_data:
                 [xref_AEPsych, x1_AEPsych, y_AEPsych],
             )
 
-    def bootstrap_AEPsych_data(xref, x1, y, trials_split=[900], seed=None):
+    def bootstrap_AEPsych_data(xref, x1, y, trials_split=[900], seed=None):  # noqa: B006
         """
         Bootstraps AEPsych trials by splitting the data into chunks defined by `trials_split`,
         then resampling each chunk with replacement independently.
@@ -628,7 +628,7 @@ class load_expt_data:
         y_AEPsych_list = []  # List of response arrays per session
 
         # Iterate through all sessions
-        for idx, d in enumerate(data_allSessions):
+        for idx, d in enumerate(data_allSessions):  # noqa: B007
             # Extract the trial sequence array for the session
             sequence_array = d["sim_interleaved_trial_sequence"].final_sequence[0]
 
@@ -786,7 +786,7 @@ class load_util_files:
         ellipses_fine = np.full((n_ellipses, 2, num_ell_pts), np.nan)
 
         # Generate finely sampled points on each ellipse
-        for idx, (a, b, theta, xc, yc) in enumerate(zip(semi_major, semi_minor, angles_deg, xc_array, yc_array)):
+        for idx, (a, b, theta, xc, yc) in enumerate(zip(semi_major, semi_minor, angles_deg, xc_array, yc_array)):  # noqa: B905
             x_fine, y_fine = PointsOnEllipseQ(a, b, theta, xc, yc, nTheta=num_ell_pts)
             ellipses_fine[idx] = np.stack((x_fine, y_fine))
 

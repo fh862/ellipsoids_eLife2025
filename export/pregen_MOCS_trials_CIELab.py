@@ -397,7 +397,7 @@ MOCS_x1_unshuffled = np.reshape(compStimulus, (nRefs * nLevels * trials_per_leve
 # Create a shuffled array for levels within each reference condition
 rng = np.random.default_rng(sobol_seed)  # Create a random number generator with a seed
 shuffled_list = []
-for n in range(nRefs):
+for n in range(nRefs):  # noqa: B007
     #  Create a 2D array of levels (nLevels x trials_per_level)
     shuffled_array_n = np.tile(np.arange(nLevels).reshape(nLevels, 1), (1, trials_per_level))
     # Shuffle each column independently using rng.permutation()
@@ -534,7 +534,7 @@ else:
 output_file = (
     f"Sim{stim_dims}dTask_colorDiscrimination_{ttl}_MOCStrials_"
     + f"{nRefs}refs_{nLevels}levels_{trials_per_level}trialsPerLevel_"
-    + f"{str_extension}_{method_ref_generation}{str_ext}_seed{sobol_seed}.pkl"
+    + f"{str_extension}_{method_ref_generation}{str_ext}_seed{sobol_seed}.pkl"  # noqa: F821
 )
 full_path2 = os.path.join(output_fileDir, output_file)
 

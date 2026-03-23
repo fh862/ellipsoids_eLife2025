@@ -207,7 +207,7 @@ class TrialSequenceAnalyzer:
         # Show the figure
         plt.show()
 
-        if (save_fig == True) and (output_figDir is not None):
+        if (save_fig == True) and (output_figDir is not None):  # noqa: E712
             # Save figure
             fig.savefig(
                 output_figDir
@@ -331,7 +331,7 @@ class TrialSequenceAnalyzer:
         plt.tight_layout()
         plt.show()
 
-        if (save_fig == True) and (output_figDir is not None):
+        if (save_fig == True) and (output_figDir is not None):  # noqa: E712
             # Save figure
             fig4.savefig(
                 output_figDir

@@ -660,7 +660,7 @@ def rerun_model_pred_wExisting_model(
     model_pred,
     color_thres_data,
     ngrid_bruteforce=1000,
-    bds_bruteforce=[0.0005, 0.25],
+    bds_bruteforce=[0.0005, 0.25],  # noqa: B006
 ):
     """
     Recomputes model predictions on a new grid using an existing Wishart model
