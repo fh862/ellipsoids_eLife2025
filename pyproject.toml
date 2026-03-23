@@ -30,6 +30,23 @@ dependencies = [
 [project.optional-dependencies]
 dev = ["pre-commit"]
 
+[tool.ruff]
+line-length = 88
+target-version = "py312"
+
+[tool.ruff.lint]
+select = [
+    "E",   # pycodestyle errors
+    "F",   # pyflakes (undefined names, unused imports)
+    "I",   # isort
+    "UP",  # pyupgrade
+    "B",   # flake8-bugbear
+]
+ignore = [
+    "E402",  # module-level import not at top — common in research scripts that
+             # manipulate sys.path before importing project modules
+]
+
 # ---------------------------------------------------------------------------
 # Packaging — expose every functional subdirectory as an importable package
 # so that 'pip install -e .' makes 'from core import ...' etc. work anywhere.

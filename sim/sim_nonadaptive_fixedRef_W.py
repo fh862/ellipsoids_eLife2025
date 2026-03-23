@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Mon Dec 16 13:27:53 2024
 
@@ -31,32 +30,38 @@ sample reference locations using Sobol sequences, see
 
 """
 
-import sys
-import numpy as np
-import dill as pickled
 import os
+import sys
 from dataclasses import replace
-import matplotlib.pyplot as plt
-#import functions from the other script
-sys.path.append("/Users/fangfang/Documents/MATLAB/projects/ellipsoids/ellipsoids")
-from analysis.trial_placement import TrialPlacement_gridRef_W, StimConfig_W
-from analysis.ellipses_tools import UnitCircleGenerate, PointsOnEllipseQ
-from analysis.utils_load import select_file_and_get_path, extract_sub_number
-from plotting.wishart_plotting import PlotSettingsBase
-from plotting.adaptive_sampling_plotting import SamplingRefCompPairVisualization, \
-    Plot2DSamplingSettings
-from plotting.adaptive_sampling_plotting import Plot3DSamplingHTMLSettings,\
-    SamplingRefCompPairVisualization_html
-from plotting.trial_placement_nonadaptive_plotting import TrialPlacementVisualization,\
-        PlotTransformationSettings
 
-#%% 
+import dill as pickled
+import matplotlib.pyplot as plt
+import numpy as np
+
+# import functions from the other script
+sys.path.append("/Users/fangfang/Documents/MATLAB/projects/ellipsoids/ellipsoids")
+from analysis.ellipses_tools import PointsOnEllipseQ, UnitCircleGenerate
+from analysis.trial_placement import StimConfig_W, TrialPlacement_gridRef_W
+from analysis.utils_load import extract_sub_number, select_file_and_get_path
+from plotting.adaptive_sampling_plotting import (
+    Plot2DSamplingSettings,
+    Plot3DSamplingHTMLSettings,
+    SamplingRefCompPairVisualization,
+    SamplingRefCompPairVisualization_html,
+)
+from plotting.trial_placement_nonadaptive_plotting import (
+    PlotTransformationSettings,
+    TrialPlacementVisualization,
+)
+from plotting.wishart_plotting import PlotSettingsBase
+
+# %%
 # -----------------------------------------------------------
 # Set up stimulus configuration and run simulations
 # -----------------------------------------------------------
-rnd_seed = 0   # Reproducibility + sampling settings
-nSims = 200    # number of comparison samples per reference
-jitter = 0.3   # Gaussian noise level (scaled by ref→threshold distance in the sampler)
+rnd_seed = 0  # Reproducibility + sampling settings
+nSims = 200  # number of comparison samples per reference
+jitter = 0.3  # Gaussian noise level (scaled by ref→threshold distance in the sampler)
 
 # Select a pre-fit WPPM/Wishart model file:
 #   - 2D isoluminant-plane fit (4D experiment): 'Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_decayRate0.4_varScaler0.0003_nBasisDeg5.pkl'
@@ -70,23 +75,26 @@ with open(gt_file_path, "rb") as f:
     gt_Wishart = pickled.load(f)
 
 color_thres_data = gt_Wishart["color_thres_data"]
-ndims = color_thres_data.color_dimension                 # 2 for isoluminant; 3 for RGB cube
-num_grid_pts = gt_Wishart["model_pred_Wishart"].num_grid_pts1  # grid resolution per axis
+ndims = color_thres_data.color_dimension  # 2 for isoluminant; 3 for RGB cube
+num_grid_pts = gt_Wishart[
+    "model_pred_Wishart"
+].num_grid_pts1  # grid resolution per axis
 
 # Build a simulation config:
 #   - 3D: no plane slicing (fixed_plane="")
 #   - 2D: isoluminant plane (fixed_plane="lum")
-stim_config = StimConfig_W(fixed_plane="" if ndims == 3 else "lum",
-                           random_seed=rnd_seed,
-                           nSims=nSims,
-                           random_jitter=jitter,
-                           num_grid_pts=num_grid_pts,
-                           )
+stim_config = StimConfig_W(
+    fixed_plane="" if ndims == 3 else "lum",
+    random_seed=rnd_seed,
+    nSims=nSims,
+    random_jitter=jitter,
+    num_grid_pts=num_grid_pts,
+)
 
-# Initialize the trial-placement simulator 
+# Initialize the trial-placement simulator
 sim_trial = TrialPlacement_gridRef_W(gt_Wishart, stim_config)
 
-# Run simulation 
+# Run simulation
 sim_trial.run_sim()
 
 # varying dimensions (2D: [0, 1]; 3D: [0, 1, 2])
@@ -100,7 +108,9 @@ vd = stim_config.varying_color_dim
 # After reorg:
 #   xref_raw: (..., nSims, ndims)
 #   x1_raw:   (..., nSims, ndims)
-xref_raw = np.moveaxis(np.repeat(sim_trial.sim["ref_points"][..., None], nSims, axis=-1), -1, -2)[..., vd]
+xref_raw = np.moveaxis(
+    np.repeat(sim_trial.sim["ref_points"][..., None], nSims, axis=-1), -1, -2
+)[..., vd]
 x1_raw = np.moveaxis(sim_trial.sim["comp"], -1, -2)[..., vd]
 
 # Flatten the data:
@@ -110,89 +120,97 @@ xref = xref_raw.reshape(-1, ndims)
 x1 = x1_raw.reshape(-1, ndims)
 y = sim_trial.sim["resp_binary"].reshape(-1)
 
-#%% 
+# %%
 # -----------------------------------------------------------
 # Visualize trial placement
 # -----------------------------------------------------------
-base_dir = '/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/ELPS_analysis/'
-output_figDir = os.path.join(base_dir, 'Simulation_FigFiles',f'{ndims}D', f'gt_W_sub{subN}')
-output_fileDir = os.path.join(base_dir, 'Simulation_DataFiles',f'{ndims}D', f'gt_W_sub{subN}')
+base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/ELPS_analysis/"
+output_figDir = os.path.join(
+    base_dir, "Simulation_FigFiles", f"{ndims}D", f"gt_W_sub{subN}"
+)
+output_fileDir = os.path.join(
+    base_dir, "Simulation_DataFiles", f"{ndims}D", f"gt_W_sub{subN}"
+)
 os.makedirs(output_figDir, exist_ok=True)
 os.makedirs(output_fileDir, exist_ok=True)
-pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize = 8)
+pltSettings_base = PlotSettingsBase(fig_dir=output_figDir, fontsize=8)
 
-#figure name
-str_optional = (color_thres_data.plane_2D.replace(" ", "_") + '_') if ndims == 2 else ''
-figname = f"SimTrialData_nonadaptive_{ndims}DExpt_{str_optional}"+\
-    f"{nSims}perRef_jitter{jitter}_seed{rnd_seed}"
-    
+# figure name
+str_optional = (color_thres_data.plane_2D.replace(" ", "_") + "_") if ndims == 2 else ""
+figname = (
+    f"SimTrialData_nonadaptive_{ndims}DExpt_{str_optional}"
+    + f"{nSims}perRef_jitter{jitter}_seed{rnd_seed}"
+)
+
 pltSettings_tp = replace(Plot2DSamplingSettings(), **pltSettings_base.__dict__)
-if ndims == 2:    
-    pltSettings_tp = replace(pltSettings_tp,
-                             ref_markersize = 1,
-                             bounds = [-0.7, 0.7],
-                             comp_markeralpha = 0.2,
-                             linealpha = 0.2,
-                             ticks = np.linspace(-0.7, 0.7, 5),
-                             flag_rescale_axes_label = False,
-                             fig_name = f"{figname}.pdf"
-                             )
-    
-    sampling_vis = SamplingRefCompPairVisualization(ndims,
-                                                    color_thres_data,
-                                                    settings = pltSettings_tp,
-                                                    save_fig = False
-                                                    )
-    sampling_vis.plot_sampling(xref, x1, settings = pltSettings_tp)     
+if ndims == 2:
+    pltSettings_tp = replace(
+        pltSettings_tp,
+        ref_markersize=1,
+        bounds=[-0.7, 0.7],
+        comp_markeralpha=0.2,
+        linealpha=0.2,
+        ticks=np.linspace(-0.7, 0.7, 5),
+        flag_rescale_axes_label=False,
+        fig_name=f"{figname}.pdf",
+    )
+
+    sampling_vis = SamplingRefCompPairVisualization(
+        ndims, color_thres_data, settings=pltSettings_tp, save_fig=False
+    )
+    sampling_vis.plot_sampling(xref, x1, settings=pltSettings_tp)
     plt.show()
 else:
-    #html
-    plt3Dhtml_settings= Plot3DSamplingHTMLSettings()
-    plt3Dhtml_settings = replace(plt3Dhtml_settings, font_size = 12)
+    # html
+    plt3Dhtml_settings = Plot3DSamplingHTMLSettings()
+    plt3Dhtml_settings = replace(plt3Dhtml_settings, font_size=12)
     vis_sample_html = SamplingRefCompPairVisualization_html(settings=plt3Dhtml_settings)
     fig = vis_sample_html.plot_sampling(xref, x1)
     out_html = os.path.join(output_figDir, f"{figname}.html")
     fig.write_html(out_html, include_plotlyjs=True)
-    
-    #pdf
-    pltSettings_tp = replace(pltSettings_tp, 
-                             fontsize = 10,
-                             fig_size = (5.5,6),
-                             linealpha = 0.2,  # Line transparency for this subset of data
-                             bounds = 0.75 *np.array([-1,1]),
-                             flag_rescale_axes_label = False,
-                             ticks = np.linspace(-0.7,0.7,5),
-                             comp_markeralpha = 0.2, # Marker transparency for this subset of data
-                             fig_name = f"{figname}.pdf"
-                             )
-    #create a figure
-    fig = plt.figure(figsize = pltSettings_tp.fig_size, dpi= pltSettings_tp.dpi)
-    ax = fig.add_subplot(111, projection='3d')
-    sampling_vis = SamplingRefCompPairVisualization(ndims,
-                                                    color_thres_data,
-                                                    settings = pltSettings_tp,
-                                                    save_fig = True)
-    
+
+    # pdf
+    pltSettings_tp = replace(
+        pltSettings_tp,
+        fontsize=10,
+        fig_size=(5.5, 6),
+        linealpha=0.2,  # Line transparency for this subset of data
+        bounds=0.75 * np.array([-1, 1]),
+        flag_rescale_axes_label=False,
+        ticks=np.linspace(-0.7, 0.7, 5),
+        comp_markeralpha=0.2,  # Marker transparency for this subset of data
+        fig_name=f"{figname}.pdf",
+    )
+    # create a figure
+    fig = plt.figure(figsize=pltSettings_tp.fig_size, dpi=pltSettings_tp.dpi)
+    ax = fig.add_subplot(111, projection="3d")
+    sampling_vis = SamplingRefCompPairVisualization(
+        ndims, color_thres_data, settings=pltSettings_tp, save_fig=True
+    )
+
     # Visualize the trials up to the nth data point with specified marker transparency.
-    sampling_vis.plot_sampling(xref, x1, ax = ax, settings = pltSettings_tp) 
-    
-#%%
+    sampling_vis.plot_sampling(xref, x1, ax=ax, settings=pltSettings_tp)
+
+# %%
 # -----------------------------------------------------------
 # Visualizes the sampling procesure step by step
 # -----------------------------------------------------------
 if ndims == 2:
-    #% If the sampling method is 'NearContour', visualize the entire transformation process
+    # % If the sampling method is 'NearContour', visualize the entire transformation process
     # Select a reference stimulus location (e.g., row 4, column 4)
     row_eg = 3
     col_eg = 3
     # Retrieve parameters for the ellipsoid at the selected location
     ellPara_eg = sim_trial.gt_ellParams[row_eg][col_eg]
     # Extract the reference RGB values at the selected location
-    rgb_ref_eg = sim_trial.sim['ref_points'][row_eg, col_eg] #sim_trial.config.varying_RGBplane
+    rgb_ref_eg = sim_trial.sim["ref_points"][
+        row_eg, col_eg
+    ]  # sim_trial.config.varying_RGBplane
     # Retrieve the ground truth ellipses during the transformation process
-    rgb_comp_eg, rgb_comp_eg_1stepback, rgb_comp_eg_2stepback, rgb_comp_eg_3stepback =\
-        sim_trial.sample_comp_2DNearContour(rgb_ref_eg, ellPara_eg) 
-        
+    rgb_comp_eg, rgb_comp_eg_1stepback, rgb_comp_eg_2stepback, rgb_comp_eg_3stepback = (
+        sim_trial.sample_comp_2DNearContour(rgb_ref_eg, ellPara_eg)
+    )
+
     # Compute the ground truth for each step of the transformation process
     nTheta = 200
     # initial form: unit circle
@@ -200,37 +218,40 @@ if ndims == 2:
     # ground truth of the 2nd form: still a unit circle
     gt_comp_eg_2stepback = gt_comp_eg_3stepback
     # ground truth of the 3rd form: stretched
-    gt_comp_eg_1stepback = PointsOnEllipseQ(ellPara_eg[2], ellPara_eg[3],  0, 0, 0)
+    gt_comp_eg_1stepback = PointsOnEllipseQ(ellPara_eg[2], ellPara_eg[3], 0, 0, 0)
     # ground truth of the 4th form: rotated and relocated
-    gt_comp_eg = PointsOnEllipseQ(ellPara_eg[2], ellPara_eg[3], ellPara_eg[4], ellPara_eg[0], ellPara_eg[1])
-        
-    #plot the transformation
-    pltSettings_ts = replace(PlotTransformationSettings(), **pltSettings_base.__dict__)
-    pltSettings_ts = replace(pltSettings_ts, 
-                             alpha = 0.9,
-                             colorcode_resp = True
-                             )
-    #first visualize the Weibull psychometric functions
-    sim_vis = TrialPlacementVisualization(sim_trial, 
-                                          settings = pltSettings_base,
-                                          save_fig = True
-                                          )
-    sim_vis.plot_transformation(rgb_comp_eg_3stepback, 
-                                rgb_comp_eg_2stepback, 
-                                rgb_comp_eg_1stepback,
-                                rgb_comp_eg[sim_trial.config.varying_color_dim],
-                                resp = sim_trial.sim['resp_binary'][row_eg, col_eg],
-                                gt = [gt_comp_eg_3stepback, gt_comp_eg_2stepback,
-                                      gt_comp_eg_1stepback, gt_comp_eg],
-                                settings = pltSettings_ts
-                                )
+    gt_comp_eg = PointsOnEllipseQ(
+        ellPara_eg[2], ellPara_eg[3], ellPara_eg[4], ellPara_eg[0], ellPara_eg[1]
+    )
 
-#%% 
+    # plot the transformation
+    pltSettings_ts = replace(PlotTransformationSettings(), **pltSettings_base.__dict__)
+    pltSettings_ts = replace(pltSettings_ts, alpha=0.9, colorcode_resp=True)
+    # first visualize the Weibull psychometric functions
+    sim_vis = TrialPlacementVisualization(
+        sim_trial, settings=pltSettings_base, save_fig=True
+    )
+    sim_vis.plot_transformation(
+        rgb_comp_eg_3stepback,
+        rgb_comp_eg_2stepback,
+        rgb_comp_eg_1stepback,
+        rgb_comp_eg[sim_trial.config.varying_color_dim],
+        resp=sim_trial.sim["resp_binary"][row_eg, col_eg],
+        gt=[
+            gt_comp_eg_3stepback,
+            gt_comp_eg_2stepback,
+            gt_comp_eg_1stepback,
+            gt_comp_eg,
+        ],
+        settings=pltSettings_ts,
+    )
+
+# %%
 # -----------------------------------------------------------
 # Save data
 # -----------------------------------------------------------
 output_path = os.path.join(output_fileDir, f"{figname}.pkl")
-variable_names = ['gt_file_path','sim_trial','color_thres_data','xref', 'x1', 'y']
+variable_names = ["gt_file_path", "sim_trial", "color_thres_data", "xref", "x1", "y"]
 vars_dict = {}
 for var_name in variable_names:
     try:
@@ -242,8 +263,5 @@ for var_name in variable_names:
         print(f"Variable '{var_name}' does not exist. Assigned as None.")
 
 # Write the list of dictionaries to a file using pickle
-with open(output_path, 'wb') as f:
+with open(output_path, "wb") as f:
     pickled.dump(vars_dict, f)
-
-
-        

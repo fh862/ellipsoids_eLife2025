@@ -1,11 +1,10 @@
 import jax
 import jax.numpy as jnp
-from . import wishart_process
 
 
 def estimate_loglikelihood(
-        W, model, data, key, num_samples, bandwidth, simulation_func
-    ):
+    W, model, data, key, num_samples, bandwidth, simulation_func
+):
     """
     Parameters
     ----------
@@ -43,11 +42,11 @@ def estimate_loglikelihood(
         of the likelihood. Note that as bandwidth goes to
         zero the function will not be differentiable with
         respect to `W` (which is bad!).
-    
+
     simulation_func: function
-        Use 'simulate_oddity_reference' for oddity tasks where the reference 
+        Use 'simulate_oddity_reference' for oddity tasks where the reference
             is fixed.
-        Use 'simulate_oddity' when the reference and the other two probe 
+        Use 'simulate_oddity' when the reference and the other two probe
             stimuli are shuffled.
 
     Returns
@@ -56,7 +55,7 @@ def estimate_loglikelihood(
         Log likelihood of W given data (y, xref, x0, and x1).
         Averaged across trials.
     """
-    
+
     # Unpack data.
     y, mref, mprobe = data
 
@@ -68,21 +67,19 @@ def estimate_loglikelihood(
     prob_correct = oddity_prediction(
         (mref, mprobe, Uref, Uprobe),
         jax.random.split(key, num=len(y)),
-        num_samples, bandwidth, model.diag_term,
-        simulation_func
+        num_samples,
+        bandwidth,
+        model.diag_term,
+        simulation_func,
     )
     prob_correct = jnp.clip(prob_correct, 0.001, 0.999)
 
     # Evaluate log likelihood of predictions given
     # true responses y.
-    return jnp.mean(
-        y * jnp.log(prob_correct) + (1 - y) * jnp.log(1-prob_correct)
-    )
+    return jnp.mean(y * jnp.log(prob_correct) + (1 - y) * jnp.log(1 - prob_correct))
 
 
-def oddity_prediction(
-        params, key, num_samples, bandwidth, diag_term, simulation_func
-    ):
+def oddity_prediction(params, key, num_samples, bandwidth, diag_term, simulation_func):
     """
     Parameters
     ----------
@@ -91,33 +88,34 @@ def oddity_prediction(
 
     key : jax.random.PRNGKey
         Seed for the random number generator.
-    
+
     num_samples : int
         How many samples to use to approximate the probability
-    
+
     bandwidth : float
         Smoothing parameter. Warning - as this goes to zero the function becomes
         nondifferentiable with respect to `params`.
-        
+
     simulation_func: function
-        Use 'simulate_oddity_reference' for oddity tasks where the reference 
+        Use 'simulate_oddity_reference' for oddity tasks where the reference
             is fixed.
-        Use 'simulate_oddity' when the reference and the other two probe 
+        Use 'simulate_oddity' when the reference and the other two probe
             stimuli are shuffled.
-    
+
     Returns
     -------
     prob_correct : float
         The probability of the subject making a correct response.
     """
-    
+
     # Simulate outcomes with the current choice of parameters. Outcomes are
     # are negative when the subject chooses probe stimulus as the odd one out
     outcomes = simulation_func(params, key, num_samples, diag_term)
 
     # Evaluate the cumulative density function at zero, which gives
-    # the probability of making a correct choice. 
+    # the probability of making a correct choice.
     return approx_cdf(0.0, outcomes, bandwidth)
+
 
 def simulate_oddity_one_trial(params, key, num_samples, diag_term):
     """
@@ -126,10 +124,10 @@ def simulate_oddity_one_trial(params, key, num_samples, diag_term):
     Returns
     -------
     result : float
-        A positive number indicates an incorrect trial, dist(z0, z1) 
+        A positive number indicates an incorrect trial, dist(z0, z1)
         is larger than at least one of dist(z0, z2) and dist(z1, z2).
         A negative number indicates a correct trial, dist(z0, z1)
-        is the smallest distance, meaning that z2 is correctly 
+        is the smallest distance, meaning that z2 is correctly
         identified as the odd-one-out.
     """
 
@@ -178,6 +176,7 @@ def simulate_oddity_one_trial(params, key, num_samples, diag_term):
     # Return signed difference.
     return z0_to_z1 - jnp.minimum(z0_to_z2, z1_to_z2)
 
+
 def simulate_oddity_suprathres_one_trial(params, key, num_samples, diag_term):
     """
     Simulate oddity task for the supra-threshold expt
@@ -215,7 +214,7 @@ def simulate_oddity_suprathres_one_trial(params, key, num_samples, diag_term):
     S2 = Uprobe2 @ Uprobe2.T + jnp.diag(jnp.full(ndims_cov, diag_term))
 
     # Average covariances
-    Sbar = (S0 + S1 + S2)/3
+    Sbar = (S0 + S1 + S2) / 3
 
     # Compute residuals
     r1 = z1 - z0
@@ -231,10 +230,10 @@ def simulate_oddity_suprathres_one_trial(params, key, num_samples, diag_term):
 
 def simulate_oddity_one_trial_reference(params, key, num_samples, diag_term):
     """
-    Simulate oddity task outcomes. 
-    Note: This function differs from simulate_oddity_one_trial in that it 
-        assumes the location of the reference (mref) is fixed and known to the 
-        participants. The task is to determine between m0 (which is identical 
+    Simulate oddity task outcomes.
+    Note: This function differs from simulate_oddity_one_trial in that it
+        assumes the location of the reference (mref) is fixed and known to the
+        participants. The task is to determine between m0 (which is identical
         to mref) and m1, which one is more dissimilar to mref.
 
     Returns
@@ -289,6 +288,7 @@ def simulate_oddity_one_trial_reference(params, key, num_samples, diag_term):
     # Return signed difference.
     return z0_to_zref - z1_to_zref
 
+
 def approx_cdf_one_trial(x, xs, h):
     """
     Approximate the cumulative density function of a distribution at `x` given
@@ -300,10 +300,10 @@ def approx_cdf_one_trial(x, xs, h):
     ----------
     x : float
         Value to evaluate the cumulative density function.
-    
+
     xs : array
         Sampled values from the underlying probability distribution.
-    
+
     h : float
         Bandwidth parameter (larger values = more smoothing). As h goes to zero
         we get the cdf of the empirical distribution (which is not
@@ -320,16 +320,12 @@ def approx_cdf_one_trial(x, xs, h):
 # ===========
 # Use jax.vmap to make a function that simulates many trials.
 # ===========
-simulate_oddity = jax.vmap(
-    simulate_oddity_one_trial, ((0, 0, 0, 0), 0, None, None), 0
-)
+simulate_oddity = jax.vmap(simulate_oddity_one_trial, ((0, 0, 0, 0), 0, None, None), 0)
 simulate_oddity_suprathres = jax.vmap(
     simulate_oddity_suprathres_one_trial, ((0, 0, 0, 0, 0, 0), 0, None, None), 0
 )
 simulate_oddity_reference = jax.vmap(
     simulate_oddity_one_trial_reference, ((0, 0, 0, 0), 0, None, None), 0
 )
-approx_cdf = jax.vmap(
-    approx_cdf_one_trial, (None, 0, None), 0
-)
+approx_cdf = jax.vmap(approx_cdf_one_trial, (None, 0, None), 0)
 # ===========

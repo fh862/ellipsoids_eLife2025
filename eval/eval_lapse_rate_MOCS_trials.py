@@ -1,40 +1,46 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Thu Mar 13 20:35:29 2025
 
 @author: fangfang
 
 The goal of this short script is to compute the **percent correct (pC)**
-for easy (catch) trials. 
+for easy (catch) trials.
 
-In the experiment reported in the eLife paper, each session consists of **600 
+In the experiment reported in the eLife paper, each session consists of **600
 or 500 trials, with 50 or 41-42 catch trials.
 
 In the experiment that measures the entire 3D RGB cube, every two sessions consist
 of 20 catch trials. There were 400 catch trials in total.
 
-If the computed percent correct (pC) for catch trials falls below a 
+If the computed percent correct (pC) for catch trials falls below a
 specified cutoff (default: 0.9), we may consider excluding that subject.
 
 """
 
 import jax
+
 jax.config.update("jax_enable_x64", True)
-import numpy as np
-import sys
 import os
+import sys
+
+import numpy as np
+
 script_dir = os.getcwd()
-parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
+parent_dir = os.path.abspath(os.path.join(script_dir, ".."))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
-from analysis.utils_load import load_expt_data, select_file_and_get_path, extract_sub_number
+from analysis.utils_load import (
+    extract_sub_number,
+    load_expt_data,
+    select_file_and_get_path,
+)
 
 # ---------------------------------------------------------------------------
 # Load Data from All Sessions
 # ---------------------------------------------------------------------------
 # Base directory where experiment data is stored
-base_dir = '/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/'
+base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
 
 # Construct path to the subject's data directory
 # e.g., ELPS_analysis/Experiment_DataFiles/6D_Expt/sub1'
@@ -45,24 +51,21 @@ base_dir = '/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/'
 input_fileDir, file_name = select_file_and_get_path()
 full_path = os.path.join(input_fileDir, file_name)
 
-#extract subject number
+# extract subject number
 subN = extract_sub_number(file_name)
 
 # Number of sessions to analyze (selected session)
 # all subjects completed the same number of trials, but sub1 did them in less sessions
 ###################### NEED TO MODIFY ######################
-ndims = 3 #2 or 3
-nSessions = 12 #10 or 12 for 2D/4D; 40 for 3D/6D
+ndims = 3  # 2 or 3
+nSessions = 12  # 10 or 12 for 2D/4D; 40 for 3D/6D
 ############################################################
-exptCond = '_6dExpt_RGBcube' if ndims == 3 else '_4dExpt_Isoluminant plane'
+exptCond = "_6dExpt_RGBcube" if ndims == 3 else "_4dExpt_Isoluminant plane"
 
-#retrieve all the session files
-session_files, session_file_name_part1 = \
-    load_expt_data.get_all_sessions_file_names(subN, 
-                                               nSessions, 
-                                               input_fileDir,
-                                               exptCond = exptCond
-                                               )
+# retrieve all the session files
+session_files, session_file_name_part1 = load_expt_data.get_all_sessions_file_names(
+    subN, nSessions, input_fileDir, exptCond=exptCond
+)
 
 # Load session data from the files
 data_allSessions = load_expt_data.load_data_all_sessions(session_files)
@@ -70,19 +73,21 @@ data_allSessions = load_expt_data.load_data_all_sessions(session_files)
 # ---------------------------------------------------------------------------
 # Extract MOCS trials
 # ---------------------------------------------------------------------------
-xref_all_list = []   # reference stimuli
-x1_all_list = []     # comparison stimuli
-y_all_list = []      # binary responses
+xref_all_list = []  # reference stimuli
+x1_all_list = []  # comparison stimuli
+y_all_list = []  # binary responses
 
 # Extract xref, x1, and binary response from each session
 for session_data in data_allSessions:
-    mocs_trials = session_data['sim_interleaved_trial_sequence'].data_MOCS
+    mocs_trials = session_data["sim_interleaved_trial_sequence"].data_MOCS
     num_mocs_trials = len(mocs_trials)
 
     # Stack trial-wise values into arrays of shape (N_trials, ndims) or (N_trials, 1)
-    xref_n = np.vstack([mocs_trials[trial]['xref'] for trial in range(num_mocs_trials)])
-    x1_n   = np.vstack([mocs_trials[trial]['x1'] for trial in range(num_mocs_trials)])
-    y_n    = np.vstack([mocs_trials[trial]['binaryResp'] for trial in range(num_mocs_trials)])
+    xref_n = np.vstack([mocs_trials[trial]["xref"] for trial in range(num_mocs_trials)])
+    x1_n = np.vstack([mocs_trials[trial]["x1"] for trial in range(num_mocs_trials)])
+    y_n = np.vstack(
+        [mocs_trials[trial]["binaryResp"] for trial in range(num_mocs_trials)]
+    )
 
     # append to the list
     xref_all_list.append(xref_n)
@@ -127,8 +132,8 @@ for idx, ref_stimulus in enumerate(unique_xref):
 # Compute catch-trial performance for each session
 # ---------------------------------------------------------------------------
 # Per-session summary statistics for catch trials
-pC_easy_trials = np.full((nSessions,), np.nan)      # proportion correct
-num_easy_trials = np.full((nSessions,), np.nan)     # number of catch trials
+pC_easy_trials = np.full((nSessions,), np.nan)  # proportion correct
+num_easy_trials = np.full((nSessions,), np.nan)  # number of catch trials
 num_correct_trials = np.full((nSessions,), np.nan)  # number correct on catch trials
 
 # Loop over each session
@@ -150,9 +155,9 @@ for session_idx in range(nSessions):
         l2_norm_differences_n = np.linalg.norm(x1_subset - ref_stimulus, axis=1)
 
         # Identify trial(s) whose distance matches the precomputed catch-trial distance
-        max_l2_norm_indices = np.where(
-            l2_norm_differences_n == l2_norm_easy_trials[r]
-        )[0]
+        max_l2_norm_indices = np.where(l2_norm_differences_n == l2_norm_easy_trials[r])[
+            0
+        ]
 
         # Append the corresponding binary responses
         y_easy_trials.extend(
@@ -169,13 +174,13 @@ for session_idx in range(nSessions):
             num_correct_trials[session_idx] / num_easy_trials[session_idx]
         )
         print(
-            f'Session {session_idx+1}: Catch trial pC = '
-            f'{int(num_correct_trials[session_idx])}/'
-            f'{int(num_easy_trials[session_idx])} = '
-            f'{pC_easy_trials[session_idx]:.4f}'
+            f"Session {session_idx + 1}: Catch trial pC = "
+            f"{int(num_correct_trials[session_idx])}/"
+            f"{int(num_easy_trials[session_idx])} = "
+            f"{pC_easy_trials[session_idx]:.4f}"
         )
     else:
-        print(f'Session {session_idx+1} does not include any Sobol catch trials.')
+        print(f"Session {session_idx + 1} does not include any Sobol catch trials.")
 
 # ---------------------------------------------------------------------------
 # Aggregate catch-trial performance across sessions
@@ -184,8 +189,7 @@ num_correct_total = np.nansum(num_correct_trials)
 pC_easy_trials_avg = num_correct_total / np.nansum(num_easy_trials)
 
 print(
-    f'All sessions: Catch trial pC = '
-    f'{num_correct_total}/{np.sum(num_easy_trials)} = {pC_easy_trials_avg:.4f}'
+    f"All sessions: Catch trial pC = "
+    f"{num_correct_total}/{np.sum(num_easy_trials)} = {pC_easy_trials_avg:.4f}"
 )
-print(f'Range: [{np.nanmin(pC_easy_trials):.4f}, {np.nanmax(pC_easy_trials):.4f}]')
-
+print(f"Range: [{np.nanmin(pC_easy_trials):.4f}, {np.nanmax(pC_easy_trials):.4f}]")

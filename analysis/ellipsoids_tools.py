@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Fri Aug  2 10:26:03 2024
 
@@ -8,61 +7,63 @@ Created on Fri Aug  2 10:26:03 2024
 
 import numpy as np
 
-#%%
+
+# %%
 def UnitCircleGenerate_3D(nTheta, nPhi):
     """
-    Generates points on the surface of a unit sphere (3D ellipsoid with equal radii) 
+    Generates points on the surface of a unit sphere (3D ellipsoid with equal radii)
     by sampling angles theta and phi in spherical coordinates.
-    
+
     Parameters:
     - nTheta (int): The number of points to sample along the theta dimension.
     - nPhi (int): The number of points to sample along the phi dimension.
             Determines the resolution from top (north pole) to bottom (south pole).
-            
+
     Returns:
-    - ellipsoids: A 3D numpy array of shape (nPhi, nTheta, 3), where each "slice" 
-        of the array ([..., 0], [..., 1], [..., 2]) corresponds to the x, y, and z 
-        coordinates of points on the unit sphere. The first two dimensions 
-        correspond to the grid defined by the phi and theta angles, and the 
+    - ellipsoids: A 3D numpy array of shape (nPhi, nTheta, 3), where each "slice"
+        of the array ([..., 0], [..., 1], [..., 2]) corresponds to the x, y, and z
+        coordinates of points on the unit sphere. The first two dimensions
+        correspond to the grid defined by the phi and theta angles, and the
         third dimension corresponds to the Cartesian coordinates.
     """
     # Generate linearly spaced angles for theta and phi
-    theta = np.linspace(0, 2*np.pi, nTheta)
+    theta = np.linspace(0, 2 * np.pi, nTheta)
     phi = np.linspace(0, np.pi, nPhi)
-    
+
     # Create 2D grids for theta and phi using meshgrid.
     # THETA and PHI arrays have shapes (nPhi, nTheta) and contain all combinations
     # of phi and theta values.
     THETA, PHI = np.meshgrid(theta, phi)
-    
+
     # Calculate the Cartesian coordinates for points on the unit sphere surface
     # using the spherical to Cartesian coordinate transformation.
     xCoords = np.sin(PHI) * np.cos(THETA)
     yCoords = np.sin(PHI) * np.sin(THETA)
     zCoords = np.cos(PHI)
-    
-    # Initialize an array to hold the Cartesian coordinates of the points on 
-    # the unit sphere. The array is initially filled with NaNs and has the shape 
-    #(nPhi, nTheta, 3).
-    ellipsoids = np.stack((xCoords, yCoords, zCoords), axis = 2)
-    
+
+    # Initialize an array to hold the Cartesian coordinates of the points on
+    # the unit sphere. The array is initially filled with NaNs and has the shape
+    # (nPhi, nTheta, 3).
+    ellipsoids = np.stack((xCoords, yCoords, zCoords), axis=2)
+
     return ellipsoids
+
 
 def rotation_angles_to_eigenvectors(angle1_rad, angle2_rad, angle3_rad):
     """
     Convert three rotation angles into an eigenvector matrix for an ellipsoid.
-    
+
     Parameters
     ----------
     angle1_rad : float
         The first rotation angle in radians (rotation around the z-axis).
-        
+
     angle2_rad : float
         The second rotation angle in radians (rotation around the y-axis).
-    
+
     angle3_rad : float
         The third rotation angle in radians (rotation around the x-axis).
-        
+
     Returns
     -------
     eigenvector_matrix : np.ndarray
@@ -70,73 +71,89 @@ def rotation_angles_to_eigenvectors(angle1_rad, angle2_rad, angle3_rad):
         after applying the specified rotations.
     """
     # Rotation matrix for a rotation around the x-axis (angle3_rad)
-    R_x = np.array([[1,        0,                   0],
-                    [0, np.cos(angle3_rad), -np.sin(angle3_rad)],
-                    [0, np.sin(angle3_rad),  np.cos(angle3_rad)]])
-    
+    R_x = np.array(
+        [
+            [1, 0, 0],
+            [0, np.cos(angle3_rad), -np.sin(angle3_rad)],
+            [0, np.sin(angle3_rad), np.cos(angle3_rad)],
+        ]
+    )
+
     # Rotation matrix for a rotation around the y-axis (angle2_rad)
-    R_y = np.array([[ np.cos(angle2_rad), 0, np.sin(angle2_rad)],
-                    [0,                   1,                  0],
-                    [-np.sin(angle2_rad), 0, np.cos(angle2_rad)]])
-    
+    R_y = np.array(
+        [
+            [np.cos(angle2_rad), 0, np.sin(angle2_rad)],
+            [0, 1, 0],
+            [-np.sin(angle2_rad), 0, np.cos(angle2_rad)],
+        ]
+    )
+
     # Rotation matrix for a rotation around the z-axis (angle1_rad)
-    R_z = np.array([[np.cos(angle1_rad), -np.sin(angle1_rad), 0],
-                    [np.sin(angle1_rad),  np.cos(angle1_rad), 0],
-                    [0,                   0,                  1]])
-    
+    R_z = np.array(
+        [
+            [np.cos(angle1_rad), -np.sin(angle1_rad), 0],
+            [np.sin(angle1_rad), np.cos(angle1_rad), 0],
+            [0, 0, 1],
+        ]
+    )
+
     # Combine the rotations: R_x * R_y * R_z
     eigenvector_matrix = R_x @ R_y @ R_z
-    
+
     return eigenvector_matrix
+
 
 def PointsOnEllipsoid(radii, center, eigenVectors, unitEllipsoid):
     """
-    This function computes points on the surface of an ellipsoid given its 
-    radii, center, orientation (via eigenVectors), and a unit ellipsoid 
+    This function computes points on the surface of an ellipsoid given its
+    radii, center, orientation (via eigenVectors), and a unit ellipsoid
     (unit sphere mapped to an ellipsoid).
-    
+
     Parameters:
     - radii (array; (3,)): Radii of the ellipsoid along the x, y, and z axes.
     - center (array; (3,)): Center of the ellipsoid in 3D space.
-    - eigenVectors (array; (3,3)): Rotation matrix representing the orientation 
+    - eigenVectors (array; (3,3)): Rotation matrix representing the orientation
         of the ellipsoid.
-    - unitEllipsoid (array; (nPhi, nTheta,3)): Points on a unit ellipsoid, 
+    - unitEllipsoid (array; (nPhi, nTheta,3)): Points on a unit ellipsoid,
         which is a unit sphere scaled according to the ellipsoid's radii.
-                     
+
     Returns:
-    - ellipsoid: A 2D array of size (3, N) containing the 3D coordinates of 
-        N points on the ellipsoid's surface. The first dimension corresponds 
-        to the x, y, z coordinates, and the second dimension corresponds to 
+    - ellipsoid: A 2D array of size (3, N) containing the 3D coordinates of
+        N points on the ellipsoid's surface. The first dimension corresponds
+        to the x, y, z coordinates, and the second dimension corresponds to
         the sampled grid points.
 
     """
     # Extract the x, y, and z coordinates from the unit ellipsoid's surface points.
-    x_Ellipsoid = unitEllipsoid[:,:,0]
-    y_Ellipsoid = unitEllipsoid[:,:,1]
-    z_Ellipsoid = unitEllipsoid[:,:,2]
-    
-    # Stretch the unit ellipsoid points by the ellipsoid radii to get the 
+    x_Ellipsoid = unitEllipsoid[:, :, 0]
+    y_Ellipsoid = unitEllipsoid[:, :, 1]
+    z_Ellipsoid = unitEllipsoid[:, :, 2]
+
+    # Stretch the unit ellipsoid points by the ellipsoid radii to get the
     # ellipsoid's shape in its principal axis frame.
     x_stretched = x_Ellipsoid * radii[0]
     y_stretched = y_Ellipsoid * radii[1]
     z_stretched = z_Ellipsoid * radii[2]
-    
+
     # Stack the stretched coordinates and flatten them to create a 2D array of size (3, N),
     # where N = Theta * Phi. This step prepares the coordinates for rotation.
-    xyz = np.vstack((x_stretched.flatten(), y_stretched.flatten(), z_stretched.flatten()))
-    
-    # Rotate the stretched ellipsoid points to align with the ellipsoid's actual 
+    xyz = np.vstack(
+        (x_stretched.flatten(), y_stretched.flatten(), z_stretched.flatten())
+    )
+
+    # Rotate the stretched ellipsoid points to align with the ellipsoid's actual
     # orientation in 3D space using the eigenVectors rotation matrix.
     # The resulting xyz_rotated array has size (3, N).
     xyz_rotated = eigenVectors @ xyz
-    
+
     # Translate the rotated points by the ellipsoid's center to position the ellipsoid
     # correctly in 3D space. The size of the ellipsoid array remains (3, N).
-    ellipsoid = xyz_rotated + center[:,None]
-    
+    ellipsoid = xyz_rotated + center[:, None]
+
     return ellipsoid
 
-def EllipsoidSurfaceMesh(radii, center, eigenVectors, nu = 120, nv = 240):
+
+def EllipsoidSurfaceMesh(radii, center, eigenVectors, nu=120, nv=240):
     """
     Generate a parametric surface mesh (X, Y, Z) for a 3D ellipsoid.
 
@@ -161,19 +178,19 @@ def EllipsoidSurfaceMesh(radii, center, eigenVectors, nu = 120, nv = 240):
     """
     # Affine map: unit-sphere → axis-aligned ellipsoid (scale) → world frame (rotate)
     # p_world = eigenVectors @ diag(radii) @ p_sphere + center
-    sphere_to_ellipsoid = np.asarray(eigenVectors, float) @ np.diag(np.asarray(radii, float))
+    sphere_to_ellipsoid = np.asarray(eigenVectors, float) @ np.diag(
+        np.asarray(radii, float)
+    )
 
     # Angular parameterization of the unit sphere
-    theta = np.linspace(0.0, np.pi,   int(nu))   # polar angle
-    phi   = np.linspace(0.0, 2*np.pi, int(nv))   # azimuth angle
+    theta = np.linspace(0.0, np.pi, int(nu))  # polar angle
+    phi = np.linspace(0.0, 2 * np.pi, int(nv))  # azimuth angle
     th, ph = np.meshgrid(theta, phi, indexing="ij")  # (nu, nv)
 
     # Unit-sphere coordinates s(θ, φ) = (sinθ cosφ, sinθ sinφ, cosθ)
-    sphere_pts = np.stack([
-        np.sin(th) * np.cos(ph),
-        np.sin(th) * np.sin(ph),
-        np.cos(th)
-    ], axis=-1)  # (nu, nv, 3)
+    sphere_pts = np.stack(
+        [np.sin(th) * np.cos(ph), np.sin(th) * np.sin(ph), np.cos(th)], axis=-1
+    )  # (nu, nv, 3)
 
     # Map to world frame and translate by center
     center = np.asarray(center, float).ravel()
@@ -187,49 +204,55 @@ def EllipsoidSurfaceMesh(radii, center, eigenVectors, nu = 120, nv = 240):
 
     return X, Y, Z
 
-def ellipsoid_fit(X, lambda_reg = 0):
+
+def ellipsoid_fit(X, lambda_reg=0):
     """
     This function is taken from
     # http://www.mathworks.com/matlabcentral/fileexchange/24693-ellipsoid-fit
     # for arbitrary axes
     See more documentation in the link
-    """    
-    x=X[:,0]
-    y=X[:,1]
-    z=X[:,2]
-    D = np.array([x*x,
-                 y*y,
-                 z*z,
-                 2 * x*y,
-                 2 * x*z,
-                 2 * y*z,
-                 2 * x,
-                 2 * y,
-                 2 * z])
+    """
+    x = X[:, 0]
+    y = X[:, 1]
+    z = X[:, 2]
+    D = np.array(
+        [x * x, y * y, z * z, 2 * x * y, 2 * x * z, 2 * y * z, 2 * x, 2 * y, 2 * z]
+    )
     DT = D.conj().T
 
-    v = np.linalg.solve( D.dot(DT)  + lambda_reg * np.eye(D.shape[0]), D.dot(np.ones(np.size(x))))
-    A = np.array(  [[v[0], v[3], v[4], v[6]],
-                    [v[3], v[1], v[5], v[7]],
-                    [v[4], v[5], v[2], v[8]],
-                    [v[6], v[7], v[8], -1]])
+    v = np.linalg.solve(
+        D.dot(DT) + lambda_reg * np.eye(D.shape[0]), D.dot(np.ones(np.size(x)))
+    )
+    A = np.array(
+        [
+            [v[0], v[3], v[4], v[6]],
+            [v[3], v[1], v[5], v[7]],
+            [v[4], v[5], v[2], v[8]],
+            [v[6], v[7], v[8], -1],
+        ]
+    )
 
-    center = np.linalg.solve(- A[:3,:3], [[v[6]],[v[7]],[v[8]]])
+    center = np.linalg.solve(-A[:3, :3], [[v[6]], [v[7]], [v[8]]])
     T = np.eye(4)
-    T[3,:3] = center.T
+    T[3, :3] = center.T
     R = T.dot(A).dot(T.conj().T)
-    evals, evecs = np.linalg.eig(R[:3,:3] / -R[3,3])
-    radii = np.sqrt(1. / evals)
+    evals, evecs = np.linalg.eig(R[:3, :3] / -R[3, 3])
+    radii = np.sqrt(1.0 / evals)
 
     # calculate difference of the fitted points from the actual data normalized by the conic radii
-    sgns = np.sign(evals);
-    radii = radii * sgns;
-    d = np.array([x - center[0], y - center[1], z - center[2]]); # shift data to origin
-    d = np.asarray(np.matrix(d.T) * np.matrix(evecs)); # rotate to cardinal axes of the conic;
-    d = np.array([d[:,0] / radii[0], d[:,1] / radii[1], d[:,2] / radii[2]]).T; # normalize to the conic radii
-    chi2 = np.sum(np.abs(1 - np.sum(d**2 * np.tile(sgns, (d.shape[0], 1)), axis=1)));
+    sgns = np.sign(evals)
+    radii = radii * sgns
+    d = np.array([x - center[0], y - center[1], z - center[2]])  # shift data to origin
+    d = np.asarray(
+        np.matrix(d.T) * np.matrix(evecs)
+    )  # rotate to cardinal axes of the conic;
+    d = np.array(
+        [d[:, 0] / radii[0], d[:, 1] / radii[1], d[:, 2] / radii[2]]
+    ).T  # normalize to the conic radii
+    chi2 = np.sum(np.abs(1 - np.sum(d**2 * np.tile(sgns, (d.shape[0], 1)), axis=1)))
 
     return center, radii, evecs, v, chi2
+
 
 def ellipsoid_fit_fixed_center(X, center0, lambda_reg=0.0):
     """
@@ -246,20 +269,17 @@ def ellipsoid_fit_fixed_center(X, center0, lambda_reg=0.0):
         Q      (3,3)  quadratic form matrix in shifted coords
         chi2   scalar  (same style as your original: sum |1 - u^T Q u|)
     """
-    center0 = np.asarray(center0, dtype=float).reshape(3,)
+    center0 = np.asarray(center0, dtype=float).reshape(
+        3,
+    )
     U = X - center0[None, :]  # shifted data, shape (N, 3)
 
     x, y, z = U[:, 0], U[:, 1], U[:, 2]
 
     # Design for symmetric Q (6 params): [xx, yy, zz, 2xy, 2xz, 2yz]
-    D = np.vstack([
-        x * x,
-        y * y,
-        z * z,
-        2 * x * y,
-        2 * x * z,
-        2 * y * z
-    ])  # shape (6, N)
+    D = np.vstack(
+        [x * x, y * y, z * z, 2 * x * y, 2 * x * z, 2 * y * z]
+    )  # shape (6, N)
 
     # Solve: minimize || D^T p - 1 ||^2 + lambda||p||^2
     # Normal equations in your style: (D D^T + λI) p = D 1
@@ -268,11 +288,9 @@ def ellipsoid_fit_fixed_center(X, center0, lambda_reg=0.0):
     p = np.linalg.solve(A, b)
 
     # Build Q from p
-    Q = np.array([
-        [p[0], p[3], p[4]],
-        [p[3], p[1], p[5]],
-        [p[4], p[5], p[2]]
-    ], dtype=float)
+    Q = np.array(
+        [[p[0], p[3], p[4]], [p[3], p[1], p[5]], [p[4], p[5], p[2]]], dtype=float
+    )
 
     # Eigen-decompose: Q = V diag(evals) V^T
     evals, evecs = np.linalg.eigh(Q)
@@ -286,9 +304,10 @@ def ellipsoid_fit_fixed_center(X, center0, lambda_reg=0.0):
 
     return center0, radii, evecs, Q, chi2
 
-def fit_3d_isothreshold_ellipsoid(ref, comp, nTheta = 200, nPhi = 100, 
-                                  ellipsoid_scaler = 1,
-                                  flag_force_centered_ref = False):
+
+def fit_3d_isothreshold_ellipsoid(
+    ref, comp, nTheta=200, nPhi=100, ellipsoid_scaler=1, flag_force_centered_ref=False
+):
     """
     Fit a 3D ellipsoid to a set of comparison stimuli around a reference stimulus,
     then optionally scale the fitted ellipsoid and the discrete comparison points
@@ -349,26 +368,38 @@ def fit_3d_isothreshold_ellipsoid(ref, comp, nTheta = 200, nPhi = 100,
 
     # Unpack fit results
     ellFits = {}
-    ell_center_centered, ellFits['radii'], ellFits['evecs'], ellFits['v'], ellFits['chi2'] = fits
+    (
+        ell_center_centered,
+        ellFits["radii"],
+        ellFits["evecs"],
+        ellFits["v"],
+        ellFits["chi2"],
+    ) = fits
 
     # Convert fitted center back to the original coordinate system
-    ellFits['center'] = np.asarray(ell_center_centered).reshape(3,) + ref
+    ellFits["center"] = (
+        np.asarray(ell_center_centered).reshape(
+            3,
+        )
+        + ref
+    )
 
     # Generate surface points of the fitted ellipsoid (unscaled)
-    fitEllipsoid_unscaled = PointsOnEllipsoid(ellFits['radii'],
-                                              ellFits['center'],
-                                              ellFits['evecs'],
-                                              circleIn3D
-                                              )
+    fitEllipsoid_unscaled = PointsOnEllipsoid(
+        ellFits["radii"], ellFits["center"], ellFits["evecs"], circleIn3D
+    )
 
     # Radially scale the ellipsoid surface about the reference
-    fitEllipsoid_scaled = (fitEllipsoid_unscaled - ref[:, None]) * ellipsoid_scaler + ref[:, None]
+    fitEllipsoid_scaled = (
+        fitEllipsoid_unscaled - ref[:, None]
+    ) * ellipsoid_scaler + ref[:, None]
 
     # Radially scale the discrete comparison points about the reference
     comp_scaled = (comp_reshape.T - ref[:, None]) * ellipsoid_scaler + ref[:, None]
 
     return fitEllipsoid_scaled, fitEllipsoid_unscaled, ellFits, comp_scaled
-      
+
+
 def eig_to_covMat(eigval, eigvec):
     """
     Compute the covariance matrix of an ellipsoid given eigenvalues and eigenvectors.
@@ -387,24 +418,26 @@ def eig_to_covMat(eigval, eigvec):
     """
     # Create diagonal matrix of eigenvalues
     Lambda = np.diag(eigval)
-    
+
     # Compute covariance matrix: covMat = eigvec @ Lambda @ eigvec.T
     covMat = eigvec @ Lambda @ eigvec.T
-    
+
     return covMat
-          
-def slice_ellipsoid_byPlane(center, radii, eigenvectors, plane_v1, plane_v2, 
-                            covMat = None, num_grid_pts = 100):
+
+
+def slice_ellipsoid_byPlane(
+    center, radii, eigenvectors, plane_v1, plane_v2, covMat=None, num_grid_pts=100
+):
     """
     Computes the intersection of an ellipsoid with a plane, resulting in an elliptical contour.
-    
+
     Parameters:
     - center: A numpy array of shape (3,) representing the center of the ellipsoid.
     - radii: A numpy array of shape (3,) representing the semi-axes (radii) of the ellipsoid.
     - eigenvectors: A numpy array of shape (3, 3) where each column is an eigenvector defining the orientation of the ellipsoid.
     - plane_v1: A numpy array of shape (3,) representing the first vector that lies on the plane.
     - plane_v2: A numpy array of shape (3,) representing the second vector that lies on the plane.
-    
+
     Returns:
     - sliced_ellipse: A numpy array of shape (3, 100) representing the 3D coordinates of the elliptical contour.
     """
@@ -412,50 +445,56 @@ def slice_ellipsoid_byPlane(center, radii, eigenvectors, plane_v1, plane_v2,
     # Normalize the input vectors that define the plane
     v1 = plane_v1 / np.linalg.norm(plane_v1)
     v2 = plane_v2 / np.linalg.norm(plane_v2)
-    
+
     # Check if the two vectors defining the plane are orthogonal
-    if np.abs(np.dot(v1, v2)) > 1e-3:  # Allow a small tolerance for floating-point precision
-        raise ValueError('The two vectors defining the plane should be orthogonal!')
-    
+    if (
+        np.abs(np.dot(v1, v2)) > 1e-3
+    ):  # Allow a small tolerance for floating-point precision
+        raise ValueError("The two vectors defining the plane should be orthogonal!")
+
     if covMat is None:
         # Construct the matrix A for the ellipsoid equation
         # The ellipsoid is defined by the equation: (x - center)^T A (x - center) = 1
-        # where A = R * D^(-2) * R^T, with R being the rotation matrix (eigenvectors) 
+        # where A = R * D^(-2) * R^T, with R being the rotation matrix (eigenvectors)
         # and D being the diagonal matrix of radii
         A = eigenvectors @ np.diag(1 / radii**2) @ eigenvectors.T
     else:
         A = covMat
 
     # Compute the quadratic form in the plane's local coordinate system
-    # M is a 2x2 matrix that represents the quadratic form of the ellipsoid equation 
+    # M is a 2x2 matrix that represents the quadratic form of the ellipsoid equation
     # restricted to the plane spanned by v1 and v2
-    M = np.array([[v1 @ A @ v1, v1 @ A @ v2],
-                  [v2 @ A @ v1, v2 @ A @ v2]])
+    M = np.array([[v1 @ A @ v1, v1 @ A @ v2], [v2 @ A @ v1, v2 @ A @ v2]])
 
     # Eigendecomposition of M to obtain the semi-axes and rotation of the ellipse
     eigvals, eigvecs = np.linalg.eigh(M)
 
     # The lengths of the semi-axes of the ellipse are the inverses of the square roots of the eigenvalues
     semi_axes = 1 / np.sqrt(eigvals)
-    
+
     # rotation angle in deg
     rot_angle = np.degrees(np.arctan2(eigvecs[1, 0], eigvecs[0, 0]))
 
     # Parametrize the ellipse in the plane's local coordinate system
     # The ellipse is parameterized using an angle from 0 to 2*pi
     angles = np.linspace(0, 2 * np.pi, num_grid_pts)  # 100 points around the ellipse
-    ellipse_local = np.array([semi_axes[0] * np.cos(angles), semi_axes[1] * np.sin(angles)])
-    
+    ellipse_local = np.array(
+        [semi_axes[0] * np.cos(angles), semi_axes[1] * np.sin(angles)]
+    )
+
     # Rotate the ellipse to align with the correct orientation in the plane
     ellipse_local_rotated = eigvecs @ ellipse_local
 
     # Transform the ellipse from the plane's local coordinates to global 3D coordinates
     # This step places the ellipse in the global coordinate system by using the plane's basis vectors (v1, v2)
-    sliced_ellipse = (center[:, None] + 
-                      ellipse_local_rotated[0, :] * v1[:, None] + 
-                      ellipse_local_rotated[1, :] * v2[:, None])
-    
+    sliced_ellipse = (
+        center[:, None]
+        + ellipse_local_rotated[0, :] * v1[:, None]
+        + ellipse_local_rotated[1, :] * v2[:, None]
+    )
+
     return sliced_ellipse, [M, eigvals, eigvecs, semi_axes, rot_angle]
+
 
 def distance_to_ellipsoid_boundary(a, b, c, theta_deg, phi_deg, dx, dy, dz):
     """
@@ -505,11 +544,14 @@ def distance_to_ellipsoid_boundary(a, b, c, theta_deg, phi_deg, dx, dy, dz):
     phi = np.deg2rad(phi_deg)
 
     # Desired major-axis unit vector (world coords)
-    v = np.array([
-        np.cos(theta) * np.sin(phi),
-        np.sin(theta) * np.sin(phi),
-        np.cos(phi),
-    ], dtype=float)
+    v = np.array(
+        [
+            np.cos(theta) * np.sin(phi),
+            np.sin(theta) * np.sin(phi),
+            np.cos(phi),
+        ],
+        dtype=float,
+    )
 
     # Pick a reference "up" vector not parallel to v
     up = np.array([0.0, 0.0, 1.0], dtype=float)
@@ -537,6 +579,7 @@ def distance_to_ellipsoid_boundary(a, b, c, theta_deg, phi_deg, dx, dy, dz):
     r = 1.0 / np.sqrt(denom)
 
     return (r, dx, dy, dz) if return_extra else r
+
 
 def angles_to_3Dchromatic_directions(theta_deg, phi_deg, normalize=True):
     """
@@ -572,26 +615,31 @@ def angles_to_3Dchromatic_directions(theta_deg, phi_deg, normalize=True):
     phi_deg = np.asarray(phi_deg, dtype=float).ravel()
 
     if theta_deg.shape != phi_deg.shape:
-        raise ValueError(f"theta_deg and phi_deg must have the same shape; "
-                         f"got {theta_deg.shape} vs {phi_deg.shape}.")
+        raise ValueError(
+            f"theta_deg and phi_deg must have the same shape; "
+            f"got {theta_deg.shape} vs {phi_deg.shape}."
+        )
 
     theta_rad = np.deg2rad(theta_deg)
     phi_rad = np.deg2rad(phi_deg)
 
-    chromatic_directions = np.column_stack([
-        np.sin(phi_rad) * np.cos(theta_rad),
-        np.sin(phi_rad) * np.sin(theta_rad),
-        np.cos(phi_rad),
-    ])  # (N, 3)
+    chromatic_directions = np.column_stack(
+        [
+            np.sin(phi_rad) * np.cos(theta_rad),
+            np.sin(phi_rad) * np.sin(theta_rad),
+            np.cos(phi_rad),
+        ]
+    )  # (N, 3)
 
     if normalize:
         n = np.linalg.norm(chromatic_directions, axis=1)
         valid = n > 0
         if not np.all(valid):
             n_bad = np.sum(~valid)
-            print(f"[angles_to_chromatic_directions] Warning: {n_bad} direction(s) "
-                  "have zero norm; leaving them as zero vectors.")
+            print(
+                f"[angles_to_chromatic_directions] Warning: {n_bad} direction(s) "
+                "have zero norm; leaving them as zero vectors."
+            )
         chromatic_directions[valid] /= n[valid, None]
 
     return chromatic_directions
-

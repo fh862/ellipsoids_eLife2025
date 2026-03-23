@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Mon Jan 19 15:22:16 2026
 
@@ -30,48 +29,52 @@ We perform this analysis separately for different trial types:
 
 Comparing these subsets helps reveal how adaptive sampling changes directional
 coverage and whether it concentrates trials in specific regions of stimulus space.
-    
+
 """
 
-import matplotlib
-import matplotlib.pyplot as plt
-import matplotlib as mpl
-import numpy as np
-import sys
 import os
+import sys
+
+import matplotlib as mpl
+import matplotlib.pyplot as plt
+import numpy as np
+
 script_dir = os.getcwd()
-parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
+parent_dir = os.path.abspath(os.path.join(script_dir, ".."))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
-from analysis.utils_load import load_expt_data
 from analysis.bin_pCorrect import BinnedPC
+from analysis.utils_load import load_expt_data
 
-#%%
+# %%
 # -----------------------------------------------------------
 # SECTION 1: set directories
 # -----------------------------------------------------------
-#specify the file name
+# specify the file name
 subN = 11
 stim_dims = 2
 psyfield_dims = 4
-nSessions = 12 #selected session
+nSessions = 12  # selected session
 
 # Base directory where data lives. On HPC, prefer paths relative to the script.
-base_dir = '/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/'
-path_str  = os.path.join(base_dir,'ELPS_analysis','Experiment_DataFiles',
-                         'pilot2',f'sub{subN}') 
-                         #4D_Expt_varyingBackground, 
-                         #4D_Expt_dichromats
-                         #pilot2
+base_dir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
+path_str = os.path.join(
+    base_dir, "ELPS_analysis", "Experiment_DataFiles", "pilot2", f"sub{subN}"
+)
+# 4D_Expt_varyingBackground,
+# 4D_Expt_dichromats
+# pilot2
 
 # -----------------------------------------------------------
 # SECTION 2: Load and organize pilot data
 # -----------------------------------------------------------
 # Collect file paths for all sessions for this subject
 session_files, session_file_name_part1 = load_expt_data.get_all_sessions_file_names(
-    subN, nSessions, path_str,
-    exptCond = '_4dExpt_Isoluminant plane',#'_4dExpt_LSisolating plane',
-    #str_ext = '_gray_copy'
+    subN,
+    nSessions,
+    path_str,
+    exptCond="_4dExpt_Isoluminant plane",  #'_4dExpt_LSisolating plane',
+    # str_ext = '_gray_copy'
 )
 
 # Load raw session structs
@@ -79,22 +82,41 @@ data_allSessions = load_expt_data.load_data_all_sessions(session_files)
 
 try:
     # Concatenate MOCS trials across sessions (if present)
-    xref_MOCS_list, x1_MOCS_list, y_MOCS_list, xref_MOCS, x1_MOCS, y_MOCS = \
+    xref_MOCS_list, x1_MOCS_list, y_MOCS_list, xref_MOCS, x1_MOCS, y_MOCS = (
         load_expt_data.load_MOCS_data(data_allSessions)
+    )
 
     # Group MOCS trials by unique reference stimulus condition
-    xref_unique_MOCS, nRefs_MOCS, refStimulus_MOCS, compStimulus_MOCS, \
-        responses_MOCS, nLevels_MOCS, nTrials_MOCS, _, _, _ = \
-            load_expt_data.org_MOCS_by_condition(xref_MOCS, x1_MOCS, y_MOCS)
+    (
+        xref_unique_MOCS,
+        nRefs_MOCS,
+        refStimulus_MOCS,
+        compStimulus_MOCS,
+        responses_MOCS,
+        nLevels_MOCS,
+        nTrials_MOCS,
+        _,
+        _,
+        _,
+    ) = load_expt_data.org_MOCS_by_condition(xref_MOCS, x1_MOCS, y_MOCS)
 except:
     print("MOCS trials not found in this dataset.")
 
 # Concatenate AEPsych trials across sessions, and also load any pre-generated Sobol block
-aepsych_data, sobol_data, combined_data = \
-    load_expt_data.load_combine_AEPsych_pregSobol(data_allSessions)
+aepsych_data, sobol_data, combined_data = load_expt_data.load_combine_AEPsych_pregSobol(
+    data_allSessions
+)
 
-xref_AEPsych_list, x1_AEPsych_list, y_AEPsych_list, time_elapsed_list, \
-    xref_AEPsych, x1_AEPsych, y_AEPsych, time_elapsed = aepsych_data
+(
+    xref_AEPsych_list,
+    x1_AEPsych_list,
+    y_AEPsych_list,
+    time_elapsed_list,
+    xref_AEPsych,
+    x1_AEPsych,
+    y_AEPsych,
+    time_elapsed,
+) = aepsych_data
 
 # Total number of AEPsych trials
 nTrials_AEPsych = y_AEPsych.shape[0]
@@ -130,7 +152,7 @@ if sobol_data is not None:
 else:
     xref_pregenSobol, x1_pregenSobol, y_pregenSobol = None, None, None
 
-#%%
+# %%
 # -----------------------------------------------------------
 # SECTION 3: Direction-binning sanity check (pC vs azimuth theta)
 # -----------------------------------------------------------
@@ -157,16 +179,18 @@ else:
 #   EAVC if there are more trials / denser sampling).
 step_deg = [10, 4, 10]
 
-trial_type_str = ['AEPsych Sobol', 'AEPsych EAVC', 'Pregenerated Sobol']
+trial_type_str = ["AEPsych Sobol", "AEPsych EAVC", "Pregenerated Sobol"]
 
 # Trial subsets to analyze
 xref_for_tests = [xref_aeSobol, xref_aeEAVC, xref_pregenSobol]
-x1_for_tests   = [x1_aeSobol,   x1_aeEAVC,   x1_pregenSobol]
-y_for_tests    = [y_aeSobol,    y_aeEAVC,    y_pregenSobol]
+x1_for_tests = [x1_aeSobol, x1_aeEAVC, x1_pregenSobol]
+y_for_tests = [y_aeSobol, y_aeEAVC, y_pregenSobol]
 
 # Create one BinnedPC object per subset and run theta-binning
 binner_list = []
-for ii, (xref_ii, x1_ii, y_ii) in enumerate(zip(xref_for_tests, x1_for_tests, y_for_tests)):
+for ii, (xref_ii, x1_ii, y_ii) in enumerate(
+    zip(xref_for_tests, x1_for_tests, y_for_tests)
+):
     # Some datasets may not include the pre-generated Sobol block; skip if missing
     if xref_ii is None:
         continue
@@ -178,13 +202,14 @@ for ii, (xref_ii, x1_ii, y_ii) in enumerate(zip(xref_for_tests, x1_for_tests, y_
     # and compute pC / counts / indices per theta bin.
     binner.edges_theta_deg(step_deg[ii])
     binner.bin_2d()
-    
+
     binner_list.append(binner)
-        
-#%% visualizse
-output_fig_path = os.path.join(path_str.replace('Experiment_DataFiles',
-                                                'Experiment_FigFiles'), 'binnedPC')
-os.makedirs(output_fig_path, exist_ok= True)
+
+# %% visualizse
+output_fig_path = os.path.join(
+    path_str.replace("Experiment_DataFiles", "Experiment_FigFiles"), "binnedPC"
+)
+os.makedirs(output_fig_path, exist_ok=True)
 
 for ii in range(len(xref_for_tests)):
     # Skip subsets that are not present (e.g., pre-generated Sobol might be None)
@@ -197,32 +222,32 @@ for ii in range(len(xref_for_tests)):
     nTrials_bin = np.asarray(binner_ii.perBin_data["nTrials"], dtype=float)
 
     # Normalize nTrials so colormap spans [min, max] across bins
-    norm = mpl.colors.Normalize(vmin=np.min(nTrials_bin),
-                                vmax=np.max(nTrials_bin))
+    norm = mpl.colors.Normalize(vmin=np.min(nTrials_bin), vmax=np.max(nTrials_bin))
 
     # Use a truncated range of a base colormap to keep colors subtle
     base_cmap = plt.cm.PiYG_r
     cmap_trunc = mpl.colors.LinearSegmentedColormap.from_list(
-        "bone_trunc",
-        base_cmap(np.linspace(0.3, 0.5, 256))
+        "bone_trunc", base_cmap(np.linspace(0.3, 0.5, 256))
     )
 
     # Map trial counts to RGBA colors, one per theta bin
     colors = cmap_trunc(norm(nTrials_bin))
 
     # Figure / polar axis
-    fig = plt.figure(dpi = 1024)
+    fig = plt.figure(dpi=1024)
     ax = fig.add_subplot(111, projection="polar")
 
     # Background bars: show bin occupancy (all bars same height, colored by nTrials)
-    ax.bar(binner_ii.theta_edges_rad[:-1],
-           np.ones_like(binner_ii.theta_edges_rad[:-1]),
-           width=np.deg2rad(step_deg[ii]),
-           bottom=0.0,
-           align="edge",
-           color=colors,
-           edgecolor="none",
-           zorder=0)
+    ax.bar(
+        binner_ii.theta_edges_rad[:-1],
+        np.ones_like(binner_ii.theta_edges_rad[:-1]),
+        width=np.deg2rad(step_deg[ii]),
+        bottom=0.0,
+        align="edge",
+        color=colors,
+        edgecolor="none",
+        zorder=0,
+    )
 
     # pC curve + markers at bin centers
     #   - line: pC vs theta
@@ -244,9 +269,13 @@ for ii in range(len(xref_for_tests)):
     ax.scatter(theta_centers, pC_bin, color="k", s=s, zorder=3)
 
     # Optional: close the curve visually (connect last center back to first)
-    ax.plot([theta_centers[0], theta_centers[-1]],
-            [pC_bin[0], pC_bin[-1]],
-            color="k", linewidth=1, zorder=2)
+    ax.plot(
+        [theta_centers[0], theta_centers[-1]],
+        [pC_bin[0], pC_bin[-1]],
+        color="k",
+        linewidth=1,
+        zorder=2,
+    )
 
     # Axis formatting
     ax.set_rlim(0, 1)
@@ -271,5 +300,5 @@ for ii in range(len(xref_for_tests)):
     sm.set_array([])
     plt.colorbar(sm, ax=ax, pad=0.1, label="Trials per bin")
     plt.tight_layout()
-    #save
-    fig.savefig(os.path.join(output_fig_path, f'binned_pC_{trial_type_str[ii]}.pdf'))
+    # save
+    fig.savefig(os.path.join(output_fig_path, f"binned_pC_{trial_type_str[ii]}.pdf"))

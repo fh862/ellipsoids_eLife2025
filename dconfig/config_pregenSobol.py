@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Sun Mar 22 21:26:30 2026
 
@@ -44,9 +43,11 @@ Notes
 
 """
 
+from collections.abc import Sequence
 from dataclasses import dataclass, field
-from typing import Optional, Sequence
+
 import numpy as np
+
 
 @dataclass
 class PregenSobolConfig:
@@ -59,8 +60,8 @@ class PregenSobolConfig:
     nTrials_sobol_perSession: int
 
     # optional metadata
-    plane_2D: Optional[str] = None
-    file_date: Optional[str] = None
+    plane_2D: str | None = None
+    file_date: str | None = None
 
     # sampling settings
     lb_sobol_trials: Sequence[float] = None
@@ -71,8 +72,8 @@ class PregenSobolConfig:
     flag_addCatchTrials: bool = False
 
     # optional catch trials
-    delta_catchTrials_unique: Optional[np.ndarray] = None
-    percent_catchTrials: Optional[float] = None
+    delta_catchTrials_unique: np.ndarray | None = None
+    percent_catchTrials: float | None = None
 
     # derived: number of repetitions of sobol_scaler needed to fill all trials
     num_repeats: int = field(init=False)
@@ -81,13 +82,15 @@ class PregenSobolConfig:
         # Ensure total trials can be evenly divided across scaling factors
         if self.nTrials_sobol_perSession % len(self.sobol_scaler) != 0:
             raise ValueError("nTrials must be multiple of sobol_scaler length")
-    
+
         # Number of times each scaler set is repeated
         self.num_repeats = self.nTrials_sobol_perSession // len(self.sobol_scaler)
-    
+
         # Validate catch trial configuration
         if self.flag_addCatchTrials and self.delta_catchTrials_unique is None:
-            raise ValueError("Catch trials enabled but delta_catchTrials_unique not provided")
+            raise ValueError(
+                "Catch trials enabled but delta_catchTrials_unique not provided"
+            )
 
     # --------------------------------------------------
     # factory constructors
@@ -98,12 +101,12 @@ class PregenSobolConfig:
         return cls(
             stim_dims=2,
             psyfield_dims=4,
-            plane_2D='Isoluminant plane',
-            file_date='02242025',
+            plane_2D="Isoluminant plane",
+            file_date="02242025",
             nTrials_sobol_perSession=1200,
             lb_sobol_trials=[-0.75, -0.75, -0.25, -0.25],
             ub_sobol_trials=[0.75, 0.75, 0.25, 0.25],
-            sobol_scaler=[2/8, 3/8, 4/8],
+            sobol_scaler=[2 / 8, 3 / 8, 4 / 8],
             flag_addCatchTrials=False,
             nSessions=15,
         )
@@ -114,8 +117,8 @@ class PregenSobolConfig:
             stim_dims=3,
             psyfield_dims=3,
             nTrials_sobol_perSession=900,
-            lb_sobol_trials=[-1, -1, -1/3],
-            ub_sobol_trials=[1, 1, 1/3],
+            lb_sobol_trials=[-1, -1, -1 / 3],
+            ub_sobol_trials=[1, 1, 1 / 3],
             sobol_scaler=[0.15, 0.45, 0.75],
             flag_addCatchTrials=False,
             nSessions=5,
@@ -126,21 +129,23 @@ class PregenSobolConfig:
         return cls(
             stim_dims=2,
             psyfield_dims=4,
-            plane_2D='LSisolating plane',
-            file_date='11172025',
+            plane_2D="LSisolating plane",
+            file_date="11172025",
             nTrials_sobol_perSession=2400,
             lb_sobol_trials=[-0.75, -0.75, -0.25, -0.25],
             ub_sobol_trials=[0.75, 0.75, 0.25, 0.25],
-            sobol_scaler=[2/8, 3/8, 4/8],
+            sobol_scaler=[2 / 8, 3 / 8, 4 / 8],
             flag_addCatchTrials=True,
             percent_catchTrials=0.05,
             nSessions=30,
-            delta_catchTrials_unique=np.array([
-                [-0.25, -0.25],
-                [-0.25,  0.25],
-                [ 0.25, -0.25],
-                [ 0.25,  0.25],
-            ]),
+            delta_catchTrials_unique=np.array(
+                [
+                    [-0.25, -0.25],
+                    [-0.25, 0.25],
+                    [0.25, -0.25],
+                    [0.25, 0.25],
+                ]
+            ),
         )
 
     @classmethod
@@ -148,21 +153,23 @@ class PregenSobolConfig:
         return cls(
             stim_dims=2,
             psyfield_dims=4,
-            plane_2D='LSisolating plane',
-            file_date='11172025',
+            plane_2D="LSisolating plane",
+            file_date="11172025",
             nTrials_sobol_perSession=2400,
             lb_sobol_trials=[-0.55, -0.7, -0.45, -0.3],
             ub_sobol_trials=[0.55, 0.7, 0.45, 0.3],
-            sobol_scaler=[4/8, 6/8, 1],
+            sobol_scaler=[4 / 8, 6 / 8, 1],
             flag_addCatchTrials=True,
             percent_catchTrials=0.05,
             nSessions=30,
-            delta_catchTrials_unique=np.array([
-                [-0.45, -0.3],
-                [-0.45,  0.3],
-                [ 0.45, -0.3],
-                [ 0.45,  0.3],
-            ]),
+            delta_catchTrials_unique=np.array(
+                [
+                    [-0.45, -0.3],
+                    [-0.45, 0.3],
+                    [0.45, -0.3],
+                    [0.45, 0.3],
+                ]
+            ),
         )
 
     @classmethod
@@ -170,21 +177,23 @@ class PregenSobolConfig:
         return cls(
             stim_dims=2,
             psyfield_dims=4,
-            plane_2D='Isoluminant plane',
-            file_date='10062025',
+            plane_2D="Isoluminant plane",
+            file_date="10062025",
             nTrials_sobol_perSession=2400,
             lb_sobol_trials=[-0.75, -0.75, -0.25, -0.25],
             ub_sobol_trials=[0.75, 0.75, 0.25, 0.25],
-            sobol_scaler=[2/8, 3/8, 4/8],
+            sobol_scaler=[2 / 8, 3 / 8, 4 / 8],
             flag_addCatchTrials=True,
             percent_catchTrials=0.05,
             nSessions=30,
-            delta_catchTrials_unique=np.array([
-                [-0.25, -0.25],
-                [-0.25,  0.25],
-                [ 0.25, -0.25],
-                [ 0.25,  0.25],
-            ]),
+            delta_catchTrials_unique=np.array(
+                [
+                    [-0.25, -0.25],
+                    [-0.25, 0.25],
+                    [0.25, -0.25],
+                    [0.25, 0.25],
+                ]
+            ),
         )
 
     @classmethod
@@ -198,23 +207,25 @@ class PregenSobolConfig:
         return cls(
             stim_dims=2,
             psyfield_dims=4,
-            plane_2D='Isoluminant plane',
-            file_date='02012026',
+            plane_2D="Isoluminant plane",
+            file_date="02012026",
             nTrials_sobol_perSession=900,
             lb_sobol_trials=[-0.75, -0.75, -0.25, -0.25],
             ub_sobol_trials=[0.75, 0.75, 0.25, 0.25],
-            sobol_scaler=[2/8, 3/8, 4/8],
+            sobol_scaler=[2 / 8, 3 / 8, 4 / 8],
             flag_addCatchTrials=True,
             percent_catchTrials=0.05,
             nSessions=40,
-            delta_catchTrials_unique=np.array([
-                [-0.25, -0.25],
-                [-0.25,  0.25],
-                [ 0.25, -0.25],
-                [ 0.25,  0.25],
-            ]),
+            delta_catchTrials_unique=np.array(
+                [
+                    [-0.25, -0.25],
+                    [-0.25, 0.25],
+                    [0.25, -0.25],
+                    [0.25, 0.25],
+                ]
+            ),
         )
-    
+
     def print_summary(self):
         print("---- Sobol Sampling Config ----")
         print(f"stim_dims                : {self.stim_dims}")
@@ -225,19 +236,19 @@ class PregenSobolConfig:
         print(f"sobol_scaler             : {self.sobol_scaler}")
         print(f"flag_addCatchTrials      : {self.flag_addCatchTrials}")
         print(f"nSessions                : {self.nSessions}")
-    
+
         if self.flag_addCatchTrials and self.delta_catchTrials_unique is not None:
             print("delta_catchTrials_unique :")
             print(self.delta_catchTrials_unique)
         else:
             print("delta_catchTrials_unique : None")
-    
+
         print("--------------------------------")
-        
+
     def to_legacy_dict(self):
-        return {"nTrials_sobol_perSession": self.nTrials_sobol_perSession,
-                "lb_sobol_trials": self.lb_sobol_trials,
-                "ub_sobol_trials": self.ub_sobol_trials,
-                "sobol_scaler": self.sobol_scaler,
-                }
-    
+        return {
+            "nTrials_sobol_perSession": self.nTrials_sobol_perSession,
+            "lb_sobol_trials": self.lb_sobol_trials,
+            "ub_sobol_trials": self.ub_sobol_trials,
+            "sobol_scaler": self.sobol_scaler,
+        }

@@ -1,14 +1,20 @@
 import jax
 import jax.numpy as jnp
+
 from . import chebyshev
 
 
 class WishartProcessModel:
-
     def __init__(
-            self, degree, num_dims, extra_dims, variance_scale,
-            decay_rate, diag_term, num_dims_cov = None
-        ):
+        self,
+        degree,
+        num_dims,
+        extra_dims,
+        variance_scale,
+        decay_rate,
+        diag_term,
+        num_dims_cov=None,
+    ):
         """
         degree : int
             Degree of the Chebyshev polynomial. The total number of
@@ -25,28 +31,28 @@ class WishartProcessModel:
             Scale parameter for the prior variance of the zeroth-order
             (constant) basis coefficient. Higher-order coefficients are
             down-weighted geometrically.
-            
+
             Corresponds to the parameter γ (gamma) in the eLife paper.
-    
+
         decay_rate : float
             Geometric decay factor controlling how strongly higher-order
             polynomial coefficients are weighted in the prior. Specifically,
             the prior variance of a coefficient of total polynomial order d
             is given by:
-            
+
                 variance_scale × (decay_rate ** d)
-            
+
             Corresponds to the parameter ε (epsilon) in the eLife paper.
             Note that smaller values of `decay_rate` impose stronger
-            suppression of higher-order basis functions (yielding smoother 
-            covariance fields), whereas larger values allow greater contribution 
-            from higher-order basis functions. Although the name `decay_rate` 
+            suppression of higher-order basis functions (yielding smoother
+            covariance fields), whereas larger values allow greater contribution
+            from higher-order basis functions. Although the name `decay_rate`
             can be counterintuitive in this respect, it is retained for consistency
             with existing code.
 
         diag_term : float
             Minimum variance for the ellipsoids.
-            
+
         num_dims_cov : int
             Number of covariance matrix dimensions. By default, this is set
             equal to the stimulus dimensionality (`num_dims`). In some cases,
@@ -56,16 +62,16 @@ class WishartProcessModel:
             adaptation state) along which the psychometric field varies smoothly.
             In such cases, the perceptual noise may still be well described by
             a 2D covariance matrix, even though the stimulus space itself is 3D.
-        
+
         """
 
         if num_dims not in (2, 3):
             raise ValueError("`num_dims` must be equal to 2 or 3.")
-            
+
         # If not provided, use the stimulus dimensionality
         if num_dims_cov is None:
             num_dims_cov = num_dims
-            
+
         # We don't allow a higher-dimensional covariance than the stimulus itself.
         if num_dims_cov > num_dims:
             raise ValueError(
@@ -84,21 +90,18 @@ class WishartProcessModel:
 
         if self.num_dims == 2:
             basis_degrees = (
-                jnp.arange(self.degree)[:, None] +
-                jnp.arange(self.degree)[None, :]
+                jnp.arange(self.degree)[:, None] + jnp.arange(self.degree)[None, :]
             )
 
         elif self.num_dims == 3:
             basis_degrees = (
-                jnp.arange(self.degree)[:, None, None] +
-                jnp.arange(self.degree)[None, :, None] + 
-                jnp.arange(self.degree)[None, None, :]
+                jnp.arange(self.degree)[:, None, None]
+                + jnp.arange(self.degree)[None, :, None]
+                + jnp.arange(self.degree)[None, None, :]
             )
 
-        self.W_prior_variances = (
-            self.variance_scale * (self.decay_rate ** basis_degrees)
-        )
-        
+        self.W_prior_variances = self.variance_scale * (self.decay_rate**basis_degrees)
+
     @property
     def num_dims_cov(self):
         """
@@ -116,12 +119,12 @@ class WishartProcessModel:
     def sample_W_prior(self, key):
         """
         Draw a sample from the prior over basis function coefficients.
-    
+
         Parameters
         ----------
         key : jax.random.PRNGKey
             Seed for random number generator.
-    
+
         Returns
         -------
         W : array
@@ -131,17 +134,21 @@ class WishartProcessModel:
             (degree, degree, degree) for 3D.
         """
         variances = self.W_prior_variances  # shape: (deg, deg) or (deg, deg, deg)
-    
+
         # Add two singleton axes at the end, works for both 2D and 3D:
         #   (deg, deg)        -> (deg, deg, 1, 1)
         #   (deg, deg, deg)   -> (deg, deg, deg, 1, 1)
         scale = jnp.sqrt(variances)[..., None, None]
-    
+
         noise = jax.random.normal(
             key,
-            shape=(*variances.shape, self.num_dims_cov, self.num_dims_cov + self.extra_dims),
+            shape=(
+                *variances.shape,
+                self.num_dims_cov,
+                self.num_dims_cov + self.extra_dims,
+            ),
         )
-    
+
         return scale * noise
 
     def logprior_density_W(self, W):
@@ -161,12 +168,12 @@ class WishartProcessModel:
             Log density of the prior distribution over coefficients.
         """
         variances = self.W_prior_variances  # shape: (deg, deg) or (deg, deg, deg)
-    
+
         # Broadcast scale over the last two coefficient axes, regardless of 2D or 3D:
         #   (deg, deg)       -> (deg, deg, 1, 1)
         #   (deg, deg, deg)  -> (deg, deg, deg, 1, 1)
         scale = jnp.sqrt(variances)[..., None, None]
-    
+
         return jax.scipy.stats.norm.logpdf(W, scale=scale).sum()
 
     def compute_U(self, W, x):
@@ -197,17 +204,17 @@ class WishartProcessModel:
         if self.num_dims == 2:
             # phi.shape = (N, degree, degree)
             phi = (
-                chebyshev.evaluate(self.cheb_basis, xt[:, 0])[:, :, None] *
-                chebyshev.evaluate(self.cheb_basis, xt[:, 1])[:, None, :]
+                chebyshev.evaluate(self.cheb_basis, xt[:, 0])[:, :, None]
+                * chebyshev.evaluate(self.cheb_basis, xt[:, 1])[:, None, :]
             )
             U = jnp.einsum("abdv,iab->idv", W, phi)
 
         elif self.num_dims == 3:
             # phi.shape = (N, degree, degree, degree)
             phi = (
-                chebyshev.evaluate(self.cheb_basis, xt[:, 0])[:, :, None, None] *
-                chebyshev.evaluate(self.cheb_basis, xt[:, 1])[:, None, :, None] *
-                chebyshev.evaluate(self.cheb_basis, xt[:, 2])[:, None, None, :]
+                chebyshev.evaluate(self.cheb_basis, xt[:, 0])[:, :, None, None]
+                * chebyshev.evaluate(self.cheb_basis, xt[:, 1])[:, None, :, None]
+                * chebyshev.evaluate(self.cheb_basis, xt[:, 2])[:, None, None, :]
             )
             U = jnp.einsum("abcdv,iabc->idv", W, phi)
 
@@ -234,8 +241,8 @@ class WishartProcessModel:
 
         # Compute covariance matrix
         S = (
-            jnp.einsum("ijk,ihk->ijh", U, U) +
-            self.diag_term * jnp.eye(self.num_dims_cov)[None, :, :]
+            jnp.einsum("ijk,ihk->ijh", U, U)
+            + self.diag_term * jnp.eye(self.num_dims_cov)[None, :, :]
         )
 
         # Reshape to original dimensions.

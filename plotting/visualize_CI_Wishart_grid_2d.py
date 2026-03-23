@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Wed Jan 15 11:37:06 2025
 
@@ -31,31 +30,36 @@ See also:
 """
 
 import jax
+
 jax.config.update("jax_enable_x64", True)
-import jax.numpy as jnp
-import dill as pickled
-from tqdm import trange
-import numpy as np
-import re
-import matplotlib.pyplot as plt
-from dataclasses import replace
-from copy import deepcopy
-import sys
 import os
+import re
+import sys
+from copy import deepcopy
+from dataclasses import replace
+
+import dill as pickled
+import jax.numpy as jnp
+import matplotlib.pyplot as plt
+import numpy as np
+from tqdm import trange
+
 script_dir = os.getcwd()
-parent_dir = os.path.abspath(os.path.join(script_dir, '..'))
+parent_dir = os.path.abspath(os.path.join(script_dir, ".."))
 if parent_dir not in sys.path:
     sys.path.append(parent_dir)
-from analysis.utils_load import select_file_and_get_path
-from plotting.wishart_predictions_plotting import WishartPredictionsVisualization
-from core.model_predictions import rerun_model_pred_wExisting_model
-from plotting.wishart_plotting import PlotSettingsBase 
-from plotting.wishart_predictions_plotting import Plot2DPredSettings
 from analysis.conf_interval import find_inner_outer_contours_for_gridRefs
 from analysis.model_performance import ModelPerformance
+from analysis.utils_load import select_file_and_get_path
+from core.model_predictions import rerun_model_pred_wExisting_model
+from plotting.wishart_plotting import PlotSettingsBase
+from plotting.wishart_predictions_plotting import (
+    Plot2DPredSettings,
+    WishartPredictionsVisualization,
+)
 
-#%%
-#---------------------------------------------------------------------------
+# %%
+# ---------------------------------------------------------------------------
 # SECTION 1: load the model fits to the empirical data
 # --------------------------------------------------------------------------
 # Select the file containing the model fits
@@ -75,19 +79,19 @@ input_fileDir_fits, file_name = select_file_and_get_path()
 full_path = os.path.join(input_fileDir_fits, file_name)
 
 # Load the necessary variables from the file
-with open(full_path, 'rb') as f:
+with open(full_path, "rb") as f:
     vars_dict = pickled.load(f)
 
 # - Transformation matrices for converting between DKL, RGB, and W spaces
-color_thres_data = vars_dict['color_thres_data']
+color_thres_data = vars_dict["color_thres_data"]
 
 # - Dimensionality of the color space (e.g., 2D for isoluminant planes)
 ndims = color_thres_data.color_dimension
 
 # - Experimental trial data
-expt_trial = vars_dict['expt_trial']
+expt_trial = vars_dict["expt_trial"]
 
-#%%
+# %%
 """
 Grid-handling logic for model predictions:
 
@@ -110,53 +114,57 @@ num_grid_pts_desired = 7
 flag_append_data = False
 
 # Construct the key name based on the desired grid size
-key_grid = f'model_pred_Wishart_grid{num_grid_pts_desired}'
+key_grid = f"model_pred_Wishart_grid{num_grid_pts_desired}"
 
 if key_grid in vars_dict.keys():
     # Use precomputed results if available
     model_pred = vars_dict[key_grid]
-    grid = vars_dict[f'grid{num_grid_pts_desired}']
+    grid = vars_dict[f"grid{num_grid_pts_desired}"]
     ndims = model_pred.model.num_dims
 else:
     # - Number of grid points per dimension for model prediction computations
-    model_pred = deepcopy(vars_dict['model_pred_Wishart'])
+    model_pred = deepcopy(vars_dict["model_pred_Wishart"])
     ndims = model_pred.model.num_dims
     num_grid_pts = model_pred.fitEll_scaled.shape[0]
-    
+
     if num_grid_pts == num_grid_pts_desired:
-         model_pred = vars_dict['model_pred_Wishart']
-         grid = vars_dict['grid']
+        model_pred = vars_dict["model_pred_Wishart"]
+        grid = vars_dict["grid"]
     else:
         # Recompute everything if the desired grid size is not available
-        grid = jnp.stack(jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, num_grid_pts_desired) \
-                                        for _ in range(ndims)]), axis=-1)
-    
+        grid = jnp.stack(
+            jnp.meshgrid(
+                *[jnp.linspace(-0.7, 0.7, num_grid_pts_desired) for _ in range(ndims)]
+            ),
+            axis=-1,
+        )
+
         # Use the helper function to recompute model predictions and transformed grid
         model_pred, _ = rerun_model_pred_wExisting_model(
             grid, model_pred, color_thres_data
         )
-    
+
         # Optionally append results to the pickle
         if flag_append_data:
             vars_dict[key_grid] = model_pred
-            vars_dict[f'grid{num_grid_pts_desired}'] = grid
-    
+            vars_dict[f"grid{num_grid_pts_desired}"] = grid
+
             # Save the updated pickle file
-            with open(full_path, 'wb') as f:
+            with open(full_path, "wb") as f:
                 pickled.dump(vars_dict, f)
 
-#%% 
-#---------------------------------------------------------------------------
-# SECTION 2: load another 
+# %%
+# ---------------------------------------------------------------------------
+# SECTION 2: load another
 # --------------------------------------------------------------------------
 # Step 1: Define mode
 ##############################################################################
 flag_load_other_subjects = False  # <-- Set True if loading different subjects
-subject_list = [1,2,4,6,7,8,10,11]         # Only used if loading other subjects
+subject_list = [1, 2, 4, 6, 7, 8, 10, 11]  # Only used if loading other subjects
 ##############################################################################
 
 # Step 2: Select the bootstrapped data file (choose one as a reference)
-# Option 1: 
+# Option 1:
 # 'ELPS_analysis/Experiment_DataFiles/pilot2/sub1/fits/AEPsych_btst/decayRate0.4'
 # 'Fitted_ColorDiscrimination_4dExpt_Isoluminant plane_sub1_decayRate0.4_nBasisDeg5_btst_AEPsych[0].pkl'
 
@@ -197,24 +205,26 @@ for r in trange(nDatasets):
         # Cross-subject mode: swap "subXX" in directory + filename
         subject_id = subject_list[r]
 
-        match = re.search(r'sub\d+', file_name_others)
+        match = re.search(r"sub\d+", file_name_others)
         if not match:
             raise ValueError('No "subXXX" pattern found in the file name!')
 
         old_sub = match.group()
-        input_fileDir_fits_others_r = input_fileDir_fits_others.replace(old_sub, f'sub{subject_id}')
-        file_name_r = file_name_others.replace(old_sub, f'sub{subject_id}')
+        input_fileDir_fits_others_r = input_fileDir_fits_others.replace(
+            old_sub, f"sub{subject_id}"
+        )
+        file_name_r = file_name_others.replace(old_sub, f"sub{subject_id}")
 
     else:
         # Bootstrap mode: swap the bootstrap index in the filename
         input_fileDir_fits_others_r = input_fileDir_fits_others
-        file_name_r = file_name_others.replace('AEPsych[0]', f'AEPsych[{r}]')
+        file_name_r = file_name_others.replace("AEPsych[0]", f"AEPsych[{r}]")
 
     full_path_others_r = f"{input_fileDir_fits_others_r}/{file_name_r}"
     full_path_others.append(full_path_others_r)
 
     # 5b) Load the pickle for dataset r
-    with open(full_path_others_r, 'rb') as f:
+    with open(full_path_others_r, "rb") as f:
         vars_dict_others = pickled.load(f)
 
     # 5c) Retrieve model predictions on the desired grid
@@ -226,33 +236,33 @@ for r in trange(nDatasets):
         model_pred_r = vars_dict_others[key_grid]
         param_ell_r = model_pred_r.params_ell
     else:
-        model_pred_r = deepcopy(vars_dict_others['model_pred_Wishart'])
+        model_pred_r = deepcopy(vars_dict_others["model_pred_Wishart"])
         num_grid_pts_others = model_pred_r.fitEll_scaled.shape[0]
 
         if num_grid_pts_others == num_grid_pts_desired:
             # Existing predictions already match the desired grid size
-            param_ell_r = vars_dict_others['model_pred_Wishart'].params_ell
+            param_ell_r = vars_dict_others["model_pred_Wishart"].params_ell
         else:
             # Recompute predictions on the desired grid
-            model_pred_r, _ = rerun_model_pred_wExisting_model(grid, 
-                                                               model_pred_r, 
-                                                               color_thres_data)
+            model_pred_r, _ = rerun_model_pred_wExisting_model(
+                grid, model_pred_r, color_thres_data
+            )
             param_ell_r = model_pred_r.params_ell
 
             # Optionally cache the new results back into the pickle
             if flag_append_data:
                 vars_dict_others[key_grid] = model_pred_r
-                vars_dict_others[f'grid{num_grid_pts_desired}'] = grid
-                with open(full_path_others_r, 'wb') as f:
+                vars_dict_others[f"grid{num_grid_pts_desired}"] = grid
+                with open(full_path_others_r, "wb") as f:
                     pickled.dump(vars_dict_others, f)
 
     # 5d) Store ellipse params and compute per-grid-point similarity
     for i in range(num_grid_pts_desired):
         for j in range(num_grid_pts_desired):
             params_ell[i, j, r] = param_ell_r[i][j]
-            
-#%%
-#---------------------------------------------------------------------------
+
+# %%
+# ---------------------------------------------------------------------------
 # SECTION 3: compute the normalized bures similarity score and 95% CI
 # --------------------------------------------------------------------------
 if not flag_load_other_subjects:
@@ -270,34 +280,38 @@ if not flag_load_other_subjects:
         # Define the fine prediction grid
         num_grid_pts_fine = 103
         grid_fine = jnp.stack(
-            jnp.meshgrid(*[jnp.linspace(-0.85, 0.85, num_grid_pts_fine) for _ in range(ndims)]),
-            axis=-1
+            jnp.meshgrid(
+                *[jnp.linspace(-0.85, 0.85, num_grid_pts_fine) for _ in range(ndims)]
+            ),
+            axis=-1,
         )
-    
+
         # Compute noise covariance matrices for the original dataset fit
         model = model_pred.model
         W_org = model_pred.W_est
         Sigmas_noise_grid_org = model.compute_Sigmas(model.compute_U(W_org, grid_fine))
-    
+
         # Cache results to avoid recomputing next time
         vars_dict["grid_fine"] = grid_fine
         vars_dict["Sigmas_noise_grid_org"] = Sigmas_noise_grid_org
-        with open(full_path, 'wb') as f:
+        with open(full_path, "wb") as f:
             pickled.dump(vars_dict, f)
-    
+
     # ---------------------------------------------------------------------
     # For each bootstrap dataset: compute / load NBS on the fine grid
     # ---------------------------------------------------------------------
     # NBS is computed per grid point between the original-fit covariance matrix
     # and the bootstrap-fit covariance matrix. Results are cached per bootstrap
     # pickle to avoid repeating expensive matrix operations.
-    NBS_fine_grid_btst = np.full((nDatasets, num_grid_pts_fine, num_grid_pts_fine), np.nan)
-    
+    NBS_fine_grid_btst = np.full(
+        (nDatasets, num_grid_pts_fine, num_grid_pts_fine), np.nan
+    )
+
     for r in trange(nDatasets):
         # Load bootstrap pickle for dataset r
-        with open(full_path_others[r], 'rb') as f:
+        with open(full_path_others[r], "rb") as f:
             vars_dict_others = pickled.load(f)
-    
+
         # Reuse cached NBS if available
         if "NBS_fine_grid" in vars_dict_others.keys():
             NBS_fine_grid_btst[r] = vars_dict_others["NBS_fine_grid"]
@@ -309,50 +323,51 @@ if not flag_load_other_subjects:
             Sigmas_noise_grid_btst = model_btst.compute_Sigmas(
                 model_btst.compute_U(W_btst, grid_fine)
             )
-    
+
             # Compute NBS at each grid location
             for idx in np.ndindex(grid_fine.shape[:-1]):
-                NBS_fine_grid_btst[r, *idx] = \
+                NBS_fine_grid_btst[r, *idx] = (
                     ModelPerformance.compute_normalized_Bures_similarity(
-                    Sigmas_noise_grid_org[*idx],
-                    Sigmas_noise_grid_btst[*idx],
+                        Sigmas_noise_grid_org[*idx],
+                        Sigmas_noise_grid_btst[*idx],
+                    )
                 )
-    
+
             # Cache grid, covariance matrices, and NBS back to the bootstrap pickle
             vars_dict_others["grid_fine"] = grid_fine
             vars_dict_others["Sigmas_noise_grid_btst"] = Sigmas_noise_grid_btst
             vars_dict_others["NBS_fine_grid"] = NBS_fine_grid_btst[r]
-            with open(full_path_others[r], 'wb') as f:
+            with open(full_path_others[r], "wb") as f:
                 pickled.dump(vars_dict_others, f)
-    
+
             del vars_dict_others
-    
+
     # ---------------------------------------------------------------------
     # Rank bootstraps by similarity to original fit and keep top 95%
     # ---------------------------------------------------------------------
     # Aggregate NBS over grid to obtain one similarity score per bootstrap dataset
     NBS_sum = np.sum(NBS_fine_grid_btst.reshape(nDatasets, -1), axis=1)
-    
+
     # Rank bootstrap datasets by descending similarity to original fit
     idx_NBS_sort_descending = np.argsort(NBS_sum)[::-1]
     NBS_sorted = NBS_sum[idx_NBS_sort_descending]
-    
+
     # Keep top 95% of bootstrap datasets for confidence interval construction
     nDatasets_CI = int(nDatasets * 0.95)
     idx_keep_NBS = idx_NBS_sort_descending[:nDatasets_CI]
-    
+
     # Retain ellipse parameters corresponding to selected bootstrap datasets
     params_ell_within_CI = params_ell[:, :, idx_keep_NBS]
 else:
-    #if we are loading data from different subjects, then we want to compute the full
+    # if we are loading data from different subjects, then we want to compute the full
     # range instead of 95% confidence interval
     params_ell_within_CI = params_ell
 
 # Compute confidence interval contours at each grid point
 #   - fitEll_min / fitEll_max represent the inner/outer envelopes across datasets
 fitEll_min, fitEll_max = find_inner_outer_contours_for_gridRefs(params_ell_within_CI)
-        
-#%%           
+
+# %%
 # -------------------------------------------------------------------------
 # Optional: load ground-truth predictions (simulated datasets only)
 # -------------------------------------------------------------------------
@@ -370,7 +385,7 @@ if flag_load_gt:
     gt_full_path = os.path.join(gt_fileDir_fits, gt_file_name)
 
     # Load ground-truth variables
-    with open(gt_full_path, 'rb') as f:
+    with open(gt_full_path, "rb") as f:
         vars_dict_gt = pickled.load(f)
 
     # Retrieve ground-truth model predictions evaluated on the desired grid
@@ -381,7 +396,7 @@ if flag_load_gt:
     if key_grid in vars_dict_gt:
         gt_model_pred = deepcopy(vars_dict_gt[key_grid])
     else:
-        gt_model_pred = deepcopy(vars_dict_gt['model_pred_Wishart'])
+        gt_model_pred = deepcopy(vars_dict_gt["model_pred_Wishart"])
 
         num_grid_pts = gt_model_pred.fitEll_scaled.shape[0]
         if num_grid_pts != num_grid_pts_desired:
@@ -393,74 +408,90 @@ if flag_load_gt:
 
     # Use GT ellipses as the reference overlay in the visualization
     reference_ell_vis = gt_model_pred.fitEll_unscaled
-    fig_name_ext = '_wGroundTruth'
+    fig_name_ext = "_wGroundTruth"
 
 else:
     # Simulated data, but user chose not to load ground truth
     reference_ell_vis = model_pred.fitEll_unscaled
-    fig_name_ext = ''
+    fig_name_ext = ""
 
-#%% 
-#---------------------------------------------------------------------------
+# %%
+# ---------------------------------------------------------------------------
 # SECTION 5: visualize the model predictions with confidence intervals
 # --------------------------------------------------------------------------
-output_figDir_fits = os.path.join(os.path.dirname(input_fileDir_fits.replace('DataFiles', 'FigFiles')), 'AEPsych_btst')
+output_figDir_fits = os.path.join(
+    os.path.dirname(input_fileDir_fits.replace("DataFiles", "FigFiles")), "AEPsych_btst"
+)
 if flag_load_other_subjects:
-    output_figDir_fits = re.sub(r'sub\d+', 'groupData', output_figDir_fits)
-    fig_name = re.sub(r'sub\d+', 'groupData', file_name[:-4])
+    output_figDir_fits = re.sub(r"sub\d+", "groupData", output_figDir_fits)
+    fig_name = re.sub(r"sub\d+", "groupData", file_name[:-4])
 else:
     fig_name = f"{file_name[:-4]}_wBtstCI{fig_name_ext}.pdf"
 os.makedirs(output_figDir_fits, exist_ok=True)
 
 # Create a base plotting settings instance (shared across plots)
-pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize = 8)
+pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=8)
 
 # Initialize 2D prediction settings by copying from base and overriding method-specific parameters
 pred2D_settings = replace(Plot2DPredSettings(), **pltSettings_base.__dict__)
-pred2D_settings = replace(pred2D_settings, 
-                          visualize_samples= False,
-                          visualize_gt = False if flag_load_other_subjects else True,
-                          visualize_model_estimatedCov = False,
-                          flag_rescale_axes_label = False,
-                          visualize_model_pred = True,
-                          modelpred_alpha = 1,
-                          ticks = np.linspace(-0.7, 0.7,5),
-                          modelpred_lw = 0.75,
-                          modelpred_ls = '-',
-                          gt_lw = 0.5,
-                          gt_lc = 'k',
-                          gt_label = 'Model predictions (original dataset)' \
-                              if not flag_load_gt else 'Ground truths',
-                          gt_ls = '--',  
-                          title =f'decay rate = {model_pred.model.decay_rate}',
-                          fig_name = fig_name) 
+pred2D_settings = replace(
+    pred2D_settings,
+    visualize_samples=False,
+    visualize_gt=False if flag_load_other_subjects else True,
+    visualize_model_estimatedCov=False,
+    flag_rescale_axes_label=False,
+    visualize_model_pred=True,
+    modelpred_alpha=1,
+    ticks=np.linspace(-0.7, 0.7, 5),
+    modelpred_lw=0.75,
+    modelpred_ls="-",
+    gt_lw=0.5,
+    gt_lc="k",
+    gt_label="Model predictions (original dataset)"
+    if not flag_load_gt
+    else "Ground truths",
+    gt_ls="--",
+    title=f"decay rate = {model_pred.model.decay_rate}",
+    fig_name=fig_name,
+)
 # Initialize Visualization Class for Wishart Predictions
-wishart_pred_vis_wCI = WishartPredictionsVisualization(expt_trial,
-                                                       model_pred.model, 
-                                                       model_pred, 
-                                                       color_thres_data,
-                                                       settings = pltSettings_base,
-                                                       save_fig = True)
+wishart_pred_vis_wCI = WishartPredictionsVisualization(
+    expt_trial,
+    model_pred.model,
+    model_pred,
+    color_thres_data,
+    settings=pltSettings_base,
+    save_fig=True,
+)
 # Create figure and axes for plotting
 fig, ax = plt.subplots(1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi)
 
 # plot the confidence interval
 for idx in np.ndindex(grid.shape[:-1]):
     cm = color_thres_data.W2D_to_rgb(grid[*idx])
-    if idx == (0,0):
-        if flag_load_other_subjects: lbl = f'100% across subjects CI ({nDatasets} datasets)' 
-        else: lbl = f'95% bootstrap CI ({nDatasets} datasets)' 
+    if idx == (0, 0):
+        if flag_load_other_subjects:
+            lbl = f"100% across subjects CI ({nDatasets} datasets)"
+        else:
+            lbl = f"95% bootstrap CI ({nDatasets} datasets)"
     else:
         lbl = None
-    #adapting_bg_2DW = np.array([-0.218, 0.5461, 0.9652])  #np.array([-0.0021, 0.0023, 0.9652]) np.array([-0.218, 0.5461, 0.9652])
-    #adapting_bg_rgb = color_thres_data.M_2DWToRGB @ adapting_bg_2DW
-    #ax.scatter(*adapting_bg_2DW[:2], marker = '*', color = adapting_bg_rgb, 
+    # adapting_bg_2DW = np.array([-0.218, 0.5461, 0.9652])  #np.array([-0.0021, 0.0023, 0.9652]) np.array([-0.218, 0.5461, 0.9652])
+    # adapting_bg_rgb = color_thres_data.M_2DWToRGB @ adapting_bg_2DW
+    # ax.scatter(*adapting_bg_2DW[:2], marker = '*', color = adapting_bg_rgb,
     #           edgecolor = 'k',lw = 0.2, s = 30,
     #           label = 'Adapting background' if idx == (0,0) else None)
-    wishart_pred_vis_wCI.add_CI_ellipses(fitEll_min[*idx], fitEll_max[*idx],
-                                         ax=ax, cm=cm, label=lbl, lw_outer = 0,
-                                         alpha = 0.5)
+    wishart_pred_vis_wCI.add_CI_ellipses(
+        fitEll_min[*idx],
+        fitEll_max[*idx],
+        ax=ax,
+        cm=cm,
+        label=lbl,
+        lw_outer=0,
+        alpha=0.5,
+    )
 
 # Overlay model predictions (joint fits) onto the same axes
-wishart_pred_vis_wCI.plot_2D(grid, gt_ellipses= reference_ell_vis, 
-                             ax=ax, settings=pred2D_settings)
+wishart_pred_vis_wCI.plot_2D(
+    grid, gt_ellipses=reference_ell_vis, ax=ax, settings=pred2D_settings
+)

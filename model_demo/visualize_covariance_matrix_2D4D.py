@@ -1,5 +1,4 @@
 #!/usr/bin/env python3
-# -*- coding: utf-8 -*-
 """
 Created on Mon Jul 15 23:37:26 2024
 
@@ -37,48 +36,64 @@ For visualization tools tailored to other experiment designs (e.g., 3D/6D thresh
 """
 
 import jax
+
 jax.config.update("jax_enable_x64", True)
+import os
+import sys
+from dataclasses import replace
+
 import jax.numpy as jnp
 import numpy as np
-import sys
-import os
-from dataclasses import replace
-#load functions from other modules
+
+# load functions from other modules
 sys.path.append("/Users/fangfang/Documents/MATLAB/projects/ellipsoids/ellipsoids")
 from core.wishart_process import WishartProcessModel
-from plotting.wishart_plotting import WishartModelBasicsVisualization,\
-    PlotSettingsBase, PlotCovMatSettings, PlotUSettings, PlottingTools
-    
-#%%
+from plotting.wishart_plotting import (
+    PlotCovMatSettings,
+    PlotSettingsBase,
+    PlottingTools,
+    PlotUSettings,
+    WishartModelBasicsVisualization,
+)
+
+# %%
 # -----------------------------------------------------------
 # SECTION 1: Randomly draw from prior (2D)
 # -----------------------------------------------------------
 ndims = 2
 # Number of grid points in the coarse (for ellipses) and fine (for heatmaps) grids.
-num_grid_pts      = 7
-num_grid_pts_fine = 100  
+num_grid_pts = 7
+num_grid_pts_fine = 100
 
 # PRNG key for sampling from the Wishart-process prior over W.
-W_INIT_KEY   = jax.random.PRNGKey(221)
+W_INIT_KEY = jax.random.PRNGKey(221)
 
 # Initialize a 2D WishartProcessModel with ndims×ndims covariance matrices.
 model = WishartProcessModel(
-    5,     # Degree of the polynomial basis functions
-    ndims, # Number of stimulus dimensions
-    1,     # Number of extra inner dimensions in `U`.
+    5,  # Degree of the polynomial basis functions
+    ndims,  # Number of stimulus dimensions
+    1,  # Number of extra inner dimensions in `U`.
     3e-4,  # Scale parameter for prior on `W`.
-    0.3,   # decay rate on `W` 
-    0,     # Diagonal term setting minimum variance for the ellipsoids.
-    num_dims_cov= ndims
+    0.3,  # decay rate on `W`
+    0,  # Diagonal term setting minimum variance for the ellipsoids.
+    num_dims_cov=ndims,
 )
 
 # Coarse grid of points in the 2D stimulus space (for plotting ellipses).
-grid = jnp.stack(jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, num_grid_pts) \
-                                 for _ in range(model.num_dims)]), axis=-1)
-    
-grid_fine = jnp.stack(jnp.meshgrid(*[jnp.linspace(-0.7, 0.7, num_grid_pts_fine) \
-                                 for _ in range(model.num_dims)]), axis=-1)
-    
+grid = jnp.stack(
+    jnp.meshgrid(
+        *[jnp.linspace(-0.7, 0.7, num_grid_pts) for _ in range(model.num_dims)]
+    ),
+    axis=-1,
+)
+
+grid_fine = jnp.stack(
+    jnp.meshgrid(
+        *[jnp.linspace(-0.7, 0.7, num_grid_pts_fine) for _ in range(model.num_dims)]
+    ),
+    axis=-1,
+)
+
 # Sample Chebyshev coefficients W from the prior.
 W_init = model.sample_W_prior(W_INIT_KEY)
 
@@ -90,44 +105,39 @@ U = model.compute_U(W_init, grid)
 Sigmas_test_grid_fine = model.compute_Sigmas(U_fine)
 Sigmas_test_grid = model.compute_Sigmas(U)
 
-#%%
+# %%
 # -----------------------------------------------------------
 # SECTION 2: Visualize 2D covariance matrix
 # -----------------------------------------------------------
 # Base directory for saving figures
-baseDir = '/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/'
+baseDir = "/Volumes/T9/Aguirre-Brainard Lab Dropbox/Fangfang Hong/"
 
 # Directory for all Wishart practice figure files
-fig_output_sim = os.path.join(baseDir, 'ELPS_analysis', 'WishartPractice_FigFiles')
+fig_output_sim = os.path.join(baseDir, "ELPS_analysis", "WishartPractice_FigFiles")
 
 # Subdirectory specific to this covariance-matrix visualization
-fig_outputDir = os.path.join(fig_output_sim, f'CovarianceMatrix_{ndims}D{ndims * 2}D')
+fig_outputDir = os.path.join(fig_output_sim, f"CovarianceMatrix_{ndims}D{ndims * 2}D")
 
 # Initialize base plotting settings (shared across different plot types)
-pltSettings_base = PlotSettingsBase(
-    fig_dir=fig_outputDir,
-    fontsize=9
-)
+pltSettings_base = PlotSettingsBase(fig_dir=fig_outputDir, fontsize=9)
 
 # Specialize plotting settings for covariance-matrix figures
 pltCovSettings = replace(PlotCovMatSettings(), **pltSettings_base.__dict__)
 
 # Visualization helper for Wishart model covariances
 visualize_sigma2D = WishartModelBasicsVisualization(
-    save_fig=True,
-    save_format='png',
-    settings=pltCovSettings
+    save_fig=True, save_format="png", settings=pltCovSettings
 )
 
 # Titles for the 2×2 covariance components:
 #   [0,0]: σ_dim1², [0,1] and [1,0]: σ_dim1,dim2, [1,1]: σ_dim2²
 ttl_list = [
-    [r'$\sigma^2_{\mathrm{dim1}}$', r'$\sigma_{\mathrm{dim1},\mathrm{dim2}}$'],
-    [r'$\sigma_{\mathrm{dim1},\mathrm{dim2}}$', r'$\sigma^2_{\mathrm{dim2}}$']
+    [r"$\sigma^2_{\mathrm{dim1}}$", r"$\sigma_{\mathrm{dim1},\mathrm{dim2}}$"],
+    [r"$\sigma_{\mathrm{dim1},\mathrm{dim2}}$", r"$\sigma^2_{\mathrm{dim2}}$"],
 ]
 
-#figure name
-fig_name = f'CovarianceMatrix_decayRate{model.decay_rate}_seed{W_INIT_KEY[1]}'
+# figure name
+fig_name = f"CovarianceMatrix_decayRate{model.decay_rate}_seed{W_INIT_KEY[1]}"
 
 # Loop over coarse grid locations and plot
 for p in range(num_grid_pts):
@@ -138,39 +148,37 @@ for p in range(num_grid_pts):
             slc_idx_dim2=q,
             cmap_bds=[-0.003, 0.003],
             ticks_W=np.around(np.linspace(-0.7, 0.7, 3), 1),
-            cmap_ell='k',
+            cmap_ell="k",
             heatmap_title_list=ttl_list,
-            covMat_title='2D plane',
-            scaler_ell=5, #enlarge it by 5 times for visualization
+            covMat_title="2D plane",
+            scaler_ell=5,  # enlarge it by 5 times for visualization
             fig_name=fig_name,
-            plane_2D='2D plane'
+            plane_2D="2D plane",
         )
 
         # Plot heatmaps of Σ(x) components (fine grid) and ellipses (coarse grid)
         visualize_sigma2D.plot_2D_covMat(
-            grid,
-            Sigmas_test_grid_fine,
-            Sigmas_test_grid,
-            settings=pltCovSettings_randW
+            grid, Sigmas_test_grid_fine, Sigmas_test_grid, settings=pltCovSettings_randW
         )
-        
-if visualize_sigma2D.save_format == 'png':
-    PlottingTools.save_gif(fig_outputDir, 
-                           gif_name=fig_name,
-                           fig_name_start = fig_name, 
-                           fig_name_end='.png'
-                           )
 
-#%%
+if visualize_sigma2D.save_format == "png":
+    PlottingTools.save_gif(
+        fig_outputDir, gif_name=fig_name, fig_name_start=fig_name, fig_name_end=".png"
+    )
+
+# %%
 # -----------------------------------------------------------
 # SECTION 2b: look at the weighted sum (U)
 # -----------------------------------------------------------
 pltUSettings = replace(PlotUSettings(), **pltSettings_base.__dict__)
-pltUSettings = replace(pltUSettings,
-                       cmap_bds = [-0.05, 0.05],
-                       ticks = np.linspace(-0.7, 0.7, 3),
-                       fig_name = 'U_given_sampledWeightMatrix',
-                       fig_name_ext = f'_seed{W_INIT_KEY[1]}'
-                       )
-visualize_sigma2D.fig_dir = os.path.join(fig_output_sim, 'U_given_estimatedWeightMatrix')
-visualize_sigma2D.plot_U_2D(U_fine, settings = pltUSettings)
+pltUSettings = replace(
+    pltUSettings,
+    cmap_bds=[-0.05, 0.05],
+    ticks=np.linspace(-0.7, 0.7, 3),
+    fig_name="U_given_sampledWeightMatrix",
+    fig_name_ext=f"_seed{W_INIT_KEY[1]}",
+)
+visualize_sigma2D.fig_dir = os.path.join(
+    fig_output_sim, "U_given_estimatedWeightMatrix"
+)
+visualize_sigma2D.plot_U_2D(U_fine, settings=pltUSettings)

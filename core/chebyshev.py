@@ -1,19 +1,22 @@
 import jax
+
 jax.config.update("jax_enable_x64", True)
-import numpy as np
 import jax.numpy as jnp
+import numpy as np
 
 # Example usage
 # -------------
 #
-# >> degree = 5 
+# >> degree = 5
 # >> x = jnp.linspace(-1, 1, 100)
 # >> basis_coeffs = chebyshev_basis(degree)
 # >> evaluate(basis_coefficients, x)
 
-#evaluate = jax.vmap(jnp.polyval, (0, None), 1)
+
+# evaluate = jax.vmap(jnp.polyval, (0, None), 1)
 def evaluate(basis_coefficients, x):
     return jax.vmap(jnp.polyval, (0, None), 1)(basis_coefficients, x)
+
 
 def chebyshev_basis(degree):
     """
@@ -42,4 +45,3 @@ def chebyshev_basis(degree):
         T[n + 1] = np.polyadd(np.polymul(twox, T[n]), -1 * T[n - 1])
 
     return jnp.array(T)
-
