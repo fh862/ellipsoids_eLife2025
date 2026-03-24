@@ -316,6 +316,14 @@ class ModelPerformance():
             
     @staticmethod
     def compute_normalized_Bures_similarity(M1, M2):
+        M1 = np.asarray(M1)
+        M2 = np.asarray(M2)
+    
+        if M1.shape != M2.shape:
+            raise ValueError(f"M1 and M2 must have the same shape, got {M1.shape} and {M2.shape}")
+        if M1.ndim < 2 or M1.shape[-1] != M1.shape[-2]:
+            raise ValueError("M1 and M2 must have shape (..., d, d)")
+            
         # Compute the product inside the trace
         inner_product = sqrtm(sqrtm(M1) @ M2 @ sqrtm(M1))  
         # Calculate the trace of the product
@@ -325,6 +333,56 @@ class ModelPerformance():
         # Calculate NBS
         NBS = trace_value / normalization_factor    
         return NBS
+    
+    @staticmethod
+    def compute_normalized_Bures_similarity_batch(M1, M2, eps=1e-12):
+        """
+        Compute normalized Bures similarity (NBS) for batches of covariance matrices.
+        This method is suitable for fast computing the NBS between two sets of cov matrices
+    
+        Parameters
+        ----------
+        M1, M2 : ndarray
+            Arrays of shape (..., d, d), where each pair M1[..., :, :] and
+            M2[..., :, :] is one covariance-matrix pair.
+        eps : float
+            Small value for numerical stability when clipping eigenvalues.
+    
+        Returns
+        -------
+        NBS : ndarray
+            Array of shape (...) containing the NBS for each matrix pair.
+        """
+        M1 = np.asarray(M1)
+        M2 = np.asarray(M2)
+    
+        if M1.shape != M2.shape:
+            raise ValueError(f"M1 and M2 must have the same shape, got {M1.shape} and {M2.shape}")
+        if M1.ndim < 2 or M1.shape[-1] != M1.shape[-2]:
+            raise ValueError("M1 and M2 must have shape (..., d, d)")
+    
+        # sqrt(M1) via batched eigendecomposition
+        evals1, evecs1 = np.linalg.eigh(M1)
+        evals1 = np.clip(evals1, eps, None)
+        sqrt_evals1 = np.sqrt(evals1)
+    
+        # sqrt(M1) = V diag(sqrt(lambda)) V^T
+        sqrt_M1 = (evecs1 * sqrt_evals1[..., None, :]) @ np.swapaxes(evecs1, -1, -2)
+    
+        # A = sqrt(M1) @ M2 @ sqrt(M1)
+        A = sqrt_M1 @ M2 @ sqrt_M1
+    
+        # trace(sqrt(A)) = sum(sqrt(eigvals(A)))
+        evalsA = np.linalg.eigvalsh(A)
+        evalsA = np.clip(evalsA, eps, None)
+        trace_sqrt_A = np.sum(np.sqrt(evalsA), axis=-1)
+    
+        # normalization factor = sqrt(trace(M1) * trace(M2))
+        trace_M1 = np.trace(M1, axis1=-2, axis2=-1)
+        trace_M2 = np.trace(M2, axis1=-2, axis2=-1)
+        normalization_factor = np.sqrt(np.clip(trace_M1 * trace_M2, eps, None))
+    
+        return trace_sqrt_A / normalization_factor
     
     @staticmethod
     def log_psd_matrix(S, tol=1e-4):

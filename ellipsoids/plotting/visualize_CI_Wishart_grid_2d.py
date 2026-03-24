@@ -51,8 +51,8 @@ from plotting.wishart_predictions_plotting import WishartPredictionsVisualizatio
     add_CI_ellipses, Plot2DPredSettings
 from core.model_predictions import rerun_model_pred_wExisting_model
 from plotting.wishart_plotting import PlotSettingsBase 
-from analysis.conf_interval import find_inner_outer_contours_for_gridRefs
-from analysis.model_performance import ModelPerformance
+from analysis.conf_interval import find_inner_outer_contours_for_gridRefs, \
+    find_btst_dataset_within_CI
 
 #%%
 #---------------------------------------------------------------------------
@@ -110,7 +110,7 @@ Assumptions:
 
 """
 
-num_grid_pts_desired = 5
+num_grid_pts_desired = 7
 flag_append_data = False
 
 # Construct the key name based on the desired grid size
@@ -260,97 +260,26 @@ for r in trange(nDatasets):
 # --------------------------------------------------------------------------
 if not flag_load_other_subjects:
     # ---------------------------------------------------------------------
-    # Precompute / load prediction grid + original-dataset noise ellipses
-    # ---------------------------------------------------------------------
-    # We evaluate noise covariance matrices on a fixed fine grid in 2D model space.
-    # If these have already been saved into the original-dataset pickle, load them;
-    # otherwise compute once and cache them back to disk.
-    if "grid_fine" in vars_dict.keys() and "Sigmas_noise_grid_org" in vars_dict.keys():
-        grid_fine = vars_dict["grid_fine"]
-        Sigmas_noise_grid_org = vars_dict["Sigmas_noise_grid_org"]
-        num_grid_pts_fine = grid_fine.shape[0]
-    else:
-        # Define the fine prediction grid
-        # num_grid_pts_fine = 103
-        # grid_fine = jnp.stack(
-        #     jnp.meshgrid(*[jnp.linspace(-0.85, 0.85, num_grid_pts_fine) for _ in range(ndims)]),
-        #     axis=-1
-        # )
-        
-        grid_fine1 = jnp.linspace(-0.6, 0.6, 73)
-        grid_fine2 = jnp.linspace(-0.85, 0.85, 103)
-        
-        grid_fine = jnp.stack(jnp.meshgrid(grid_fine1, grid_fine2), axis = -1)
-    
-        # Compute noise covariance matrices for the original dataset fit
-        model = model_pred.model
-        W_org = model_pred.W_est
-        Sigmas_noise_grid_org = model.compute_Sigmas(model.compute_U(W_org, grid_fine))
-    
-        # Cache results to avoid recomputing next time
-        vars_dict["grid_fine"] = grid_fine
-        vars_dict["Sigmas_noise_grid_org"] = Sigmas_noise_grid_org
-        with open(full_path, 'wb') as f:
-            pickled.dump(vars_dict, f)
-    
-    # ---------------------------------------------------------------------
     # For each bootstrap dataset: compute / load NBS on the fine grid
     # ---------------------------------------------------------------------
     # NBS is computed per grid point between the original-fit covariance matrix
     # and the bootstrap-fit covariance matrix. Results are cached per bootstrap
     # pickle to avoid repeating expensive matrix operations.
-    NBS_fine_grid_btst = np.full((nDatasets, num_grid_pts_fine, num_grid_pts_fine), np.nan)
+    NBS_sum = np.full((nDatasets,), np.nan)
     
+    params_ell_array = np.array(params_ell)
     for r in trange(nDatasets):
-        # Load bootstrap pickle for dataset r
         with open(full_path_others[r], 'rb') as f:
             vars_dict_others = pickled.load(f)
-    
-        # Reuse cached NBS if available
-        # if "NBS_fine_grid" in vars_dict_others.keys():
-        #     NBS_fine_grid_btst[r] = vars_dict_others["NBS_fine_grid"]
-        # else:
-        # Compute covariance matrices on the same fine grid for bootstrap fit r
-        model_pred_btst = deepcopy(vars_dict_others["model_pred_Wishart"])
-        model_btst = model_pred_btst.model
-        W_btst = model_pred_btst.W_est
-        Sigmas_noise_grid_btst = model_btst.compute_Sigmas(
-            model_btst.compute_U(W_btst, grid_fine)
-        )
+        NBS_sum[r] = np.sum(vars_dict_others["NBS_fine_grid"])
 
-        # Compute NBS at each grid location
-        for idx in np.ndindex(grid_fine.shape[:-1]):
-            NBS_fine_grid_btst[r, *idx] = \
-                ModelPerformance.compute_normalized_Bures_similarity(
-                Sigmas_noise_grid_org[*idx],
-                Sigmas_noise_grid_btst[*idx],
-            )
-
-        # Cache grid, covariance matrices, and NBS back to the bootstrap pickle
-        vars_dict_others["grid_fine"] = grid_fine
-        vars_dict_others["Sigmas_noise_grid_btst"] = Sigmas_noise_grid_btst
-        vars_dict_others["NBS_fine_grid"] = NBS_fine_grid_btst[r]
-        with open(full_path_others[r], 'wb') as f:
-            pickled.dump(vars_dict_others, f)
-
-        del vars_dict_others
-    
-    # ---------------------------------------------------------------------
     # Rank bootstraps by similarity to original fit and keep top 95%
-    # ---------------------------------------------------------------------
-    # Aggregate NBS over grid to obtain one similarity score per bootstrap dataset
-    NBS_sum = np.sum(NBS_fine_grid_btst.reshape(nDatasets, -1), axis=1)
-    
-    # Rank bootstrap datasets by descending similarity to original fit
-    idx_NBS_sort_descending = np.argsort(NBS_sum)[::-1]
-    NBS_sorted = NBS_sum[idx_NBS_sort_descending]
-    
-    # Keep top 95% of bootstrap datasets for confidence interval construction
-    nDatasets_CI = int(nDatasets * 0.95)
-    idx_keep_NBS = idx_NBS_sort_descending[:nDatasets_CI]
-    
-    # Retain ellipse parameters corresponding to selected bootstrap datasets
-    params_ell_within_CI = params_ell[:, :, idx_keep_NBS]
+    params_ell_within_CI, *_ = find_btst_dataset_within_CI(
+        NBS_sum, 
+        np.moveaxis(params_ell_array, -2, 0), 
+        CI_percent=0.95
+    )
+
 else:
     #if we are loading data from different subjects, then we want to compute the full
     # range instead of 95% confidence interval
@@ -358,7 +287,9 @@ else:
 
 # Compute confidence interval contours at each grid point
 #   - fitEll_min / fitEll_max represent the inner/outer envelopes across datasets
-fitEll_min, fitEll_max = find_inner_outer_contours_for_gridRefs(params_ell_within_CI)
+fitEll_min, fitEll_max = find_inner_outer_contours_for_gridRefs(
+    np.moveaxis(params_ell_within_CI, 0, -2)
+    )
         
 #%%           
 # -------------------------------------------------------------------------
@@ -373,7 +304,8 @@ if flag_load_gt:
     #
     # Example:
     #   'ELPS_analysis/ModelFitting_DataFiles/2D_oddity_task/Isoluminant plane'
-    #   'Fitted_isothreshold_Isoluminant plane_CIE1994_sim18000total_samplingNearContour_jitter0.3_seed0_bandwidth0.005_decay0.4_oddity.pkl'
+    #   'Fitted_isothreshold_Isoluminant plane_CIE1994_sim18000total_'+\
+    #       'samplingNearContour_jitter0.3_seed0_bandwidth0.005_decay0.4_oddity.pkl'
     gt_fileDir_fits, gt_file_name = select_file_and_get_path()
     gt_full_path = os.path.join(gt_fileDir_fits, gt_file_name)
 
@@ -448,7 +380,7 @@ wishart_pred_vis_wCI = WishartPredictionsVisualization(expt_trial,
                                                        model_pred, 
                                                        color_thres_data,
                                                        settings = pltSettings_base,
-                                                       save_fig = True)
+                                                       save_fig = False)
 # Create figure and axes for plotting
 fig, ax = plt.subplots(1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi)
 

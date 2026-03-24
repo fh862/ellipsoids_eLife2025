@@ -120,7 +120,7 @@ class Plot3DPredHTMLSettings:
     disable_hover: bool = True #universal disabling
     # Fonts / labels
     font_family: str = "Arial"
-    font_size: float = 10
+    font_size: float = 12
     xlabel: str = "Model space dimension 1"
     ylabel: str = "Model space dimension 2"
     zlabel: str = "Model space dimension 3"
@@ -1144,7 +1144,8 @@ def order_points_on_contour(pts, flag_wraparound = False):
         return np.vstack([pts_ord, pts_ord[0][None, :]])
     else:
         return pts_ord
-        
+
+#%%
 class WishartPredictionsVisualization_html():
     def __init__(self, settings: Plot3DPredHTMLSettings):
         """
@@ -1309,35 +1310,33 @@ class WishartPredictionsVisualization_html():
         P = model_pred.params_ell                  # 3D grid-like: P[i][j][k]
         n1, n2, n3 = len(P), len(P[0]), len(P[0][0])    # grid extents
     
-        for i in range(n1):
-            for j in range(n2):
-                for k in range(n3):
-                    p = P[i][j][k]
-    
-                    # Unpack parameters with explicit dtypes/shapes
-                    radii  = np.asarray(p["radii"], float)          # (3,)
-                    evecs  = np.asarray(p["evecs"],  float)         # (3,3)
-                    center = np.asarray(p["center"], float).ravel() # (3,)
-    
-                    # Use provided center_rgb for color if given; otherwise use this ellipsoid's center
-                    if center_rgb is not None:
-                        center_for_color = center_rgb[i,j,k]
-                    else:
-                        center_for_color = color_thresholds.W_unit_to_N_unit(np.asarray(center_rgb, float).ravel())
-    
-                    color_str = self.to_rgb_str(center_for_color)
-    
-                    # Build surface mesh
-                    X, Y, Z = EllipsoidSurfaceMesh(
-                        radii= self.st.ell_scaler * radii, 
-                        center=center, 
-                        eigenVectors=evecs,
-                        nu= self.st.ell_mesh_nu, 
-                        nv=self.st.ell_mesh_nv
-                    )
-    
-                    # use the internal helper
-                    self.add_ellipsoid_surface(fig, X, Y, Z, color_str)
+        for idx in np.ndindex(n1, n2, n3):
+            p = P[idx[0]][idx[1]][idx[2]]
+
+            # Unpack parameters with explicit dtypes/shapes
+            radii  = np.asarray(p["radii"], float)          # (3,)
+            evecs  = np.asarray(p["evecs"],  float)         # (3,3)
+            center = np.asarray(p["center"], float).ravel() # (3,)
+
+            # Use provided center_rgb for color if given; otherwise use this ellipsoid's center
+            if center_rgb is not None:
+                center_for_color = center_rgb[*idx]
+            else:
+                center_for_color = color_thresholds.W_unit_to_N_unit(np.asarray(center, float).ravel())
+
+            color_str = self.to_rgb_str(center_for_color)
+
+            # Build surface mesh
+            X, Y, Z = EllipsoidSurfaceMesh(
+                radii= self.st.ell_scaler * radii, 
+                center=center, 
+                eigenVectors=evecs,
+                nu= self.st.ell_mesh_nu, 
+                nv=self.st.ell_mesh_nv
+            )
+
+            # use the internal helper
+            self.add_ellipsoid_surface(fig, X, Y, Z, color_str)
         return fig
     
     def plot_ellipsoids_mesh_cov(self, fig, grid, cov_grid):
