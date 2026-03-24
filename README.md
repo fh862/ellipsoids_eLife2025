@@ -1,4 +1,4 @@
-# ellipsoids_eLife2025
+# ellipsoids_eLife2025 (dev)
 
 Code accompanying:
 
