@@ -21,7 +21,8 @@ jobs:
           python-version: "3.12"
 
       - name: Install package and test dependencies
-        run: pip install -e ".[dev]"
+        run: pip install -e "./ellipsoids[dev]"
 
       - name: Run tests
+        working-directory: ellipsoids
         run: python -m pytest tests/ -v
