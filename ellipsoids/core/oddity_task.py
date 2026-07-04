@@ -2,7 +2,6 @@ import jax
 import jax.numpy as jnp
 from . import wishart_process
 
-
 def estimate_loglikelihood(
         W, model, data, key, num_samples, bandwidth, simulation_func
     ):
@@ -71,14 +70,13 @@ def estimate_loglikelihood(
         num_samples, bandwidth, model.diag_term,
         simulation_func
     )
-    prob_correct = jnp.clip(prob_correct, 0.001, 0.999)
+    prob_correct = jnp.clip(prob_correct, 1e-6, 1-1e-6)
 
     # Evaluate log likelihood of predictions given
     # true responses y.
     return jnp.mean(
         y * jnp.log(prob_correct) + (1 - y) * jnp.log(1-prob_correct)
     )
-
 
 def oddity_prediction(
         params, key, num_samples, bandwidth, diag_term, simulation_func
@@ -118,6 +116,34 @@ def oddity_prediction(
     # Evaluate the cumulative density function at zero, which gives
     # the probability of making a correct choice. 
     return approx_cdf(0.0, outcomes, bandwidth)
+
+def oddity_prediction_nn(
+        params, nn_input_stats, nn_weights
+    ):
+    from nnlikelihoodapprox.nn_inputs import whiten_inputs_batch
+    from nnlikelihoodapprox.nn_model import nn_forward, standardize_inputs
+
+    # Unpack parameters
+    #     mref, mprobe == mean parameters for reference and probe stimuli
+    #     Uref, Uprobe == Specifies covariance for reference and probe stimuli
+    # Compute noise covariance matrix
+    mref, mprobe, Sigmas_ref, Sigmas_probe = params
+    
+    # Convert raw trial geometry (Sigmas + ref/probe locations) into the canonical
+    # whitened feature representation expected by the NN:
+    #   2D -> [lambda_1, lambda_2, |delta'_1|, |delta'_2|]
+    #   3D -> [lambda_1, lambda_2, lambda_3, |delta'_1|, |delta'_2|, |delta'_3|]
+    whitened_inputs = whiten_inputs_batch(Sigmas_ref, Sigmas_probe, mref, mprobe)
+
+    # Apply the same per-feature standardization used during NN training. The NN
+    # weights expect standardized whitened inputs, not the raw whitened values.
+    stddz_inputs = standardize_inputs(jnp.asarray(whitened_inputs), nn_input_stats)
+    
+    prob_correct = nn_forward(nn_weights, stddz_inputs)
+    
+    prob_correct = jnp.clip(prob_correct, 1e-6, 1-1e-6)
+    
+    return prob_correct
 
 def simulate_oddity_one_trial(params, key, num_samples, diag_term):
     """

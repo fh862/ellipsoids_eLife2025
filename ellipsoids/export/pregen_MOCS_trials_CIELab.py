@@ -35,27 +35,15 @@ subfolder_name = 'Isoluminant plane' if stim_dims == 2 else '3D'
 #-----------------------------------------------------
 # Define the required parameters
 if stim_dims == 2:
-    flag_gt_CIE = False
     plane_2D = 'Isoluminant plane'  
     
-    if flag_gt_CIE:
-        # Create an instance of the class
-        color_thres_data = color_thresholds(stim_dims, 
-                                            baseDir, 
-                                            plane_2D = plane_2D)
-        SUBJ_gt_Wishart = 'CIE1994'
-        color_thres_data.load_CIE_data(CIE_version = SUBJ_gt_Wishart)
-        color_thres_data.load_model_fits(CIE_version = SUBJ_gt_Wishart)  
-    else:
-        SUBJ_gt_Wishart = 4
-        # Create an instance of the class
-        color_thres_data = color_thresholds(stim_dims, 
-                                            baseDir, 
-                                            plane_2D = plane_2D,
-                                            manual_input= True)
-        # Load Wishart model fits
-        color_thres_data.load_model_fits()  
-        color_thres_data.load_CIE_data(CIE_version = 'CIE1994')
+    # Create an instance of the class
+    color_thres_data = color_thresholds(stim_dims, 
+                                        baseDir, 
+                                        plane_2D = plane_2D)
+    SUBJ_gt_Wishart = 'CIE1994'
+    color_thres_data.load_CIE_data(CIE_version = SUBJ_gt_Wishart)
+    color_thres_data.load_model_fits(CIE_version = SUBJ_gt_Wishart)  
 
     if plane_2D == 'Isoluminant plane':
         color_thres_data.load_transformation_matrix()
@@ -81,10 +69,10 @@ elif stim_dims == 3:
     
 # Define output directories using os.path.join for compatibility
 output_fileDir = os.path.join(baseDir, 'ELPS_analysis', 'Simulation_DataFiles',
-                              subfolder_name, 'MOCS', 'gt_CIE' if flag_gt_CIE else '')
+                              subfolder_name, 'MOCS', 'gt_CIE')
 output_figDir_sims = os.path.join(baseDir, 'ELPS_analysis', 'Simulation_FigFiles', 
                                   'Python_version', subfolder_name, 'MOCS', 
-                                  'gt_CIE' if flag_gt_CIE else '')
+                                  'gt_CIE')
 # List of directories to ensure existence
 directories = [output_figDir_sims, output_fileDir]
 # Ensure directories exist (create if they don't)
@@ -144,7 +132,6 @@ if stim_dims == 2:
     #   d = [cos(theta), sin(theta)]
     theta_rad = np.radians(theta_deg)
     chromatic_directions = np.column_stack([np.cos(theta_rad), np.sin(theta_rad)])  # (nRefs, 2)
-
 
 elif stim_dims == 3:
     xref_and_angles = sim_MOCS_trials.sample_sobol(
@@ -488,7 +475,7 @@ else:
     str_ext = ''
 output_file = f'Sim{stim_dims}dTask_colorDiscrimination_{ttl}_MOCStrials_'+\
                 f'{nRefs}refs_{nLevels}levels_{trials_per_level}trialsPerLevel_'+\
-                f'{str_extension}_{method_ref_generation}{str_ext}_seed{sobol_seed}.pkl'
+                f'{str_extension}_{str_ext}_seed{sobol_seed}.pkl'
 full_path2 = os.path.join(output_fileDir, output_file)
 
 variable_names = ['SUBJ_gt_Wishart','color_thres_data','model_pred_Wishart',

@@ -182,27 +182,6 @@ class color_thresholds():
             if file_name in files:
                 return os.path.join(root, file_name)
         raise FileNotFoundError(f"Data files directory not found for file {file_name}.")
-        
-    def _file_selection_popup(self):
-        """
-        Displays a list of file options in the console, assigns an ID to each, 
-        and allows the user to select a file by entering its ID. 
-        Returns the selected file name.
-        """
-        files = ManualFitFilenames()
-        print("Please select a file by entering its corresponding ID:")
-        for idx, name in enumerate(files.simplified_names, 1):
-            print(f"{idx}: {name}")
-    
-        while True:
-            try:
-                selected_id = int(input("Enter the ID of your selection: "))
-                if 1 <= selected_id <= len(files.full_names):
-                    return files.full_names[selected_id - 1]
-                else:
-                    print(f"Invalid ID. Please enter a number between 1 and {len(files.full_names)}.")
-            except ValueError:
-                print("Invalid input. Please enter a valid number.")
 
     #%%
     def load_CIE_data(self, CIE_version = '', num_grid_pts = 5):
@@ -618,6 +597,44 @@ class color_thresholds():
 
         return W3D[0] if was_1d else W3D
     
+    def recenter_via_cc(self, w_before, bgLMS_before, bgLMS_after):
+        """Recenter 2D W points by preserving cone contrast across backgrounds.
+
+        The transform is:
+            2D W -> RGB -> LMS -> cone contrast relative to bgLMS_before
+            -> LMS relative to bgLMS_after -> RGB -> 2D W.
+        """
+        w_before = np.asarray(w_before, dtype=float)
+        was_1d = w_before.shape == (2,)
+
+        rgb_before = self.W2D_to_rgb(w_before)
+        lms_before = (self.M_RGBToLMS @ rgb_before.T).T
+
+        bgLMS_before = np.asarray(bgLMS_before, dtype=float)
+        if bgLMS_before.shape == (3,):
+            bgLMS_before = np.broadcast_to(bgLMS_before, lms_before.shape)
+        elif bgLMS_before.shape != lms_before.shape:
+            raise ValueError(
+                f"bgLMS_before must have shape (3,) or {lms_before.shape}; "
+                f"got {bgLMS_before.shape}."
+            )
+
+        bgLMS_after = np.asarray(bgLMS_after, dtype=float)
+        if bgLMS_after.shape == (3,):
+            bgLMS_after = np.broadcast_to(bgLMS_after, lms_before.shape)
+        elif bgLMS_after.shape != lms_before.shape:
+            raise ValueError(
+                f"bgLMS_after must have shape (3,) or {lms_before.shape}; "
+                f"got {bgLMS_after.shape}."
+            )
+
+        cc = (lms_before - bgLMS_before) / bgLMS_before
+        lms_after = cc * bgLMS_after + bgLMS_after
+        rgb_after = (self.M_LMSToRGB @ lms_after.T).T
+
+        w_after = self.rgb_to_2DW(rgb_after)
+        return w_after[0] if was_1d else w_after
+
     #%% other useful methods                
     @staticmethod
     def N_unit_to_W_unit(N_unit):
@@ -651,4 +668,3 @@ class color_thresholds():
         """
         
         return (W_unit + 1) / 2
-    

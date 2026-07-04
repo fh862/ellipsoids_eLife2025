@@ -38,7 +38,6 @@ class wishart_model_pred():
         self.Sigmas_noise_grid = Sigmas_noise_grid
         
         # Experimental / data-related configuration
-        
         self.color_thres_data    = color_thres_data
         self.target_pC           = target_pC     
         
@@ -52,16 +51,43 @@ class wishart_model_pred():
             'scaler_x1': 1,                  # optional: ellipses/ellipsoids were scaled up/down
             'ngrid_bruteforce': 1000,        # Number of brute force steps based on vector length
             'bds_bruteforce': [0.001, 0.25], # Bounds for vector length search
-            'flag_force_centered_ref': True  #force the center to be at the ref when fitting ellipses / ellipsoids
+            'flag_force_centered_ref': True, #force the center to be at the ref when fitting ellipses / ellipsoids
+            'flag_use_nn_weights': False,
+            'nn_weights': None,
+            'nn_input_stats': None
             }
     
         # Allow caller to override any of the default parameters
         self.params.update(kwargs)
+        self._ensure_prediction_param_defaults()
     
         # Derived quantities based on model and grid
         self._extract_grid_points()
         self._set_chromatic_dir()
+        self._check_trained_nn_weights()
+
+    def __setstate__(self, state):
+        self.__dict__.update(state)
+        self._ensure_prediction_param_defaults()
+
+    def _ensure_prediction_param_defaults(self):
+        if not hasattr(self, 'params') or self.params is None:
+            self.params = {}
+
+        self.params.setdefault('flag_use_nn_weights', False)
+        self.params.setdefault('nn_weights', None)
+        self.params.setdefault('nn_input_stats', None)
         
+    def _check_trained_nn_weights(self):
+        if not self.params['flag_use_nn_weights']:
+            return
+        else:
+            print('Using trained NN for model predictions.')
+            if self.params['nn_weights'] is None or self.params['nn_input_stats'] is None:
+                raise ValueError(
+                    "flag_use_nn_weights=True requires nn_weights and nn_input_stats."
+                )
+                
     def _extract_grid_points(self):
         """
         Infer the spatial grid dimensions and covariance dimensionality
@@ -232,7 +258,22 @@ class wishart_model_pred():
                                     self.opt_params['mc_samples'], 
                                     self.opt_params['bandwidth'],
                                     self.model.diag_term,
-                                    self.params['simulation_func'])
+                                    self.params['simulation_func']
+                                    )
+        return pChoosingX1
+    
+    def _compute_pChoosingX1_nn(self, w_ref, w_comp):
+        Uref          = self.model.compute_U(self.W_est, w_ref)
+        U1            = self.model.compute_U(self.W_est, w_comp)
+        Sigmasref     = self.model.compute_Sigmas(Uref)
+        Sigmas1       = self.model.compute_Sigmas(U1)
+        pChoosingX1   = oddity_task.oddity_prediction_nn(
+                                    (w_ref[:,:self.model.num_dims_cov],
+                                     w_comp[:,:self.model.num_dims_cov],
+                                     Sigmasref, Sigmas1),
+                                    self.params['nn_input_stats'],
+                                    self.params['nn_weights']
+                                    )
         return pChoosingX1
     
     def _convert_Sig_2DisothresholdContour_oddity(self, w_ref, vecLength_test):
@@ -323,7 +364,10 @@ class wishart_model_pred():
         w_comp_rep = w_ref_rep + vecDir_rep * vecLength_rep
         
         # Compute the U matrices for reference and comparison stimuli.
-        pChoosingX1 = self._compute_pChoosingX1(w_ref_rep_full, w_comp_rep_full)
+        if not self.params['flag_use_nn_weights']:
+            pChoosingX1 = self._compute_pChoosingX1(w_ref_rep_full, w_comp_rep_full)
+        else:
+            pChoosingX1 = self._compute_pChoosingX1_nn(w_ref_rep_full, w_comp_rep_full)
             
         #reshape the probability of choosing x1 from
         #(16000, ) to (16, 1000)
@@ -371,7 +415,10 @@ class wishart_model_pred():
         # comparison stimuli
         w_comp_rep  = w_ref_rep + vecDir_rep * vecLength_rep 
         # Compute the U matrices for reference and comparison stimuli.
-        pChoosingX1 = self._compute_pChoosingX1(w_ref_rep, w_comp_rep)
+        if not self.params['flag_use_nn_weights']:
+            pChoosingX1 = self._compute_pChoosingX1(w_ref_rep, w_comp_rep)
+        else:
+            pChoosingX1 = self._compute_pChoosingX1_nn(w_ref_rep, w_comp_rep)            
         
         #reshape the probability of choosing x1 from
         #(nRepeats, 3) to (n_phi, n_theta, nSteps_bruteforce, 3)
@@ -671,13 +718,12 @@ def rerun_model_pred_wExisting_model(grid, model_pred, color_thres_data,
                                         target_pC = model_pred.target_pC,
                                         ngrid_bruteforce = ngrid_bruteforce,
                                         bds_bruteforce = bds_bruteforce,
-                                        simulation_func = model_pred.params['simulation_func'])
+                                        simulation_func = model_pred.params['simulation_func'],
+                                        flag_use_nn_weights = model_pred.params.get('flag_use_nn_weights', False),
+                                        nn_weights = model_pred.params.get('nn_weights'),
+                                        nn_input_stats = model_pred.params.get('nn_input_stats'))
     model_pred_new.convert_Sig_Threshold_oddity_batch(grid)   
     
     return model_pred_new
         
-
-
-
-
 
