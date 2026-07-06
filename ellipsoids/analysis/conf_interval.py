@@ -10,7 +10,6 @@ import jax
 jax.config.update("jax_enable_x64", True)
 import numpy as np
 from shapely.geometry import Polygon
-import os
 from analysis.ellipses_tools import find_inner_outer_contours, distance_to_ellipse_boundary
 
 #%%
@@ -128,6 +127,44 @@ def find_distance_to_ellipse_boundary_for_gridRef(p_ell, chromDir, bds_idx=[0, -
     opt_vec_sorted_ub = opt_vec_sorted[..., bds_idx[1]]
     
     return opt_vec, opt_vec_sorted, opt_vec_sorted_lb, opt_vec_sorted_ub
+
+def sort_array_and_get_bounds(values, axis=-1, bds_idx=(0, -1)):
+    """
+    Sort an array along a specified axis and return selected lower and upper bounds.
+
+    Parameters
+    ----------
+    values : array-like
+        Input values to sort.
+
+    axis : int, optional
+        Axis along which to sort. Default is the last axis, which is typically
+        the bootstrap-sample axis.
+
+    bds_idx : tuple of int, optional
+        Indices to extract from the sorted array as lower and upper bounds.
+        Default is (0, -1), i.e. the full min-max interval.
+
+    Returns
+    -------
+    values_sorted : ndarray
+        Input values sorted along the requested axis.
+
+    lb : ndarray
+        Lower bound extracted from values_sorted along the requested axis.
+
+    ub : ndarray
+        Upper bound extracted from values_sorted along the requested axis.
+    """
+    if len(bds_idx) != 2:
+        raise ValueError("bds_idx must contain exactly two indices: (lower, upper).")
+
+    values = np.asarray(values)
+    values_sorted = np.sort(values, axis=axis)
+    lb = np.take(values_sorted, bds_idx[0], axis=axis)
+    ub = np.take(values_sorted, bds_idx[1], axis=axis)
+
+    return values_sorted, lb, ub
 
 def intervals_overlap(ci1, ci2):
     """
