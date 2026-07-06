@@ -133,7 +133,7 @@ for r in trange(nDatasets):
             W_btst = vars_dict_btst["W_est"]
         except KeyError:
             try:
-                model_btst = deepcopy(vars_dict_btst["model_pred_Wishart"])
+                model_btst = deepcopy(vars_dict_btst["model_pred_Wishart"].model)
                 W_btst = model_btst.W_est
             except KeyError as exc:
                 raise KeyError(

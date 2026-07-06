@@ -310,6 +310,51 @@ class ModelPerformance():
         return BW_distance
             
     @staticmethod
+    def compute_Bures_Wasserstein_distance_batch(M1, M2, eps=1e-12):
+        """
+        Compute Bures-Wasserstein distance for batches of covariance matrices.
+
+        Parameters
+        ----------
+        M1, M2 : ndarray
+            Arrays of shape (..., d, d), where each pair M1[..., :, :] and
+            M2[..., :, :] is one covariance-matrix pair.
+        eps : float
+            Small value for numerical stability when clipping eigenvalues.
+
+        Returns
+        -------
+        BWD : ndarray
+            Array of shape (...) containing the Bures-Wasserstein distance for
+            each matrix pair.
+        """
+        M1 = np.asarray(M1)
+        M2 = np.asarray(M2)
+
+        if M1.shape != M2.shape:
+            raise ValueError(f"M1 and M2 must have the same shape, got {M1.shape} and {M2.shape}")
+        if M1.ndim < 2 or M1.shape[-1] != M1.shape[-2]:
+            raise ValueError("M1 and M2 must have shape (..., d, d)")
+
+        # sqrt(M1) via batched eigendecomposition
+        evals1, evecs1 = np.linalg.eigh(M1)
+        evals1 = np.clip(evals1, eps, None)
+        sqrt_evals1 = np.sqrt(evals1)
+        sqrt_M1 = (evecs1 * sqrt_evals1[..., None, :]) @ np.swapaxes(evecs1, -1, -2)
+
+        product = sqrt_M1 @ M2 @ sqrt_M1
+        evals_product = np.linalg.eigvalsh(product)
+        evals_product = np.clip(evals_product, eps, None)
+        trace_sqrt_product = np.sum(np.sqrt(evals_product), axis=-1)
+
+        trace_diff = (
+            np.trace(M1, axis1=-2, axis2=-1)
+            + np.trace(M2, axis1=-2, axis2=-1)
+            - 2 * trace_sqrt_product
+        )
+        return np.sqrt(np.clip(trace_diff, 0, None))
+
+    @staticmethod
     def compute_normalized_Bures_similarity(M1, M2):
         M1 = np.asarray(M1)
         M2 = np.asarray(M2)
