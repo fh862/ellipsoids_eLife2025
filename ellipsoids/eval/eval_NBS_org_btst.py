@@ -133,8 +133,9 @@ for r in trange(nDatasets):
             W_btst = vars_dict_btst["W_est"]
         except KeyError:
             try:
-                model_btst = deepcopy(vars_dict_btst["model_pred_Wishart"].model)
-                W_btst = model_btst.W_est
+                model_btst_pred = deepcopy(vars_dict_btst["model_pred_Wishart"])
+                model_btst = model_btst_pred.model
+                W_btst = model_btst_pred.W_est
             except KeyError as exc:
                 raise KeyError(
                     "Bootstrap save file must contain either (`model`, `W_est`) "
