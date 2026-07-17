@@ -8,10 +8,12 @@ Created on Sun Mar 22 15:27:16 2026
 
 from dataclasses import dataclass, field
 from typing import Optional, Sequence
+import ast
 import os
 import re
 import jax.numpy as jnp
 import numpy as np
+import pandas as pd
 from dconfig.mocs_config_mixin import MOCSConfigMixin
 
 @dataclass
@@ -42,11 +44,12 @@ class DatasetConfig_4D:
     grid_lim: float = 0.7
     grid_lim_1: float = 0.45
     grid_lim_2: float = 0.7
-    
+
     # stimulus dimension and rgb of adapting points
     stim_dims: int = 2
     psyfield_dims: int = 4
     bg_rgb: Optional[np.ndarray] = None
+    cr_rgb: Optional[np.ndarray] = None
     cr_xyY_measured: Optional[np.ndarray] = None
 
     # optional fields for simulated data
@@ -59,6 +62,9 @@ class DatasetConfig_4D:
     grid_2: Optional[jnp.ndarray] = field(init=False, default=None)
     path_fits_str: str = field(init=False)
     str_ext_s: str = field(init=False, default='')
+    schedule_filename: Optional[str] = field(init=False, default=None)
+    schedule_path: Optional[str] = field(init=False, default=None)
+    assigned_sessions: list[int] = field(init=False, default_factory=list)
 
     def __post_init__(self):
         # session suffix
@@ -174,6 +180,66 @@ class DatasetConfig_4D:
             num_grid_pts=7,
             bds_bruteforce=[0.0005, 0.3],
         )
+
+    @classmethod
+    def human_local_vs_global(
+        cls,
+        base_dir: str,
+        subN: int,
+        adaptation_cond_str: str = '_bg_gray_cr_gray',
+    ):
+
+        adaptation_cond_str_list = ['_bg_gray_cr_gray', '_bg_blue_cr_blue',
+                                       '_bg_orange_cr_orange', '_bg_gray_cr_blue',
+                                       '_bg_blue_cr_gray', '_bg_orange_cr_gray',
+                                       '_bg_gray_cr_orange']
+        if adaptation_cond_str not in adaptation_cond_str_list:
+            raise ValueError(
+                f"adaptation_cond_str must be one of {', '.join(adaptation_cond_str_list)}."
+            )
+
+        path_str = os.path.join(
+            base_dir, 'ELPS_analysis', 'Experiment_DataFiles',
+            '4D_Expt_varyingBackground', f'sub{subN}'
+        )
+        schedule_filename = f'session_schedule_sub{subN}_copy.csv'
+        schedule_path = os.path.join(path_str, schedule_filename)
+        schedule_df = pd.read_csv(schedule_path)
+        schedule_cond = adaptation_cond_str.removeprefix('_')
+        matching_rows = schedule_df[
+            schedule_df['cond_all'].apply(
+                lambda conds: schedule_cond in ast.literal_eval(conds)
+            )
+        ]
+        if matching_rows.empty:
+            raise ValueError(f"Condition {schedule_cond!r} was not found in {schedule_path}.")
+
+        first_row = matching_rows.iloc[0]
+        cond_idx = ast.literal_eval(first_row['cond_all']).index(schedule_cond)
+        parse_rgb = lambda column: np.fromstring(
+            first_row[column].split('|')[cond_idx], sep=','
+        )
+
+        config = cls(
+            base_dir=base_dir,
+            subN=subN,
+            flag_load_datafile=True,
+            totalSessions=len(matching_rows),
+            nSession=len(matching_rows),
+            path_str=path_str,
+            plane_2D='Isoluminant plane',
+            file_date='02012026',
+            adaptation_cond_str=adaptation_cond_str,
+            exptCond='_4dExpt_Isoluminant plane',
+            bg_rgb=parse_rgb('bg_rgb_all'),
+            cr_rgb=parse_rgb('cr_rgb_all'),
+            num_grid_pts=7,
+            bds_bruteforce=[0.0005, 0.3],
+        )
+        config.schedule_filename = schedule_filename
+        config.schedule_path = schedule_path
+        config.assigned_sessions = matching_rows['session'].astype(int).tolist()
+        return config
 
     @classmethod
     def human_ls_isolating(cls, base_dir: str, subN: int):

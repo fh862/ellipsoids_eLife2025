@@ -53,7 +53,6 @@ If this is run on hpc, use runPython_cpu.sbatch
 """
 
 # Toggle between HPC batch mode and local/interactive mode.
-flag_running_on_hpc = False
 import jax
 jax.config.update("jax_enable_x64", True)
 import dill as pickled
@@ -66,7 +65,7 @@ import os
 from analysis.utils_load import get_path
 from analysis.MOCS_thresholds import compute_Wishart_based_pCorrect_atMOCS
 from dconfig.config_4Ddata import DatasetConfig_4D_MOCS
-from dconfig.config_6Ddata import DatasetConfig_6D
+#from dconfig.config_6Ddata import DatasetConfig_6D
 from core.model_predictions import wishart_model_pred, rerun_model_pred_wExisting_model
 from analysis.conf_interval import find_inner_outer_contours_for_gridRefs, \
     intervals_overlap, find_btst_dataset_within_CI
@@ -83,8 +82,7 @@ from plotting.mocs_wishart_interactive_html import MOCSWishartInteractiveHTMLPlo
 # SECTION 1: load the fitted psychometric functions to validation trials
 # --------------------------------------------------------------------------
 # Base directory where data lives. On HPC, prefer paths relative to the script.
-base_dir = os.path.dirname(__file__) if flag_running_on_hpc else \
-    get_path("dropbox_root_mac")
+base_dir = get_path("dropbox_root_mac")
     
 # load best-fit Weibull Psychometric functions
 #'ELPS_analysis/Experiment_DataFiles/pilot2/sub1/fits'
@@ -94,7 +92,7 @@ base_dir = os.path.dirname(__file__) if flag_running_on_hpc else \
 #'ELPS_analysis/Simulation_DataFiles/MOCS/gt_CIE'
 #'Fitted_weibull_psychometric_func_Isoluminant plane_240totalTrials_25refs_MOCS_subCIE1994.pkl'
 
-subN = 2
+subN = 1
 decay_rate = 0.4
 # choose one dataset
 dcfg = DatasetConfig_4D_MOCS.human_isoluminant(base_dir, subN, decay_rate = decay_rate)
@@ -281,440 +279,438 @@ for idx, r in enumerate(trange(nBtst, desc="Loading bootstraps")):
             params_all[idx, j] = model_pred_Wishart_MOCS_r.params_ell[0][j]
 
 #%%           
-if not flag_running_on_hpc:
-    # --------------------------------------------------------------------------
-    # SECTION 4a: Rank bootstraps by similarity (NBS) and keep the top 95% for CI
-    # --------------------------------------------------------------------------
-    # fit a linear regression to the original dataset
-    slope_modelPred_org, *_ = np.linalg.lstsq(MOCS['vecLen_at_targetPC_MOCS'][:,None],
-                                              MOCS['vecLen_at_targetPC_Wishart'], 
-                                              rcond = None
-                                              )
-    corr_coef_modelPred_org = np.corrcoef(MOCS['vecLen_at_targetPC_MOCS'],  
-                                          MOCS['vecLen_at_targetPC_Wishart'])[0,1]
-    
-    # the confidence interval is the central 95%
-    percent_CI = 0.95
-        
-    if dcfg.stim_dims == 2:    
-        # Ellipse parameters restricted to the retained bootstrap set
-        # Expected output shape should be (nDatasets_CI, nRefs, 5)  
-        params_ell_within_CI, idx_keep_NBS, _ = find_btst_dataset_within_CI(NBS_sum, 
-                                                                            params_all, 
-                                                                            CI_percent= percent_CI)
-        
-        # For visualization: compute inner/outer envelope contours across bootstrap ellipses
-        # aggregated over all reference locations.
-        fitEll_min, fitEll_max = find_inner_outer_contours_for_gridRefs(np.moveaxis(params_ell_within_CI, 0,1))
-    else:
-        _, idx_keep_NBS, _ = find_btst_dataset_within_CI(NBS_sum, 
-                                                         [[]*nBtst], 
-                                                         CI_percent= percent_CI)
+# --------------------------------------------------------------------------
+# SECTION 4a: Rank bootstraps by similarity (NBS) and keep the top 95% for CI
+# --------------------------------------------------------------------------
+# fit a linear regression to the original dataset
+slope_modelPred_org, *_ = np.linalg.lstsq(MOCS['vecLen_at_targetPC_MOCS'][:,None],
+                                          MOCS['vecLen_at_targetPC_Wishart'], 
+                                          rcond = None
+                                          )
+corr_coef_modelPred_org = np.corrcoef(MOCS['vecLen_at_targetPC_MOCS'],  
+                                      MOCS['vecLen_at_targetPC_Wishart'])[0,1]
 
-    # Same filtering for pChoosingX1_Wishart (align bootstraps with idx_keep_NBS)
-    pChoosingX1_Wishart_btst = np.asarray(pChoosingX1_Wishart_list)        # shape (nBtst, nRefs, 1200)
-    pChoosingX1_Wishart_within_CI = pChoosingX1_Wishart_btst[idx_keep_NBS] # shape (nDatasets_CI, nRefs, 1200)
+# the confidence interval is the central 95%
+percent_CI = 0.95
     
-    # sort across bootstrap fits, then take the CI bounds by index.
-    pChoosingX1_Wishart_sorted = np.sort(pChoosingX1_Wishart_within_CI, axis=0)
-    # take the first and the last element as the CI bounds since this is already trimmed datasets
-    pChoosingX1_Wishart_CI_bds = pChoosingX1_Wishart_sorted[[0,-1]]       
+if dcfg.stim_dims == 2:    
+    # Ellipse parameters restricted to the retained bootstrap set
+    # Expected output shape should be (nDatasets_CI, nRefs, 5)  
+    params_ell_within_CI, idx_keep_NBS, _ = find_btst_dataset_within_CI(NBS_sum, 
+                                                                        params_all, 
+                                                                        CI_percent= percent_CI)
     
-    #Euclidean distan between the ref and comp at the thres predicted by the Wishart model
-    vecLen_at_targetPC_Wishart_btst = np.asarray(vecLen_at_targetPC_Wishart_list)
-    vecLen_at_targetPC_Wishart_within_CI = vecLen_at_targetPC_Wishart_btst[idx_keep_NBS]
-    
-    #sort Euclidean distance and take the CI bounds by index
-    vecLen_at_targetPC_Wishart_sorted = np.sort(vecLen_at_targetPC_Wishart_within_CI, axis = 0)
-    vecLen_at_targetPC_Wishart_CI_bds = vecLen_at_targetPC_Wishart_sorted[[0,-1]]
-    
-    # Convert CI bounds into asymmetric error bars relative to the point estimate
-    # (matplotlib expects [lower_err, upper_err]).
-    # Shape: (nCond, 2)
-    vecLen_at_targetPC_Wishart_err = np.vstack((
-        MOCS['vecLen_at_targetPC_Wishart'] - vecLen_at_targetPC_Wishart_CI_bds[0],
-        vecLen_at_targetPC_Wishart_CI_bds[1] - MOCS['vecLen_at_targetPC_Wishart']
-    )).T
+    # For visualization: compute inner/outer envelope contours across bootstrap ellipses
+    # aggregated over all reference locations.
+    fitEll_min, fitEll_max = find_inner_outer_contours_for_gridRefs(np.moveaxis(params_ell_within_CI, 0,1))
+else:
+    _, idx_keep_NBS, _ = find_btst_dataset_within_CI(NBS_sum, 
+                                                     [[]*nBtst], 
+                                                     CI_percent= percent_CI)
 
-    # -----------------------------------------------------------------------------
-    # SECTION 4b: compute the linear regression by pairing up bootstrap model fit
-    # between validation and AEPsych trials
-    # -----------------------------------------------------------------------------    
-    # Here we pair each empirical bootstrap sample (MOCS threshold estimates) with the
-    # corresponding WPPM bootstrap fit (ellipse-based predictions) and compute:
-    #   - slope (no intercept) of predicted vs. empirical
-    #   - Pearson correlation coefficient
-    # Then we form 95% CIs across matched bootstrap samples.
+# Same filtering for pChoosingX1_Wishart (align bootstraps with idx_keep_NBS)
+pChoosingX1_Wishart_btst = np.asarray(pChoosingX1_Wishart_list)        # shape (nBtst, nRefs, 1200)
+pChoosingX1_Wishart_within_CI = pChoosingX1_Wishart_btst[idx_keep_NBS] # shape (nDatasets_CI, nRefs, 1200)
 
-    key_matched_btst_analysis = 'slope_corr_analysis_matched_btst'
+# sort across bootstrap fits, then take the CI bounds by index.
+pChoosingX1_Wishart_sorted = np.sort(pChoosingX1_Wishart_within_CI, axis=0)
+# take the first and the last element as the CI bounds since this is already trimmed datasets
+pChoosingX1_Wishart_CI_bds = pChoosingX1_Wishart_sorted[[0,-1]]       
 
-    # Variables to cache inside MOCS so we don’t recompute on reruns
-    var_names = [
-        'slope_modelPred_org',
-        'corr_coef_modelPred_org',
-        'slope_btst',
-        'corr_coef_btst',
-        'slope_btst_sorted',
-        'slope_btst_CI',
-        'corr_coef_btst_sorted',
-        'corr_coef_btst_CI'
-    ]
+#Euclidean distan between the ref and comp at the thres predicted by the Wishart model
+vecLen_at_targetPC_Wishart_btst = np.asarray(vecLen_at_targetPC_Wishart_list)
+vecLen_at_targetPC_Wishart_within_CI = vecLen_at_targetPC_Wishart_btst[idx_keep_NBS]
 
-    # If analysis already exists in MOCS, load all saved variables    
-    if key_matched_btst_analysis in MOCS:
-        for name in var_names:
-            globals()[name] = MOCS[key_matched_btst_analysis][name]
-    else: 
-        # Initialize arrays to store the slope and correlation for each matched bootstrap sample
-        slope_btst = np.full((nBtst,), np.nan)
-        corr_coef_btst = np.full((nBtst,), np.nan)
-    
-        # Note that we should loop through `nBtst` instead of `nDatasets_CI` datasets!
-        for n in range(nBtst):
-            # Get the n-th MOCS bootstrap sample (empirical thresholds)
-            data_MOCS_n = MOCS['vecLen_at_targetPC_MOCS_btst'][:, n]
-    
-            # Get the corresponding AEPsych-predicted thresholds for this bootstrap sample
-            data_model_pred = vecLen_at_targetPC_Wishart_btst[n]
-    
-            # Perform linear regression (without intercept) to compute slope of predicted vs. empirical
-            slope_modelPred_n, *_ = np.linalg.lstsq(
-                data_MOCS_n.reshape(-1,1), data_model_pred, rcond=None
-            )
-            slope_btst[n] = slope_modelPred_n.item()
-    
-            # Compute Pearson correlation coefficient between predicted and empirical thresholds
-            corr_coef_btst[n] = np.corrcoef(data_MOCS_n, data_model_pred)[0, 1]
-        
-        # Aggregate slope results
-        nDatasets_CI = int(nBtst * percent_CI)                  # 114
-        idx_bds_CI = [int(nBtst * 0.025), int(nBtst * 0.975)-1] # # Upper bound index (convert to 0-based indexing)
+#sort Euclidean distance and take the CI bounds by index
+vecLen_at_targetPC_Wishart_sorted = np.sort(vecLen_at_targetPC_Wishart_within_CI, axis = 0)
+vecLen_at_targetPC_Wishart_CI_bds = vecLen_at_targetPC_Wishart_sorted[[0,-1]]
 
-        slope_btst_sorted = np.sort(slope_btst)
-        slope_btst_CI = slope_btst_sorted[idx_bds_CI]
+# Convert CI bounds into asymmetric error bars relative to the point estimate
+# (matplotlib expects [lower_err, upper_err]).
+# Shape: (nCond, 2)
+vecLen_at_targetPC_Wishart_err = np.vstack((
+    MOCS['vecLen_at_targetPC_Wishart'] - vecLen_at_targetPC_Wishart_CI_bds[0],
+    vecLen_at_targetPC_Wishart_CI_bds[1] - MOCS['vecLen_at_targetPC_Wishart']
+)).T
+
+# -----------------------------------------------------------------------------
+# SECTION 4b: compute the linear regression by pairing up bootstrap model fit
+# between validation and AEPsych trials
+# -----------------------------------------------------------------------------    
+# Here we pair each empirical bootstrap sample (MOCS threshold estimates) with the
+# corresponding WPPM bootstrap fit (ellipse-based predictions) and compute:
+#   - slope (no intercept) of predicted vs. empirical
+#   - Pearson correlation coefficient
+# Then we form 95% CIs across matched bootstrap samples.
+
+key_matched_btst_analysis = 'slope_corr_analysis_matched_btst'
+
+# Variables to cache inside MOCS so we don’t recompute on reruns
+var_names = [
+    'slope_modelPred_org',
+    'corr_coef_modelPred_org',
+    'slope_btst',
+    'corr_coef_btst',
+    'slope_btst_sorted',
+    'slope_btst_CI',
+    'corr_coef_btst_sorted',
+    'corr_coef_btst_CI'
+]
+
+# If analysis already exists in MOCS, load all saved variables    
+if key_matched_btst_analysis in MOCS:
+    for name in var_names:
+        globals()[name] = MOCS[key_matched_btst_analysis][name]
+else: 
+    # Initialize arrays to store the slope and correlation for each matched bootstrap sample
+    slope_btst = np.full((nBtst,), np.nan)
+    corr_coef_btst = np.full((nBtst,), np.nan)
+
+    # Note that we should loop through `nBtst` instead of `nDatasets_CI` datasets!
+    for n in range(nBtst):
+        # Get the n-th MOCS bootstrap sample (empirical thresholds)
+        data_MOCS_n = MOCS['vecLen_at_targetPC_MOCS_btst'][:, n]
+
+        # Get the corresponding AEPsych-predicted thresholds for this bootstrap sample
+        data_model_pred = vecLen_at_targetPC_Wishart_btst[n]
+
+        # Perform linear regression (without intercept) to compute slope of predicted vs. empirical
+        slope_modelPred_n, *_ = np.linalg.lstsq(
+            data_MOCS_n.reshape(-1,1), data_model_pred, rcond=None
+        )
+        slope_btst[n] = slope_modelPred_n.item()
+
+        # Compute Pearson correlation coefficient between predicted and empirical thresholds
+        corr_coef_btst[n] = np.corrcoef(data_MOCS_n, data_model_pred)[0, 1]
     
-        # Aggregate correlation coefficient results
-        corr_coef_btst_sorted = np.sort(corr_coef_btst)
-        corr_coef_btst_CI = corr_coef_btst_sorted[idx_bds_CI]
-    
-        if flag_append_data:
-            # Package all computed variables into a dictionary for saving
-            slope_corr_analysis_matched_btst = {name: eval(name) for name in var_names}
-            MOCS[key_matched_btst_analysis] = slope_corr_analysis_matched_btst
-    
-            # Save updated MOCS dictionary back to file
-            with open(dcfg.mocs_fit_full_path, 'wb') as f:
-                pickled.dump(MOCS, f)
+    # Aggregate slope results
+    nDatasets_CI = int(nBtst * percent_CI)                  # 114
+    idx_bds_CI = [int(nBtst * 0.025), int(nBtst * 0.975)-1] # # Upper bound index (convert to 0-based indexing)
+
+    slope_btst_sorted = np.sort(slope_btst)
+    slope_btst_CI = slope_btst_sorted[idx_bds_CI]
+
+    # Aggregate correlation coefficient results
+    corr_coef_btst_sorted = np.sort(corr_coef_btst)
+    corr_coef_btst_CI = corr_coef_btst_sorted[idx_bds_CI]
+
+    if flag_append_data:
+        # Package all computed variables into a dictionary for saving
+        slope_corr_analysis_matched_btst = {name: eval(name) for name in var_names}
+        MOCS[key_matched_btst_analysis] = slope_corr_analysis_matched_btst
+
+        # Save updated MOCS dictionary back to file
+        with open(dcfg.mocs_fit_full_path, 'wb') as f:
+            pickled.dump(MOCS, f)
 
 #%%    
-if not flag_running_on_hpc:  
-    # Set up output directory for saving figures
-    input_fileDir_fits = deepcopy(dcfg.mocs_fit_dir)
-    output_figDir_fits = os.path.join(os.path.dirname(input_fileDir_fits).replace(\
-                                                    'Experiment_DataFiles', 
-                                                    'Experiment_FigFiles'),
-                                          'comp_validation')
-    os.makedirs(output_figDir_fits, exist_ok=True)
-    
-    # ---------------------------------------------------------------------------------
-    # SECTION 5a: Visualize threshold ellipses at validation conditions with 95% CIs
-    # ---------------------------------------------------------------------------------
-    if dcfg.stim_dims == 2:
-        # Create a base plotting settings instance (shared across plots)
-        pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=8)
-        
-        # Initialize 2D prediction settings based on the base, with method-specific overrides
-        pred2D_settings = replace(Plot2DPredSettings(), **pltSettings_base.__dict__)
-        pred2D_settings = replace(pred2D_settings,
-                                  visualize_samples=False,
-                                  visualize_gt=False,
-                                  visualize_model_estimatedCov=False,
-                                  modelpred_alpha=1,
-                                  modelpred_lw=0.7,
-                                  modelpred_ls='-',
-                                  ticks=np.linspace(-0.7, 0.7, 5),
-                                  legend_off=False,
-                                  flag_rescale_axes_label=False
-                                  )
-        
-        # Initialize visualization object for the Wishart model predictions
-        wishart_pred_vis_MOCS = WishartPredictionsVisualization(None,
-                                                                model_pred_Wishart_MOCS.model,
-                                                                model_pred_Wishart_MOCS,
-                                                                color_thres_data,
-                                                                settings=pltSettings_base,
-                                                                save_fig=False
-                                                                )
+# Set up output directory for saving figures
+input_fileDir_fits = deepcopy(dcfg.mocs_fit_dir)
+output_figDir_fits = os.path.join(os.path.dirname(input_fileDir_fits).replace(\
+                                                'Experiment_DataFiles', 
+                                                'Experiment_FigFiles'),
+                                      'comp_validation')
+os.makedirs(output_figDir_fits, exist_ok=True)
 
-        # Create a figure and axis
-        fig, ax = plt.subplots(1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi)
-        
-        # Plot bootstrapped confidence intervals (CI) from Wishart predictions
-        cmap_allref = []
-        for j in range(MOCS['nRefs']):
-            lbl = f'{percent_CI*100}% bootstrap CI ({nBtst} AEPsych datasets)' if j == 0 else None
-        
-            # Convert 2D chromatic coordinate to RGB for colormap
-            cm = color_thres_data.W2D_to_rgb(MOCS['xref_unique'][j])
-            cmap_allref.append(cm)
-        
-            # Plot the CI region between inner and outer ellipse contours
-            add_CI_ellipses(fitEll_min[j], fitEll_max[j],
-                            ax=ax, cm=cm, label=lbl, alpha = 0.75)
-        
-        # Plot model-predicted threshold ellipses from AEPsych data
-        wishart_pred_vis_MOCS.plot_2D(MOCS['xref_unique'][None], ax=ax, settings=pred2D_settings)
-        
-        # Plot MOCS trial conditions as direction vectors from reference stimuli
-        plotCond_Settings = replace(PlotCondSettings(), **pltSettings_base.__dict__)
-        plotCond_Settings = replace(plotCond_Settings, 
-                                    ref_ms=5,
-                                    ref_lw=1,
-                                    ref_label = None,
-                                    ticks=np.linspace(-0.7, 0.7, 5),
-                                    comp_ms=0.01,
-                                    comp_lw=1.5,
-                                    flag_show_comp_marker = False,
-                                    easyTrials_highlight=False
-                                    )
-
-        MOCS_cond_vis = MOCSConditionsVisualization(settings = pltSettings_base, save_fig = False)
-        MOCS_cond_vis.plot_MOCS_conditions(ndims=2,
-                                           xref_unique=MOCS['xref_unique'],
-                                           comp_unique=MOCS['stim_at_targetPC_MOCS'][:,None],
-                                           color_thres_data=color_thres_data,
-                                           ax=ax,
-                                           settings = plotCond_Settings
-                                           )
-        
-        # Plot confidence intervals for threshold magnitude along MOCS directions
-        MOCS_chromDir = MOCS['stim_at_targetPC_MOCS'] - MOCS['xref_unique']
-        MOCS_chromDir_norm = MOCS_chromDir / np.linalg.norm(MOCS_chromDir, axis=-1)[:, None]
-        for i in range(MOCS['nRefs']):
-            CI_i = MOCS['fit_PMF_MOCS'][i].stim_at_targetPC_95btstCI
-            lb_i = MOCS['xref_unique'][i] + CI_i[0] * MOCS_chromDir_norm[i]
-            ub_i = MOCS['xref_unique'][i] + CI_i[1] * MOCS_chromDir_norm[i]
-            lbl = '95% bootstrap CI (120 MOCS datasets)' if i == 0 else None
-            # Draw a line from lower to upper bound of threshold CI
-            ax.plot([lb_i[0], ub_i[0]],[lb_i[1], ub_i[1]], 
-                c='k',  lw=1.5,  solid_capstyle='butt', label = lbl, 
-            )
-            
-        ax.set_title('Isoluminant plane')
-        ax.legend(loc='lower center',bbox_to_anchor=(0.5, -0.45),
-                  fontsize = pred2D_settings.fontsize-1)
-        # Save figure
-        fig_name = f"{dcfg.wishart_file_name[:-4]}_comparison_btw_MOCS_WishartPredictions_wBtstCI.pdf"
-        #fig.savefig(os.path.join(output_figDir_fits, fig_name), bbox_inches='tight')
-        plt.show()
-    
-    #%%
-    # ---------------------------------------------------------------------------------
-    # SECTION 5b: Visualize PMFs along with WPPM predicted percent correct with 95% CI
-    # ---------------------------------------------------------------------------------
+# ---------------------------------------------------------------------------------
+# SECTION 5a: Visualize threshold ellipses at validation conditions with 95% CIs
+# ---------------------------------------------------------------------------------
+if dcfg.stim_dims == 2:
     # Create a base plotting settings instance (shared across plots)
-    pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=11)
+    pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=8)
+    
     # Initialize 2D prediction settings based on the base, with method-specific overrides
-    predPMF_settings = replace(PlotPMFSettings(), **pltSettings_base.__dict__)
+    pred2D_settings = replace(Plot2DPredSettings(), **pltSettings_base.__dict__)
+    pred2D_settings = replace(pred2D_settings,
+                              visualize_samples=False,
+                              visualize_gt=False,
+                              visualize_model_estimatedCov=False,
+                              modelpred_alpha=1,
+                              modelpred_lw=0.7,
+                              modelpred_ls='-',
+                              ticks=np.linspace(-0.7, 0.7, 5),
+                              legend_off=False,
+                              flag_rescale_axes_label=False
+                              )
     
-    #visualization object
-    vis_MOCS = MOCSTrialsVisualization(MOCS['fit_PMF_MOCS'], 
-                                       settings = pltSettings_base,
-                                       save_fig=False
-                                       )
+    # Initialize visualization object for the Wishart model predictions
+    wishart_pred_vis_MOCS = WishartPredictionsVisualization(None,
+                                                            model_pred_Wishart_MOCS.model,
+                                                            model_pred_Wishart_MOCS,
+                                                            color_thres_data,
+                                                            settings=pltSettings_base,
+                                                            save_fig=False
+                                                            )
+
+    # Create a figure and axis
+    fig, ax = plt.subplots(1, 1, figsize=pred2D_settings.fig_size, dpi=pred2D_settings.dpi)
     
-    #initialize color map
+    # Plot bootstrapped confidence intervals (CI) from Wishart predictions
     cmap_allref = []
-    for n in range(MOCS['nRefs']):
-        fig_name_part1 = dcfg.wishart_file_name[:-4]
-        fig_name_n = f"{fig_name_part1}Ref{n}_Wdim1_{np.round(MOCS['xref_unique'][n][0],2)}_"+\
-            f"Wdim2_{np.round(MOCS['xref_unique'][n][1],2)}.pdf"
-            
-        #define color map for each reference
-        if dcfg.stim_dims == 2:
-            cmap_n = color_thres_data.W2D_to_rgb(MOCS['xref_unique'][n])
-        else:
-            cmap_n = color_thres_data.W_unit_to_N_unit(MOCS['xref_unique'][n])
-        #append colormap so we can reuse it for the next plot
-        cmap_allref.append(cmap_n)
-        
-        predPMF_settings = replace(predPMF_settings, #fig_size = (3.3, 6.3),
-                                   filler_pts = [0,1/3],
-                                   cmap_PMF = 'k',
-                                   cmap_dots = 'k',
-                                   CI_area_alpha = 0.3,
-                                   CI_thres_errorbar_lw = 5,
-                                   Wishart_pred_lc = cmap_n,
-                                   Wishart_pred_lw = 1
-                                   )
-        
-        fig_n, ax_n = plt.subplots(1, 1, figsize=predPMF_settings.fig_size, 
-                                   dpi=predPMF_settings.dpi)    
-        vis_MOCS.plot_PMF(slc_idx=n, 
-                          pX1_Wishart_slc=MOCS['pChoosingX1_Wishart'][n], 
-                          xref = MOCS['xref_unique'][n],
-                          ax = ax_n,
-                          settings = predPMF_settings)    
-        #add CI of the PMF based on the Wishart fit
-        slc_PMF_MOCS = MOCS['fit_PMF_MOCS'][n]
-        ax_n.fill_between(slc_PMF_MOCS.fineVal,
-                          *pChoosingX1_Wishart_CI_bds[:,n],
-                          lw = 2,
-                          color= cmap_n, alpha=0.5, edgecolor = 'none')
-        # Add error bars for estimated threshold
-        ax_n.errorbar(MOCS['vecLen_at_targetPC_Wishart'][n], slc_PMF_MOCS.target_pC,
-                      xerr=vecLen_at_targetPC_Wishart_err[n][:, None],
-                      c=cmap_n, lw= 3, capsize=4)
-        fig_n.savefig(os.path.join(output_figDir_fits, f"{fig_name_n[:-4]}.pdf"),
-                      bbox_inches='tight')
-        plt.show()
+    for j in range(MOCS['nRefs']):
+        lbl = f'{percent_CI*100}% bootstrap CI ({nBtst} AEPsych datasets)' if j == 0 else None
     
-    #%%
-    # ---------------------------------------------------------------------------------
-    # SECTION 5c: Visualize the comparison of thresholds in a scatter plot
-    # ---------------------------------------------------------------------------------
-    # thresholds CI predicted by validation trials
-    Validation_thres_CI_bds = np.vstack([MOCS['vecLen_at_targetPC_MOCS'][i] + \
-                                 np.array([-1,1])*MOCS['fit_PMF_MOCS'][i].stim_at_targetPC_95btstErr \
-                                     for i in range(MOCS['nRefs'])])
-    #compute how many validation conditions have overlapped confidence intervals
-    _, num_overlaps, _ = intervals_overlap(Validation_thres_CI_bds, vecLen_at_targetPC_Wishart_CI_bds.T)   
+        # Convert 2D chromatic coordinate to RGB for colormap
+        cm = color_thres_data.W2D_to_rgb(MOCS['xref_unique'][j])
+        cmap_allref.append(cm)
     
-    settings_lookup = PlotThresComp3DSettings_bds if dcfg.stim_dims == 3 else PlotThresCompSettings_bds
-    settings_bds = settings_lookup[f"sub{subN if dcfg.flag_load_datafile else None}"]
-    plt_bds = settings_bds["bds"]
-    corr_txt_loc = settings_bds["corr_text_loc"]
-    slope_txt_loc = settings_bds["slope_text_loc"]
-    numOverlaps_text_loc = settings_bds["numOverlaps_text_loc"]
+        # Plot the CI region between inner and outer ellipse contours
+        add_CI_ellipses(fitEll_min[j], fitEll_max[j],
+                        ax=ax, cm=cm, label=lbl, alpha = 0.75)
     
-    #visualization object
-    pltSettings_base2 = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=9.5)
-    vis_MOCS = MOCSTrialsVisualization(MOCS['fit_PMF_MOCS'],
-                                       settings = pltSettings_base2,
-                                       save_fig= False
+    # Plot model-predicted threshold ellipses from AEPsych data
+    wishart_pred_vis_MOCS.plot_2D(MOCS['xref_unique'][None], ax=ax, settings=pred2D_settings)
+    
+    # Plot MOCS trial conditions as direction vectors from reference stimuli
+    plotCond_Settings = replace(PlotCondSettings(), **pltSettings_base.__dict__)
+    plotCond_Settings = replace(plotCond_Settings, 
+                                ref_ms=5,
+                                ref_lw=1,
+                                ref_label = None,
+                                ticks=np.linspace(-0.7, 0.7, 5),
+                                comp_ms=0.01,
+                                comp_lw=1.5,
+                                flag_show_comp_marker = False,
+                                easyTrials_highlight=False
+                                )
+
+    MOCS_cond_vis = MOCSConditionsVisualization(settings = pltSettings_base, save_fig = False)
+    MOCS_cond_vis.plot_MOCS_conditions(ndims=2,
+                                       xref_unique=MOCS['xref_unique'],
+                                       comp_unique=MOCS['stim_at_targetPC_MOCS'][:,None],
+                                       color_thres_data=color_thres_data,
+                                       ax=ax,
+                                       settings = plotCond_Settings
                                        )
     
-    predComp_settings = replace(PlotThresCompSettings(), **pltSettings_base2.__dict__)
-    predComp_settings = replace(predComp_settings,
-                                fontsize = 9.5,
-                                ms = 6,
-                                fig_size = (4.8, 5), 
-                                alpha = 0.8,
-                                lw = 1.5,
-                                bds = plt_bds, 
-                                corr_text_loc = corr_txt_loc,
-                                slope_text_loc = slope_txt_loc,
-                                numOverlaps_text_loc = numOverlaps_text_loc,
-                                xlabel = 'Threshold distance (validation)',
-                                ylabel = 'Threshold distance (WPPM)',
-                                cmap = cmap_allref,
-                                fig_name = f"{dcfg.wishart_file_name[:-4]}_comparison_"+\
-                                    "btw_MOCS_WishartPredictions_wBtstCI.pdf"
-                                )
-    # plot the comparison of thresholds between AEPsych predictions and MOCS predictions
-    vis_MOCS.plot_comparison_thres(thres_Wishart = MOCS['vecLen_at_targetPC_Wishart'],
-                                   slope_org = slope_modelPred_org.item(),
-                                   slope_CI= slope_btst_CI,
-                                   xref_unique = MOCS['xref_unique'],
-                                   thres_Wishart_95btstErr = vecLen_at_targetPC_Wishart_err,
-                                   corr_coef_org = corr_coef_modelPred_org,
-                                   corr_coef_CI = corr_coef_btst_CI,
-                                   num_overlaps=num_overlaps,
-                                   settings = predComp_settings
+    # Plot confidence intervals for threshold magnitude along MOCS directions
+    MOCS_chromDir = MOCS['stim_at_targetPC_MOCS'] - MOCS['xref_unique']
+    MOCS_chromDir_norm = MOCS_chromDir / np.linalg.norm(MOCS_chromDir, axis=-1)[:, None]
+    for i in range(MOCS['nRefs']):
+        CI_i = MOCS['fit_PMF_MOCS'][i].stim_at_targetPC_95btstCI
+        lb_i = MOCS['xref_unique'][i] + CI_i[0] * MOCS_chromDir_norm[i]
+        ub_i = MOCS['xref_unique'][i] + CI_i[1] * MOCS_chromDir_norm[i]
+        lbl = '95% bootstrap CI (120 MOCS datasets)' if i == 0 else None
+        # Draw a line from lower to upper bound of threshold CI
+        ax.plot([lb_i[0], ub_i[0]],[lb_i[1], ub_i[1]], 
+            c='k',  lw=1.5,  solid_capstyle='butt', label = lbl, 
+        )
+        
+    ax.set_title('Isoluminant plane')
+    ax.legend(loc='lower center',bbox_to_anchor=(0.5, -0.45),
+              fontsize = pred2D_settings.fontsize-1)
+    # Save figure
+    fig_name = f"{dcfg.wishart_file_name[:-4]}_comparison_btw_MOCS_WishartPredictions_wBtstCI.pdf"
+    fig.savefig(os.path.join(output_figDir_fits, fig_name), bbox_inches='tight')
+    plt.show()
+
+#%%
+# ---------------------------------------------------------------------------------
+# SECTION 5b: Visualize PMFs along with WPPM predicted percent correct with 95% CI
+# ---------------------------------------------------------------------------------
+# Create a base plotting settings instance (shared across plots)
+pltSettings_base = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=11)
+# Initialize 2D prediction settings based on the base, with method-specific overrides
+predPMF_settings = replace(PlotPMFSettings(), **pltSettings_base.__dict__)
+
+#visualization object
+vis_MOCS = MOCSTrialsVisualization(MOCS['fit_PMF_MOCS'], 
+                                   settings = pltSettings_base,
+                                   save_fig=False
                                    )
 
-    #%%
-    # ---------------------------------------------------------------------------------
-    # SECTION 5d: Export an interactive HTML summary
-    # ---------------------------------------------------------------------------------
-    html_dir = os.path.join(output_figDir_fits, 'html')
-    os.makedirs(html_dir, exist_ok=True)
+#initialize color map
+cmap_allref = []
+for n in range(MOCS['nRefs']):
+    fig_name_part1 = dcfg.wishart_file_name[:-4]
+    fig_name_n = f"{fig_name_part1}Ref{n}_Wdim1_{np.round(MOCS['xref_unique'][n][0],2)}_"+\
+        f"Wdim2_{np.round(MOCS['xref_unique'][n][1],2)}.pdf"
+        
+    #define color map for each reference
+    if dcfg.stim_dims == 2:
+        cmap_n = color_thres_data.W2D_to_rgb(MOCS['xref_unique'][n])
+    else:
+        cmap_n = color_thres_data.W_unit_to_N_unit(MOCS['xref_unique'][n])
+    #append colormap so we can reuse it for the next plot
+    cmap_allref.append(cmap_n)
+    
+    predPMF_settings = replace(predPMF_settings, #fig_size = (3.3, 6.3),
+                               filler_pts = [0,1/3],
+                               cmap_PMF = 'k',
+                               cmap_dots = 'k',
+                               CI_area_alpha = 0.3,
+                               CI_thres_errorbar_lw = 5,
+                               Wishart_pred_lc = cmap_n,
+                               Wishart_pred_lw = 1
+                               )
+    
+    fig_n, ax_n = plt.subplots(1, 1, figsize=predPMF_settings.fig_size, 
+                               dpi=predPMF_settings.dpi)    
+    vis_MOCS.plot_PMF(slc_idx=n, 
+                      pX1_Wishart_slc=MOCS['pChoosingX1_Wishart'][n], 
+                      xref = MOCS['xref_unique'][n],
+                      ax = ax_n,
+                      settings = predPMF_settings)    
+    #add CI of the PMF based on the Wishart fit
+    slc_PMF_MOCS = MOCS['fit_PMF_MOCS'][n]
+    ax_n.fill_between(slc_PMF_MOCS.fineVal,
+                      *pChoosingX1_Wishart_CI_bds[:,n],
+                      lw = 2,
+                      color= cmap_n, alpha=0.5, edgecolor = 'none')
+    # Add error bars for estimated threshold
+    ax_n.errorbar(MOCS['vecLen_at_targetPC_Wishart'][n], slc_PMF_MOCS.target_pC,
+                  xerr=vecLen_at_targetPC_Wishart_err[n][:, None],
+                  c=cmap_n, lw= 3, capsize=4)
+    fig_n.savefig(os.path.join(output_figDir_fits, f"{fig_name_n[:-4]}.pdf"),
+                  bbox_inches='tight')
+    plt.show()
 
-    reference_payloads = []
-    for n in range(MOCS['nRefs']):
-        slc_PMF_MOCS = MOCS['fit_PMF_MOCS'][n]
-        xref_n = MOCS['xref_unique'][n]
-        if dcfg.stim_dims == 2:
-            cmap_n = color_thres_data.W2D_to_rgb(xref_n)
-        else:
-            cmap_n = color_thres_data.W_unit_to_N_unit(xref_n)
-        cmap_n = np.asarray(cmap_n, dtype=float).reshape(-1)[:3]
+#%%
+# ---------------------------------------------------------------------------------
+# SECTION 5c: Visualize the comparison of thresholds in a scatter plot
+# ---------------------------------------------------------------------------------
+# thresholds CI predicted by validation trials
+Validation_thres_CI_bds = np.vstack([MOCS['vecLen_at_targetPC_MOCS'][i] + \
+                             np.array([-1,1])*MOCS['fit_PMF_MOCS'][i].stim_at_targetPC_95btstErr \
+                                 for i in range(MOCS['nRefs'])])
+#compute how many validation conditions have overlapped confidence intervals
+_, num_overlaps, _ = intervals_overlap(Validation_thres_CI_bds, vecLen_at_targetPC_Wishart_CI_bds.T)   
 
-        reference_payloads.append(
-            {
-                'ref_key': f'ref{n}',
-                'ref_name': "[" + ", ".join(f"{v:.2f}" for v in xref_n) + "]",
-                'xref': xref_n.tolist(),
-                'color_css': f"rgb({int(np.clip(cmap_n[0], 0, 1) * 255)}, {int(np.clip(cmap_n[1], 0, 1) * 255)}, {int(np.clip(cmap_n[2], 0, 1) * 255)})",
-                'wppm_ci_fill_css': f"rgba({int(np.clip(cmap_n[0], 0, 1) * 255)}, {int(np.clip(cmap_n[1], 0, 1) * 255)}, {int(np.clip(cmap_n[2], 0, 1) * 255)}, 0.28)",
-                'fine_val': slc_PMF_MOCS.fineVal.tolist(),
-                'mocs_fit': slc_PMF_MOCS.fine_pC.tolist(),
-                'mocs_ci_lower': slc_PMF_MOCS.fine_pC_95btstCI[0].tolist(),
-                'mocs_ci_upper': slc_PMF_MOCS.fine_pC_95btstCI[1].tolist(),
-                'stim_dist': slc_PMF_MOCS.unique_stim_dist.tolist(),
-                'pc_per_level': slc_PMF_MOCS.pC_perLevel.tolist(),
-                'target_pc': float(slc_PMF_MOCS.target_pC),
-                'mocs_threshold': float(slc_PMF_MOCS.stim_at_targetPC),
-                'mocs_threshold_err': slc_PMF_MOCS.stim_at_targetPC_95btstErr.tolist(),
-                'wppm_curve': MOCS['pChoosingX1_Wishart'][n].tolist(),
-                'wppm_ci_lower': pChoosingX1_Wishart_CI_bds[0, n].tolist(),
-                'wppm_ci_upper': pChoosingX1_Wishart_CI_bds[1, n].tolist(),
-                'wppm_threshold': float(MOCS['vecLen_at_targetPC_Wishart'][n]),
-                'wppm_threshold_err': vecLen_at_targetPC_Wishart_err[n].tolist(),
-            }
-        )
+settings_lookup = PlotThresComp3DSettings_bds if dcfg.stim_dims == 3 else PlotThresCompSettings_bds
+settings_bds = settings_lookup[f"sub{subN if dcfg.flag_load_datafile else None}"]
+plt_bds = settings_bds["bds"]
+corr_txt_loc = settings_bds["corr_text_loc"]
+slope_txt_loc = settings_bds["slope_text_loc"]
+numOverlaps_text_loc = settings_bds["numOverlaps_text_loc"]
 
-    regression_payload = {
-        'ref_keys': [payload['ref_key'] for payload in reference_payloads],
-        'ref_names': [payload['ref_name'] for payload in reference_payloads],
-        'colors_css': [payload['color_css'] for payload in reference_payloads],
-        'x': MOCS['vecLen_at_targetPC_MOCS'].tolist(),
-        'y': MOCS['vecLen_at_targetPC_Wishart'].tolist(),
-        'x_err': [
-            MOCS['fit_PMF_MOCS'][i].stim_at_targetPC_95btstErr.tolist()
-            for i in range(MOCS['nRefs'])
-        ],
-        'y_err': vecLen_at_targetPC_Wishart_err.tolist(),
-        'slope_org': float(slope_modelPred_org.item()),
-        'slope_ci': slope_btst_CI.tolist(),
-        'corr_org': float(corr_coef_modelPred_org),
-        'corr_ci': corr_coef_btst_CI.tolist(),
-        'num_overlaps': int(num_overlaps),
-        'axis_bounds': plt_bds.tolist(),
-    }
+#visualization object
+pltSettings_base2 = PlotSettingsBase(fig_dir=output_figDir_fits, fontsize=9.5)
+vis_MOCS = MOCSTrialsVisualization(MOCS['fit_PMF_MOCS'],
+                                   settings = pltSettings_base2,
+                                   save_fig= True
+                                   )
 
-    ref_stimulus = np.asarray(MOCS['refStimulus'])
-    comp_stimulus = np.asarray(MOCS['compStimulus'])
-    condition_refs = []
-    for n, payload in enumerate(reference_payloads):
-        xref = np.array(payload['xref'])
-        idx_match = np.where(np.all(np.isclose(ref_stimulus, xref[None], atol=1e-8), axis=1))[0]
-        comp_unique = np.unique(comp_stimulus[idx_match], axis=0)
-        condition_refs.append(
-            {
-                'ref_key': payload['ref_key'],
-                'ref_name': payload['ref_name'],
-                'xref': xref.tolist(),
-                'comp_points': comp_unique.tolist(),
-                'n_comp': int(comp_unique.shape[0]),
-                'color_css': payload['color_css'],
-            }
-        )
+predComp_settings = replace(PlotThresCompSettings(), **pltSettings_base2.__dict__)
+predComp_settings = replace(predComp_settings,
+                            fontsize = 9.5,
+                            ms = 6,
+                            fig_size = (4.8, 5), 
+                            alpha = 0.8,
+                            lw = 1.5,
+                            bds = plt_bds, 
+                            corr_text_loc = corr_txt_loc,
+                            slope_text_loc = slope_txt_loc,
+                            numOverlaps_text_loc = numOverlaps_text_loc,
+                            xlabel = 'Threshold distance (validation)',
+                            ylabel = 'Threshold distance (WPPM)',
+                            cmap = cmap_allref,
+                            fig_name = f"{dcfg.wishart_file_name[:-4]}_comparison_"+\
+                                "btw_MOCS_WishartPredictions_wBtstCI.pdf"
+                            )
+# plot the comparison of thresholds between AEPsych predictions and MOCS predictions
+vis_MOCS.plot_comparison_thres(thres_Wishart = MOCS['vecLen_at_targetPC_Wishart'],
+                               slope_org = slope_modelPred_org.item(),
+                               slope_CI= slope_btst_CI,
+                               xref_unique = MOCS['xref_unique'],
+                               thres_Wishart_95btstErr = vecLen_at_targetPC_Wishart_err,
+                               corr_coef_org = corr_coef_modelPred_org,
+                               corr_coef_CI = corr_coef_btst_CI,
+                               num_overlaps=num_overlaps,
+                               settings = predComp_settings
+                               )
 
-    condition_panel_payload = {
-        'ndims': int(dcfg.stim_dims),
-        'references': condition_refs,
-    }
+#%%
+# ---------------------------------------------------------------------------------
+# SECTION 5d: Export an interactive HTML summary
+# ---------------------------------------------------------------------------------
+html_dir = os.path.join(output_figDir_fits, 'html')
+os.makedirs(html_dir, exist_ok=True)
 
-    output_html = os.path.join(
-        html_dir,
-        f"{dcfg.wishart_file_name[:-4]}_comparison_btw_MOCS_WishartPredictions_interactive.html",
+reference_payloads = []
+for n in range(MOCS['nRefs']):
+    slc_PMF_MOCS = MOCS['fit_PMF_MOCS'][n]
+    xref_n = MOCS['xref_unique'][n]
+    if dcfg.stim_dims == 2:
+        cmap_n = color_thres_data.W2D_to_rgb(xref_n)
+    else:
+        cmap_n = color_thres_data.W_unit_to_N_unit(xref_n)
+    cmap_n = np.asarray(cmap_n, dtype=float).reshape(-1)[:3]
+
+    reference_payloads.append(
+        {
+            'ref_key': f'ref{n}',
+            'ref_name': "[" + ", ".join(f"{v:.2f}" for v in xref_n) + "]",
+            'xref': xref_n.tolist(),
+            'color_css': f"rgb({int(np.clip(cmap_n[0], 0, 1) * 255)}, {int(np.clip(cmap_n[1], 0, 1) * 255)}, {int(np.clip(cmap_n[2], 0, 1) * 255)})",
+            'wppm_ci_fill_css': f"rgba({int(np.clip(cmap_n[0], 0, 1) * 255)}, {int(np.clip(cmap_n[1], 0, 1) * 255)}, {int(np.clip(cmap_n[2], 0, 1) * 255)}, 0.28)",
+            'fine_val': slc_PMF_MOCS.fineVal.tolist(),
+            'mocs_fit': slc_PMF_MOCS.fine_pC.tolist(),
+            'mocs_ci_lower': slc_PMF_MOCS.fine_pC_95btstCI[0].tolist(),
+            'mocs_ci_upper': slc_PMF_MOCS.fine_pC_95btstCI[1].tolist(),
+            'stim_dist': slc_PMF_MOCS.unique_stim_dist.tolist(),
+            'pc_per_level': slc_PMF_MOCS.pC_perLevel.tolist(),
+            'target_pc': float(slc_PMF_MOCS.target_pC),
+            'mocs_threshold': float(slc_PMF_MOCS.stim_at_targetPC),
+            'mocs_threshold_err': slc_PMF_MOCS.stim_at_targetPC_95btstErr.tolist(),
+            'wppm_curve': MOCS['pChoosingX1_Wishart'][n].tolist(),
+            'wppm_ci_lower': pChoosingX1_Wishart_CI_bds[0, n].tolist(),
+            'wppm_ci_upper': pChoosingX1_Wishart_CI_bds[1, n].tolist(),
+            'wppm_threshold': float(MOCS['vecLen_at_targetPC_Wishart'][n]),
+            'wppm_threshold_err': vecLen_at_targetPC_Wishart_err[n].tolist(),
+        }
     )
-    html_plotter = MOCSWishartInteractiveHTMLPlotter(
-        reference_payloads=reference_payloads,
-        regression_payload=regression_payload,
-        condition_panel_payload=condition_panel_payload,
-        page_title=f"WPPM thresholds vs. validation (MOCS) thresholds (sub{subN})",
+
+regression_payload = {
+    'ref_keys': [payload['ref_key'] for payload in reference_payloads],
+    'ref_names': [payload['ref_name'] for payload in reference_payloads],
+    'colors_css': [payload['color_css'] for payload in reference_payloads],
+    'x': MOCS['vecLen_at_targetPC_MOCS'].tolist(),
+    'y': MOCS['vecLen_at_targetPC_Wishart'].tolist(),
+    'x_err': [
+        MOCS['fit_PMF_MOCS'][i].stim_at_targetPC_95btstErr.tolist()
+        for i in range(MOCS['nRefs'])
+    ],
+    'y_err': vecLen_at_targetPC_Wishart_err.tolist(),
+    'slope_org': float(slope_modelPred_org.item()),
+    'slope_ci': slope_btst_CI.tolist(),
+    'corr_org': float(corr_coef_modelPred_org),
+    'corr_ci': corr_coef_btst_CI.tolist(),
+    'num_overlaps': int(num_overlaps),
+    'axis_bounds': plt_bds.tolist(),
+}
+
+ref_stimulus = np.asarray(MOCS['refStimulus'])
+comp_stimulus = np.asarray(MOCS['compStimulus'])
+condition_refs = []
+for n, payload in enumerate(reference_payloads):
+    xref = np.array(payload['xref'])
+    idx_match = np.where(np.all(np.isclose(ref_stimulus, xref[None], atol=1e-8), axis=1))[0]
+    comp_unique = np.unique(comp_stimulus[idx_match], axis=0)
+    condition_refs.append(
+        {
+            'ref_key': payload['ref_key'],
+            'ref_name': payload['ref_name'],
+            'xref': xref.tolist(),
+            'comp_points': comp_unique.tolist(),
+            'n_comp': int(comp_unique.shape[0]),
+            'color_css': payload['color_css'],
+        }
     )
-    html_plotter.write_interactive_html(output_html)
-    print(f"Wrote interactive HTML to: {output_html}")
+
+condition_panel_payload = {
+    'ndims': int(dcfg.stim_dims),
+    'references': condition_refs,
+}
+
+output_html = os.path.join(
+    html_dir,
+    f"{dcfg.wishart_file_name[:-4]}_comparison_btw_MOCS_WishartPredictions_interactive.html",
+)
+html_plotter = MOCSWishartInteractiveHTMLPlotter(
+    reference_payloads=reference_payloads,
+    regression_payload=regression_payload,
+    condition_panel_payload=condition_panel_payload,
+    page_title=f"WPPM thresholds vs. validation (MOCS) thresholds (sub{subN})",
+)
+html_plotter.write_interactive_html(output_html)
+print(f"Wrote interactive HTML to: {output_html}")

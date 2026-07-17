@@ -65,13 +65,15 @@ from dconfig.config_4Ddata import DatasetConfig_4D
 base_dir = os.path.dirname(__file__) if flag_running_on_hpc else \
     get_path("dropbox_root_mac")
 
-subN = 2
+subN = 17
 
 # choose one dataset
 # dcfg = DatasetConfig_4D.human_ls_isolating(base_dir, subN)
-dcfg = DatasetConfig_4D.human_isoluminant(base_dir, subN)
+# dcfg = DatasetConfig_4D.human_isoluminant(base_dir, subN)
 # dcfg = DatasetConfig_4D.human_varying_background(base_dir, subN)
 # dcfg = DatasetConfig_4D.simulated_isoluminant(base_dir, subN)
+dcfg = DatasetConfig_4D.human_local_vs_global(base_dir, subN,
+                                              adaptation_cond_str='_bg_gray_cr_gray')
 
 # modify anything if needed
 #dcfg.file_date='02012026'
@@ -79,7 +81,7 @@ dcfg = DatasetConfig_4D.human_isoluminant(base_dir, subN)
 #dcfg.__post_init__()   # rerun only if you changed something that affects derived fields
 
 dcfg.print_summary()
-nSession = dcfg.nSession
+nSession = dcfg.assigned_sessions or dcfg.nSession
 
 # Define the color plane and load for transformation matrices
 color_thres_data = color_thresholds(dcfg.stim_dims, base_dir, plane_2D = dcfg.plane_2D) 
@@ -92,7 +94,7 @@ if flag_running_on_hpc:
                                        f'sub{subN}', f'{dcfg.stim_dims}D{dcfg.psyfield_dims}D')
     output_figDir_fits = os.path.join(output_fileDir_fits, 'figs')    
 else:
-    output_fileDir_fits = os.path.join(dcfg.path_str,'fits')
+    output_fileDir_fits = dcfg.path_fits_str
     output_figDir_fits = dcfg.path_str.replace('DataFiles', 'FigFiles')
     
 # Create directories if they don't exist
@@ -220,7 +222,7 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
                                    settings = pltSettings_tp,
                                    ax = ax
                                    )            
-        ax.set_title(color_thres_data.plane_2D)
+        ax.set_title(color_thres_data.plane_2D, fontsize = 9.5)
         # Save the figure as a PDF
         fig.savefig(os.path.join(output_figDir_fits, f"{fig_name}.pdf"), bbox_inches='tight')    
         plt.show()
@@ -380,4 +382,3 @@ for flag_btst_AEPsych, ll in zip(flag_btst, btst_seed):
     # Write the list of dictionaries to a file using pickle
     with open(full_path, 'wb') as f:
         pickled.dump(vars_dict, f)
-

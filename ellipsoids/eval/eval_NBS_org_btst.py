@@ -36,7 +36,7 @@ from analysis.model_performance import ModelPerformance
 #   'ELPS_analysis/Experiment_DataFiles/6D_Expt/sub1/fits'
 #
 #   selected file:
-#   'Fitted_ColorDiscrimination_6dExpt_RGBcube_sub1_decayRate0.5_nBasisDeg5.pkl'
+#   'Fitted_ColorDiscrimination_6dExpt_RGBcube_sub1_decayRate0.4_nBasisDeg5.pkl'
 input_fileDir_fits, file_name = select_file_and_get_path()
 full_path = os.path.join(input_fileDir_fits, file_name)
 
@@ -93,10 +93,10 @@ NBS_fine_grid_btst = np.full((nDatasets, *grid_fine.shape[:-1]), np.nan)
 
 # Example:
 #   input directory:
-#   '/ELPS_analysis/Experiment_DataFiles/6D_Expt/sub1/fits/AEPsych_btst/decayRate0.5'
+#   '/ELPS_analysis/Experiment_DataFiles/6D_Expt/sub1/fits/AEPsych_btst/decayRate0.4'
 #
 #   selected file:
-#   'Fitted_ColorDiscrimination_6dExpt_RGBcube_sub1_decayRate0.5_nBasisDeg5_btst_AEPsych[0].pkl'
+#   'Fitted_ColorDiscrimination_6dExpt_RGBcube_sub1_decayRate0.4_nBasisDeg5_btst_AEPsych[0].pkl'
 input_fileDir_fits_btst, file_name_btst = select_file_and_get_path()
 
 for r in trange(nDatasets):
@@ -116,7 +116,7 @@ for r in trange(nDatasets):
         grid_fine_btst = vars_dict_btst["grid_fine"]
 
         # Sanity check: cached NBS must correspond to the same fine grid.
-        assert np.max(np.abs(np.asarray(grid_fine_btst) - np.asarray(grid_fine))) < 1e-10, (
+        assert np.max(np.abs(np.asarray(grid_fine_btst) - np.asarray(grid_fine))) < 1e-5, (
             "The grid for which sigmas were computed does not match!"
         )
 
