@@ -305,9 +305,9 @@ class DatasetConfig_4D:
           - simulated_isoluminant
 
         Inference rules:
-          - If the selected path contains '4D_Expt_varyingBackground', use the
-            varying-background config and parse the adapting condition from the
-            filename suffix (e.g. '_gray.pkl', '_blue.pkl', '_orange.pkl').
+          - For local/global files ending in '_bg_<color>_cr_<color>.pkl', use
+            the local-vs-global config; otherwise use the varying-background
+            config for suffixes such as '_gray.pkl', '_blue.pkl', or '_orange.pkl'.
           - If the selected path contains '4D_Expt_dichromats', or the filename
             mentions 'LSisolating plane', use the LS-isolating config.
           - If the selected path contains
@@ -324,6 +324,15 @@ class DatasetConfig_4D:
         selected_path = os.path.join(input_fileDir, file_name)
 
         if '4D_Expt_varyingBackground' in selected_path:
+            local_global_match = re.search(
+                r'_(bg_(?:gray|blue|orange)_cr_(?:gray|blue|orange))(?=\.pkl$)',
+                file_name,
+            )
+            if local_global_match:
+                return cls.human_local_vs_global(
+                    base_dir, subN, f"_{local_global_match.group(1)}"
+                )
+
             match = re.search(r'_(gray|blue|orange)(?=\.pkl$)', file_name)
             if match is None:
                 raise ValueError(

@@ -117,7 +117,37 @@ class PlotUSettings(PlotSettingsBase):
     fig_name: str = 'U'
     fig_name_ext: str = ''
     
-    
+
+def add_adaptive_legend(fig, ax, fontsize):
+    """Place a deduplicated legend below an unchanged plotting area."""
+    handles, labels = ax.get_legend_handles_labels()
+    legend_entries = dict(zip(labels, handles))
+    labels = list(legend_entries)
+    if not labels:
+        return None
+    handles = [legend_entries[label] for label in labels]
+
+    base_width, base_height = fig.get_size_inches()
+    legend_height = 0.2 + 0.035 * fontsize * len(labels)
+    figure_height = base_height + legend_height
+    fig.set_size_inches(base_width, figure_height)
+    fig.tight_layout(rect=(0, legend_height / figure_height, 1, 1))
+    fig.canvas.draw()
+    axes_bottom = ax.get_tightbbox(fig.canvas.get_renderer()).y0
+    legend_top = (axes_bottom - 0.06 * fig.dpi) / fig.bbox.height
+    axes_position = ax.get_position()
+    legend_center = axes_position.x0 + axes_position.width / 2
+
+    return fig.legend(
+        handles,
+        labels,
+        loc='upper center',
+        bbox_to_anchor=(legend_center, legend_top),
+        borderaxespad=0,
+        fontsize=fontsize,
+    )
+
+
 #%%
 class PlottingTools:
     def __init__(self, settings: PlotSettingsBase, save_fig = False, save_format = 'pdf'):
@@ -147,7 +177,7 @@ class PlottingTools:
         full_path = os.path.join(self.st.fig_dir, fig_name)
         fig.savefig(full_path, dpi=self.st.dpi,
                     bbox_inches=bbox_inches, pad_inches=pad_inches)
-        
+
     def _update_axes_limits(self, ax, lim = [-1,1], ndims = 2):
         """
         Sets uniform limits for axes of a plot, extending to 3D if applicable.
