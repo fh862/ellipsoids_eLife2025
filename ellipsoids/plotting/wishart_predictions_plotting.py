@@ -853,7 +853,7 @@ class WishartPredictionsVisualization(PlottingTools):
                 # Save the figure if the directory is set and saving is enabled.
                 if settings.fig_dir and self.save_fig:
                     self._save_figure(fig, f'{settings.fig_name}_slice_{varyingPlanes}plane_'+\
-                                      f'fixedVal{self.color_thres.W_unit_to_N_unit(fixedRGB_val_scaled_k)}')
+                                      f'fixedVal{self.color_thres.W_unit_to_N_unit(fixedRGB_val_scaled_k):.4f}')
         return fig, axes
             
     #%% Visualize mahalanobis distance

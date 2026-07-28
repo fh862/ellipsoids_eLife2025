@@ -154,6 +154,7 @@ class PlottingTools:
         self.st = settings
         self.save_fig = save_fig
         self.save_format = save_format
+        plt.rcParams['font.family'] = self.st.fontstyle
         plt.rcParams['font.sans-serif'] = self.st.fontstyle
         plt.rcParams['font.size'] = self.st.fontsize
                 
