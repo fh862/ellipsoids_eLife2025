@@ -124,9 +124,10 @@ with open(dcfg.wishart_full_path, 'rb') as f:
 # - Transformation matrices for converting between DKL, RGB, and W spaces
 color_thres_data = vars_dict['color_thres_data']
 key_gridMOCS = 'model_pred_Wishart_MOCS'
-flag_append_data = False
+flag_append_data = True
 
 if key_gridMOCS in vars_dict:
+    print('Loading data [model predictions] ...')
     model_pred_Wishart_MOCS = vars_dict[key_gridMOCS]
 else:
     # Retrieve the variables of interest from the loaded dictionary
@@ -142,6 +143,7 @@ else:
             )
     # Optionally append results to the pickle
     if flag_append_data:
+        print('Appending data [model predictions] ...')
         vars_dict[key_gridMOCS] = model_pred_Wishart_MOCS
         vars_dict['grid_MOCS'] = grid_MOCS
 
@@ -257,6 +259,7 @@ for idx, r in enumerate(trange(nBtst, desc="Loading bootstraps")):
 
         # Optionally cache computed results back into this bootstrap pickle (speeds up reruns)
         if flag_append_data:
+            print('Appending data [thresholds] ...')
             vars_dict_btst[key_gridMOCS] = model_pred_Wishart_MOCS_r
             vars_dict_btst["grid_MOCS"] = grid_MOCS_r
             vars_dict_btst["thres_Wishart_based_atMOCS"] = thres_Wishart_based_atMOCS_r
@@ -359,6 +362,7 @@ var_names = [
 
 # If analysis already exists in MOCS, load all saved variables    
 if key_matched_btst_analysis in MOCS:
+    print('Loading data [correlation analysis] ...')
     for name in var_names:
         globals()[name] = MOCS[key_matched_btst_analysis][name]
 else: 
@@ -395,6 +399,7 @@ else:
     corr_coef_btst_CI = corr_coef_btst_sorted[idx_bds_CI]
 
     if flag_append_data:
+        print('Appending data [correlation analysis] ...')
         # Package all computed variables into a dictionary for saving
         slope_corr_analysis_matched_btst = {name: eval(name) for name in var_names}
         MOCS[key_matched_btst_analysis] = slope_corr_analysis_matched_btst
@@ -534,7 +539,7 @@ for n in range(MOCS['nRefs']):
     #append colormap so we can reuse it for the next plot
     cmap_allref.append(cmap_n)
     
-    predPMF_settings = replace(predPMF_settings, #fig_size = (3.3, 6.3),
+    predPMF_settings = replace(predPMF_settings, #fig_size = (5.7, 6.3),
                                filler_pts = [0,1/3],
                                cmap_PMF = 'k',
                                cmap_dots = 'k',
