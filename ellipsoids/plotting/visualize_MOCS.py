@@ -164,6 +164,12 @@ PlotThresComp3DSettings_bds = {
         'slope_text_loc': [0.035, 0.215],
         'numOverlaps_text_loc':[0.035,0.2]
     },
+    'sub7': {
+        'bds': np.array([0, 0.27]),
+        'corr_text_loc': [0.055, 0.25],
+        'slope_text_loc': [0.055, 0.235],
+        'numOverlaps_text_loc':[0.055,0.22]
+    }, 
     'sub8': {
         'bds': np.array([0, 0.22]),
         'corr_text_loc': [0.035, 0.2],

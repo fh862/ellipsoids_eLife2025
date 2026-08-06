@@ -53,7 +53,7 @@ from tqdm import trange
 from copy import deepcopy
 from core.model_predictions import rerun_model_pred_wExisting_model
 from dconfig.config_4Ddata import DatasetConfig_4D_MOCS
-from dconfig.config_6Ddata import DatasetConfig_6D
+#from dconfig.config_6Ddata import DatasetConfig_6D
 from analysis.color_thres import color_thresholds
 from analysis.MOCS_thresholds import fit_PMF_MOCS_trials, sim_MOCS_trials
 from plotting.visualize_MOCS import MOCSTrialsVisualization, PlotPMFSettings,\
@@ -68,7 +68,7 @@ from plotting.wishart_plotting import PlotSettingsBase
 base_dir = get_path("dropbox_root_mac")
 
 #change the knob here
-subN = 2
+subN = 7
 
 # choose one dataset
 #dcfg = DatasetConfig_6D.human_fullcube(base_dir, subN)
@@ -141,7 +141,7 @@ for n in tqdm(range(nRefs), desc="Bootstrapping Progress"):
                                              responses_n_wOrigin,
                                              nLevels + 1, #+1 because we stick 0 in there
                                              dist_metric= 'Euclidean',
-                                             bounds = [(1e-4, 1), (1e-2, 14)]
+                                             bounds = [(1e-4, 1), (1e-2, 10)]
                                              ) 
     #fit a psychometric function
     fit_PMF_MOCS_exptN.fit_PsychometricFunc_toData()

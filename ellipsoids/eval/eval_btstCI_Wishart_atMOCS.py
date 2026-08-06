@@ -37,18 +37,6 @@ This script is organized into five main sections and can be used with either
         thresholds and empirically measured validation thresholds.
    5.4. Export an interactive HTML summary linking the validation-condition
         view, psychometric functions, and threshold regression.
-        
-If this is run on hpc, use runPython_cpu.sbatch 
-
-#!/bin/bash
-#SBATCH --output=slurm_scripts/slurm%j.out
-#SBATCH --mail-type=END
-#SBATCH --mail-user=fh862@sas.upenn.edu
-#SBATCH --nodes=1
-#SBATCH --ntasks-per-node=1
-#SBATCH --cpus-per-task=10
-#SBATCH --mem=100GB
-#SBATCH --time=30:00:00
 
 """
 
@@ -92,7 +80,7 @@ base_dir = get_path("dropbox_root_mac")
 #'ELPS_analysis/Simulation_DataFiles/MOCS/gt_CIE'
 #'Fitted_weibull_psychometric_func_Isoluminant plane_240totalTrials_25refs_MOCS_subCIE1994.pkl'
 
-subN = 1
+subN = 7
 decay_rate = 0.4
 # choose one dataset
 dcfg = DatasetConfig_4D_MOCS.human_isoluminant(base_dir, subN, decay_rate = decay_rate)
