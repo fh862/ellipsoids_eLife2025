@@ -1,6 +1,11 @@
 {
   "dropbox_root_windows": "c:\\users\\brainardlab\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\",
   "dropbox_root_windows_d": "D:\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\",
+  "dropbox_root_windows_elps": "c:\\users\\brainardlab\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\ELPS_analysis\\",
+  "windows_elps_2d4d_fits": "c:\\users\\brainardlab\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\ELPS_analysis\\Experiment_DataFiles\\pilot2",
+  "windows_elps_3d6d_fits": "c:\\users\\brainardlab\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\ELPS_analysis\\Experiment_DataFiles\\6D_Expt",
+  "windows_elps_2d4d_figs": "c:\\users\\brainardlab\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\ELPS_analysis\\Experiment_FigFiles\\pilot2",
+  "windows_elps_3d6d_figs": "c:\\users\\brainardlab\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\ELPS_analysis\\Experiment_FigFiles\\6D_Expt",
   "aepsych_config_dir": "c:\\users\\brainardlab\\Aguirre-Brainard Lab Dropbox\\Fangfang Hong\\META_analysis\\customized_configs",
   "network_disk_windows": "c:\\Shares\\BrainardLab",
   "network_disk_windows_mapped": "B:\\",

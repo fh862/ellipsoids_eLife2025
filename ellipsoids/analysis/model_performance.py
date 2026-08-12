@@ -436,6 +436,86 @@ class ModelPerformance():
     	lgB = ModelPerformance.log_psd_matrix(B)
     	return np.linalg.norm(lgA - lgB, 2)
 
+    @staticmethod
+    def spd_affine_dist_sq(A, B):
+        """Squared affine-invariant Riemannian distance between SPD matrices.
+
+        For symmetric positive-definite ``A`` and ``B``,
+
+        ``d(A, B)^2 = ||Log(B^{-1/2} A B^{-1/2})||_F^2``
+        ``             = sum_i log(lambda_i)^2``,
+
+        where ``Log`` is the matrix logarithm and ``lambda_i`` are the positive
+        eigenvalues of ``B^{-1/2} A B^{-1/2}``. This is the geodesic distance induced
+        by the affine-invariant Riemannian metric on the SPD manifold.
+
+        The distance is symmetric, ``d(A, B) = d(B, A)``, and invariant under any
+        common invertible congruence transform:
+        ``d(C A C^T, C B C^T) = d(A, B)``. Consequently it is also invariant under
+        common positive scaling, ``d(c A, c B) = d(A, B)``. Scaling only one argument
+        generally changes the distance.
+        """
+        wb, vb = np.linalg.eigh(B)
+        b_inv_sqrt = (vb * (wb ** -0.5)) @ vb.T
+        M = b_inv_sqrt @ A @ b_inv_sqrt
+        logs = np.log(np.linalg.eigvalsh(M))
+        return np.sum(logs**2)
+
+    @staticmethod
+    def spd_affine_dist_sq_batch(A, B):
+        """Squared affine-invariant Riemannian distance for SPD batches.
+
+        Parameters
+        ----------
+        A, B : ndarray
+            Arrays with matching shape ``(..., d, d)``. Each matrix pair is
+            evaluated independently.
+
+        Returns
+        -------
+        ndarray
+            Squared AIRM distance for each pair, with shape ``(...)``.
+
+        Raises
+        ------
+        ValueError
+            If the inputs do not have matching square-matrix shapes or contain
+            a matrix that is not positive definite.
+        """
+        A = np.asarray(A)
+        B = np.asarray(B)
+
+        if A.shape != B.shape:
+            raise ValueError(
+                f"A and B must have the same shape, got {A.shape} and {B.shape}"
+            )
+        if A.ndim < 2 or A.shape[-1] != A.shape[-2]:
+            raise ValueError("A and B must have shape (..., d, d)")
+
+        eigvals_A = np.linalg.eigvalsh(A)
+        eigvals_B, eigvecs_B = np.linalg.eigh(B)
+        if np.any(eigvals_A <= 0) or np.any(eigvals_B <= 0):
+            raise ValueError("AIRM distance is defined only for SPD matrices.")
+
+        inv_sqrt_eigvals_B = eigvals_B ** -0.5
+        B_inv_sqrt = (
+            eigvecs_B * inv_sqrt_eigvals_B[..., None, :]
+        ) @ np.swapaxes(eigvecs_B, -1, -2)
+
+        whitened_A = B_inv_sqrt @ A @ B_inv_sqrt
+        # Remove numerical asymmetry introduced by the matrix products before
+        # using the Hermitian eigensolver.
+        whitened_A = 0.5 * (
+            whitened_A + np.swapaxes(whitened_A, -1, -2)
+        )
+        generalized_eigvals = np.linalg.eigvalsh(whitened_A)
+        if np.any(generalized_eigvals <= 0):
+            raise ValueError(
+                "Could not compute positive generalized eigenvalues for A and B."
+            )
+
+        return np.sum(np.log(generalized_eigvals) ** 2, axis=-1)
+
 #%%
 def compute_95CI_BWD_multipleConditions(BWD):
     """

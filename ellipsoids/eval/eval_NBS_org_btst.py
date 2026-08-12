@@ -5,15 +5,42 @@ Created on Tue Mar 24 11:06:14 2026
 
 @author: fangfang
 
-Compute normalized Bures similarity (NBS) on a fine prediction grid between:
-1. the model fit to the original dataset, and
-2. each bootstrap model fit.
+Evaluate the agreement between an original-data Wishart fit and its bootstrap
+fits on a common fine prediction grid.
 
-For efficiency, the script caches:
-- the fine grid and original-fit covariance matrices in the original-fit pickle
-- the fine grid, bootstrap-fit covariance matrices, and NBS values in each
-  bootstrap pickle
-  
+Legacy filename
+---------------
+This script was originally written only for normalized Bures similarity (NBS),
+which is why its filename remains ``eval_NBS_org_btst.py``. The legacy name is
+retained for legacy use only, so existing workflows and references do not
+break, but the script now supports both NBS and the affine-invariant Riemannian
+metric (AIRM). Set ``metric`` below to select which quantity is computed.
+
+Supported metrics
+-----------------
+``metric = "NBS"``
+    Computes normalized Bures similarity with
+    ``compute_normalized_Bures_similarity_batch`` and caches it under
+    ``NBS_fine_grid``. Larger dataset-level sums indicate greater similarity.
+
+``metric = "AIRM"``
+    Computes squared affine-invariant Riemannian distances with
+    ``spd_affine_dist_sq_batch`` and caches them under ``AIRM_fine_grid``.
+    Smaller dataset-level sums indicate a bootstrap fit closer to the original
+    fit. Despite the cache-key shorthand, each grid value is a squared AIRM
+    distance.
+
+Caching and downstream use
+--------------------------
+The selected original-fit pickle is updated with ``grid_fine`` and
+``Sigmas_noise_grid_org`` when needed. Each bootstrap pickle is updated with
+the matching fine grid, ``Sigmas_noise_grid_btst``, and the selected metric's
+fine-grid values. Compatible cached quantities are reused, so running the
+script once for NBS and again for AIRM does not recompute covariance matrices.
+
+Downstream scripts such as ``visualize_CI_Wishart_grid_2d.py`` sum the selected
+fine-grid values to obtain one score per bootstrap dataset. NBS must be ranked
+in descending order, whereas AIRM must be ranked in ascending order.
 """
 
 import jax
@@ -27,7 +54,26 @@ import os
 from analysis.utils_load import select_file_and_get_path
 from analysis.model_performance import ModelPerformance
 
-#%%
+
+def grids_match(grid_1, grid_2, atol=1e-5):
+    """Return whether two cached prediction grids have matching values."""
+    grid_1 = np.asarray(grid_1)
+    grid_2 = np.asarray(grid_2)
+    return (
+        grid_1.shape == grid_2.shape
+        and np.allclose(grid_1, grid_2, rtol=0, atol=atol)
+    )
+
+
+# Configuration. Keep this above file selection so invalid input fails before
+# any pickle can be updated.
+nDatasets = 120
+metric = "AIRM"
+metric = metric.upper()
+if metric not in {"NBS", "AIRM"}:
+    raise ValueError('metric must be either "NBS" or "AIRM".')
+metric_key = f"{metric}_fine_grid"
+
 #---------------------------------------------------------------------------
 # SECTION 1: load the model fits to the empirical data
 # --------------------------------------------------------------------------
@@ -50,7 +96,6 @@ ndims = model_pred.ndims
 if "grid_fine" in vars_dict.keys() and "Sigmas_noise_grid_org" in vars_dict.keys():
     grid_fine = vars_dict["grid_fine"]
     Sigmas_noise_grid_org = vars_dict["Sigmas_noise_grid_org"]
-    num_grid_pts_fine = grid_fine.shape[0]
 else:
     
     #for dichromats 
@@ -77,20 +122,8 @@ else:
         pickled.dump(vars_dict, f)
 
 # -----------------------------------------------------------------------------
-# Section 2: For each bootstrap fit, load or compute NBS on the same fine grid
+# Section 2: Load or compute the selected metric on the same fine grid
 # -----------------------------------------------------------------------------
-# NBS is computed pointwise between:
-#   - the covariance matrices from the original-data fit
-#   - the covariance matrices from a bootstrap fit
-#
-# The per-bootstrap NBS result is cached back into the corresponding bootstrap
-# pickle to avoid repeating expensive matrix computations.
-
-nDatasets = 120
-
-#initialize
-NBS_fine_grid_btst = np.full((nDatasets, *grid_fine.shape[:-1]), np.nan)
-
 # Example:
 #   input directory:
 #   '/ELPS_analysis/Experiment_DataFiles/6D_Expt/sub1/fits/AEPsych_btst/decayRate0.4'
@@ -110,53 +143,91 @@ for r in trange(nDatasets):
     # Load bootstrap pickle for dataset r
     with open(full_path_btst_r, 'rb') as f:
         vars_dict_btst = pickled.load(f)
-        
-    # Reuse cached NBS if already present.
-    if "NBS_fine_grid" in vars_dict_btst:
-        grid_fine_btst = vars_dict_btst["grid_fine"]
 
-        # Sanity check: cached NBS must correspond to the same fine grid.
-        assert np.max(np.abs(np.asarray(grid_fine_btst) - np.asarray(grid_fine))) < 1e-5, (
-            "The grid for which sigmas were computed does not match!"
-        )
+    cached_grid_matches = (
+        "grid_fine" in vars_dict_btst
+        and grids_match(vars_dict_btst["grid_fine"], grid_fine)
+    )
 
-        NBS_fine_grid_btst[r] = vars_dict_btst["NBS_fine_grid"]
+    # Reuse the selected metric if it is already cached on the same grid.
+    if metric_key in vars_dict_btst and cached_grid_matches:
+        cached_metric = np.asarray(vars_dict_btst[metric_key])
+        if cached_metric.shape != grid_fine.shape[:-1]:
+            raise ValueError(
+                f"Cached {metric_key} has shape {cached_metric.shape}; "
+                f"expected {grid_fine.shape[:-1]}."
+            )
+        if not np.all(np.isfinite(cached_metric)):
+            raise ValueError(f"Cached {metric_key} contains non-finite values.")
 
+        print(f"Bootstrap {r}: {metric_key} was already calculated.")
     else:
-        # Compute covariance matrices on the same fine grid for bootstrap fit r.
-        # Older save files stored the fitted model and best-fit weights as
-        # separate entries (`model`, `W_est`), while newer ones stored both
-        # inside `model_pred_Wishart`. Try the legacy layout first, then the
-        # wrapped-object layout, and fail with a clear error if neither exists.
-        try:
-            model_btst = deepcopy(vars_dict_btst["model"])
-            W_btst = vars_dict_btst["W_est"]
-        except KeyError:
+        # Metrics without a verifiably matching grid are no longer valid once
+        # this pickle is updated to the current fine grid.
+        if not cached_grid_matches:
+            vars_dict_btst.pop("NBS_fine_grid", None)
+            vars_dict_btst.pop("AIRM_fine_grid", None)
+
+        # Reuse covariance matrices cached by a previous NBS/AIRM run when the
+        # grid matches; otherwise compute them from the bootstrap model fit.
+        Sigmas_noise_grid_btst = None
+
+        reused_cached_sigmas = (
+            cached_grid_matches
+            and "Sigmas_noise_grid_btst" in vars_dict_btst
+        )
+        if reused_cached_sigmas:
+            Sigmas_noise_grid_btst = vars_dict_btst["Sigmas_noise_grid_btst"]
+
+        if Sigmas_noise_grid_btst is None:
+            # Older save files stored the fitted model and weights separately;
+            # newer ones store both inside `model_pred_Wishart`.
             try:
-                model_btst_pred = deepcopy(vars_dict_btst["model_pred_Wishart"])
-                model_btst = model_btst_pred.model
-                W_btst = model_btst_pred.W_est
-            except KeyError as exc:
-                raise KeyError(
-                    "Bootstrap save file must contain either (`model`, `W_est`) "
-                    "or `model_pred_Wishart`."
-                ) from exc
+                model_btst = deepcopy(vars_dict_btst["model"])
+                W_btst = vars_dict_btst["W_est"]
+            except KeyError:
+                try:
+                    model_btst_pred = deepcopy(
+                        vars_dict_btst["model_pred_Wishart"]
+                    )
+                    model_btst = model_btst_pred.model
+                    W_btst = model_btst_pred.W_est
+                except KeyError as exc:
+                    raise KeyError(
+                        "Bootstrap save file must contain either (`model`, "
+                        "`W_est`) or `model_pred_Wishart`."
+                    ) from exc
 
-        Sigmas_noise_grid_btst = model_btst.compute_Sigmas(
-            model_btst.compute_U(W_btst, grid_fine)
-        )
+            Sigmas_noise_grid_btst = model_btst.compute_Sigmas(
+                model_btst.compute_U(W_btst, grid_fine)
+            )
 
-        # Compute pointwise normalized Bures similarity (NBS) between
-        # the original-fit and bootstrap-fit covariance matrices.
-        NBS_fine_grid_btst[r] = ModelPerformance.compute_normalized_Bures_similarity_batch(
-            Sigmas_noise_grid_org,
-            Sigmas_noise_grid_btst,
-        )
+        # Compute the selected pointwise metric.
+        if metric == "NBS":
+            metric_fine_grid_btst = ModelPerformance.compute_normalized_Bures_similarity_batch(
+                Sigmas_noise_grid_org,
+                Sigmas_noise_grid_btst,
+            )
+        else:
+            metric_fine_grid_btst = ModelPerformance.spd_affine_dist_sq_batch(
+                Sigmas_noise_grid_org,
+                Sigmas_noise_grid_btst,
+            )
 
-        # Cache the fine grid, bootstrap covariance matrices, and NBS values.
-        vars_dict_btst["grid_fine"] = grid_fine
-        vars_dict_btst["Sigmas_noise_grid_btst"] = Sigmas_noise_grid_btst
-        vars_dict_btst["NBS_fine_grid"] = NBS_fine_grid_btst[r]
+        if not np.all(np.isfinite(metric_fine_grid_btst)):
+            raise ValueError(
+                f"Computed {metric_key} contains non-finite values for "
+                f"bootstrap dataset {r}."
+            )
+
+        # Update only what was missing or invalid.
+        if not cached_grid_matches:
+            vars_dict_btst["grid_fine"] = grid_fine
+
+        if not reused_cached_sigmas:
+            vars_dict_btst["Sigmas_noise_grid_btst"] = Sigmas_noise_grid_btst
+
+        vars_dict_btst[metric_key] = metric_fine_grid_btst
 
         with open(full_path_btst_r, 'wb') as f:
             pickled.dump(vars_dict_btst, f)
