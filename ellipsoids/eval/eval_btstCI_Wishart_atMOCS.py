@@ -27,6 +27,23 @@ This script is organized into five main sections and can be used with either
    - The Euclidean distance between the reference and comparison stimulus
      at threshold along each validation chromatic direction.
 
+   Bootstrap datasets can be ranked using either normalized Bures similarity
+   (NBS) or the affine-invariant Riemannian metric (AIRM), as selected by
+   ``btst_ranking_metric``. For the 2D/4D data published in the eLife paper,
+   NBS was used to retain the best 95% of bootstrap fits. For future studies,
+   we plan to use AIRM because it is invariant under a common invertible affine
+   transformation of the covariance matrices. NBS is ranked in descending
+   order (larger is better), whereas AIRM is ranked in ascending order
+   (smaller is better).
+
+   Switching the ranking metric may slightly change the retained bootstrap
+   datasets and therefore the per-condition WPPM threshold error bars and
+   ellipse confidence regions. It does not change the reported correlation
+   coefficient, regression slope, or their confidence intervals, because the
+   matched-bootstrap correlation analysis uses all bootstrap datasets rather
+   than the metric-filtered subset. The validation/MOCS threshold error bars
+   are also independent of this ranking choice.
+
 5. Visualization:
    5.1. Plot WPPM-predicted threshold ellipses at the validation reference
         locations, overlaid with the validation stimulus directions.
@@ -53,7 +70,7 @@ import os
 from analysis.utils_load import get_path
 from analysis.MOCS_thresholds import compute_Wishart_based_pCorrect_atMOCS
 from dconfig.config_4Ddata import DatasetConfig_4D_MOCS
-#from dconfig.config_6Ddata import DatasetConfig_6D
+from dconfig.config_6Ddata import DatasetConfig_6D
 from core.model_predictions import wishart_model_pred, rerun_model_pred_wExisting_model
 from analysis.conf_interval import find_inner_outer_contours_for_gridRefs, \
     intervals_overlap, find_btst_dataset_within_CI
@@ -80,12 +97,12 @@ base_dir = get_path("dropbox_root_mac")
 #'ELPS_analysis/Simulation_DataFiles/MOCS/gt_CIE'
 #'Fitted_weibull_psychometric_func_Isoluminant plane_240totalTrials_25refs_MOCS_subCIE1994.pkl'
 
-subN = 7
+subN = 2
 decay_rate = 0.4
 # choose one dataset
-dcfg = DatasetConfig_4D_MOCS.human_isoluminant(base_dir, subN, decay_rate = decay_rate)
+#dcfg = DatasetConfig_4D_MOCS.human_isoluminant(base_dir, subN, decay_rate = decay_rate)
 #dcfg = DatasetConfig_4D_MOCS.simulated_isoluminant(base_dir)
-#dcfg = DatasetConfig_6D.human_fullcube(base_dir, subN)
+dcfg = DatasetConfig_6D.human_fullcube(base_dir, subN)
 
 #print out summary
 dcfg.print_summary()
@@ -161,6 +178,13 @@ file_name_btst = f"{dcfg.wishart_file_name[:-4]}_btst_AEPsych[0].pkl"
 btst_list = list(range(120))
 nBtst = len(btst_list)
 
+# Rank bootstraps using "NBS" (higher is better) or "AIRM" (lower is better).
+btst_ranking_metric = "AIRM"
+if btst_ranking_metric not in {"NBS", "AIRM"}:
+    raise ValueError('btst_ranking_metric must be either "NBS" or "AIRM".')
+ranking_key = f"{btst_ranking_metric}_fine_grid"
+sort_order = "ascending" if btst_ranking_metric == "AIRM" else "descending"
+
 # Storage
 # params_all: ellipse parameters at each MOCS reference, for each bootstrap
 #   params = [x_center, y_center, major_axis, minor_axis, rotation_deg]
@@ -172,10 +196,8 @@ if dcfg.stim_dims == 2:
 pChoosingX1_Wishart_list = []
 vecLen_at_targetPC_Wishart_list = []
 
-# NBS_sum: dataset-level similarity score between each bootstrap fit and the original fit
-# computed by summing the fine-grid NBS values (higher = more similar)
-# used to rank bootstraps and to drop the bottom 5% when forming a 95% CI
-NBS_sum = np.full((nBtst,), np.nan)
+# Dataset-level ranking score obtained by summing the selected fine-grid metric.
+metric_sum = np.full((nBtst,), np.nan)
 
 # --------------------------------------------------------------------------
 # Loop over bootstraps
@@ -260,9 +282,8 @@ for idx, r in enumerate(trange(nBtst, desc="Loading bootstraps")):
     pChoosingX1_Wishart_list.append(thres_Wishart_based_atMOCS_r["pChoosingX1_Wishart"])
     vecLen_at_targetPC_Wishart_list.append(thres_Wishart_based_atMOCS_r["vecLen_at_targetPC_Wishart"])
 
-    # Aggregate similarity score (higher means closer to original dataset fit)
-    # vars_dict_btst["NBS_fine_grid"] is NBS per fine-grid point; sum -> one score per dataset
-    NBS_sum[idx] = np.sum(vars_dict_btst["NBS_fine_grid"])
+    # Sum the pointwise metric to obtain one score for this bootstrap dataset.
+    metric_sum[idx] = np.sum(vars_dict_btst[ranking_key])
 
     # Extract ellipse parameters at each MOCS reference for this bootstrap
     if dcfg.stim_dims == 2:
@@ -271,7 +292,7 @@ for idx, r in enumerate(trange(nBtst, desc="Loading bootstraps")):
 
 #%%           
 # --------------------------------------------------------------------------
-# SECTION 4a: Rank bootstraps by similarity (NBS) and keep the top 95% for CI
+# SECTION 4a: Rank bootstraps and keep the best 95% for CI
 # --------------------------------------------------------------------------
 # fit a linear regression to the original dataset
 slope_modelPred_org, *_ = np.linalg.lstsq(MOCS['vecLen_at_targetPC_MOCS'][:,None],
@@ -287,21 +308,27 @@ percent_CI = 0.95
 if dcfg.stim_dims == 2:    
     # Ellipse parameters restricted to the retained bootstrap set
     # Expected output shape should be (nDatasets_CI, nRefs, 5)  
-    params_ell_within_CI, idx_keep_NBS, _ = find_btst_dataset_within_CI(NBS_sum, 
-                                                                        params_all, 
-                                                                        CI_percent= percent_CI)
+    params_ell_within_CI, idx_keep_metric, _ = find_btst_dataset_within_CI(
+        metric_sum,
+        params_all,
+        CI_percent=percent_CI,
+        sort_order=sort_order,
+    )
     
     # For visualization: compute inner/outer envelope contours across bootstrap ellipses
     # aggregated over all reference locations.
     fitEll_min, fitEll_max = find_inner_outer_contours_for_gridRefs(np.moveaxis(params_ell_within_CI, 0,1))
 else:
-    _, idx_keep_NBS, _ = find_btst_dataset_within_CI(NBS_sum, 
-                                                     [[]*nBtst], 
-                                                     CI_percent= percent_CI)
+    _, idx_keep_metric, _ = find_btst_dataset_within_CI(
+        metric_sum,
+        [[] * nBtst],
+        CI_percent=percent_CI,
+        sort_order=sort_order,
+    )
 
-# Same filtering for pChoosingX1_Wishart (align bootstraps with idx_keep_NBS)
+# Apply the same retained-bootstrap indices to the threshold predictions.
 pChoosingX1_Wishart_btst = np.asarray(pChoosingX1_Wishart_list)        # shape (nBtst, nRefs, 1200)
-pChoosingX1_Wishart_within_CI = pChoosingX1_Wishart_btst[idx_keep_NBS] # shape (nDatasets_CI, nRefs, 1200)
+pChoosingX1_Wishart_within_CI = pChoosingX1_Wishart_btst[idx_keep_metric] # shape (nDatasets_CI, nRefs, 1200)
 
 # sort across bootstrap fits, then take the CI bounds by index.
 pChoosingX1_Wishart_sorted = np.sort(pChoosingX1_Wishart_within_CI, axis=0)
@@ -310,7 +337,7 @@ pChoosingX1_Wishart_CI_bds = pChoosingX1_Wishart_sorted[[0,-1]]
 
 #Euclidean distan between the ref and comp at the thres predicted by the Wishart model
 vecLen_at_targetPC_Wishart_btst = np.asarray(vecLen_at_targetPC_Wishart_list)
-vecLen_at_targetPC_Wishart_within_CI = vecLen_at_targetPC_Wishart_btst[idx_keep_NBS]
+vecLen_at_targetPC_Wishart_within_CI = vecLen_at_targetPC_Wishart_btst[idx_keep_metric]
 
 #sort Euclidean distance and take the CI bounds by index
 vecLen_at_targetPC_Wishart_sorted = np.sort(vecLen_at_targetPC_Wishart_within_CI, axis = 0)
@@ -348,12 +375,18 @@ var_names = [
     'corr_coef_btst_CI'
 ]
 
-# If analysis already exists in MOCS, load all saved variables    
+# If analysis already exists, ask whether to recompute and overwrite it.
+overwrite_matched_btst_analysis = False
 if key_matched_btst_analysis in MOCS:
+    overwrite_matched_btst_analysis = input(
+        "Cached correlation analysis found. Overwrite it? [y/N]: "
+    ).strip().lower() in {"y", "yes"}
+
+if key_matched_btst_analysis in MOCS and not overwrite_matched_btst_analysis:
     print('Loading data [correlation analysis] ...')
     for name in var_names:
         globals()[name] = MOCS[key_matched_btst_analysis][name]
-else: 
+else:
     # Initialize arrays to store the slope and correlation for each matched bootstrap sample
     slope_btst = np.full((nBtst,), np.nan)
     corr_coef_btst = np.full((nBtst,), np.nan)

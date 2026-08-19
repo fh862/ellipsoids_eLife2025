@@ -10,7 +10,6 @@ jax.config.update("jax_enable_x64", True)
 import jax.numpy as jnp
 import numpy as np
 import math
-from scipy.optimize import minimize
 from skimage.measure import EllipseModel
 from shapely.geometry import Polygon
 import matplotlib.pyplot as plt
@@ -145,34 +144,23 @@ def covMat_to_ellParamsQ(covM):
 
     raise ValueError("Input must be a 2x2 or 3x3 covariance matrix")
 
-def fit_ellipse_max_NBS(cov, fit_circle=False, tol=1e-10):
-    """
-    Find the ellipse or circle that maximizes summed NBS with a covariance field.
-
-    NBS is invariant to covariance scale, so the optimization identifies only
-    axis ratio and orientation. The returned shape is assigned the mean trace
-    of the input covariance matrices to set its absolute size.
+def fit_ellipse_min_AIRM(cov, fit_circle=False, tol=1e-10):
+    """Find the uniform ellipse or circle minimizing mean squared AIRM distance.
 
     Parameters
     ----------
     cov : ndarray
-        Covariance matrices with shape (..., 2, 2).
+        SPD covariance matrices with shape (..., 2, 2).
     fit_circle : bool, default False
-        If True, constrain the major and minor axes to be equal and fix the
-        rotation angle to zero.
+        If True, constrain the fitted covariance to be isotropic.
     tol : float, default 1e-10
         Optimization tolerance.
 
     Returns
     -------
-    major, minor : float
-        Semi-major and semi-minor axis lengths.
-    angle_deg : float
-        Major-axis rotation in degrees, wrapped to [0, 180).
-    cov_fit : ndarray, shape (2, 2)
-        Covariance matrix of the fitted ellipse or circle.
-    NBS_sum, NBS_avg : float
-        Maximum summed and average NBS across the input covariance matrices.
+    major, minor, angle_deg, cov_fit, AIRM_sum, AIRM_avg
+        Geometry and covariance of the fitted uniform ellipse or circle,
+        followed by its summed and mean squared AIRM distances.
     """
     cov = np.asarray(cov, dtype=float)
     if cov.ndim < 2 or cov.shape[-2:] != (2, 2):
@@ -183,76 +171,67 @@ def fit_ellipse_max_NBS(cov, fit_circle=False, tol=1e-10):
         raise ValueError("cov must contain finite covariance matrices")
 
     cov = 0.5 * (cov + np.swapaxes(cov, -1, -2))
-    eigvals = np.linalg.eigvalsh(cov)
-    if np.any(eigvals < -tol):
-        raise ValueError("cov must contain positive-semidefinite matrices")
+    eigvals, eigvecs = np.linalg.eigh(cov)
+    if np.any(eigvals <= 0):
+        raise ValueError("AIRM requires positive-definite covariance matrices")
 
-    traces = np.trace(cov, axis1=-2, axis2=-1)
-    if np.any(traces <= 0):
-        raise ValueError("covariance matrices must have positive trace")
-
-    cov_norm = cov / traces[:, None, None]
-    det_norm = np.clip(np.linalg.det(cov_norm), 0, None)
-
-    # A trace-one 2D covariance can be written as
-    # 0.5 * [[1 + u, v], [v, 1 - u]], with u**2 + v**2 <= 1.
-    def objective(x):
-        u, v = x
-        cov_candidate = 0.5 * np.array([
-            [1 + u, v],
-            [v, 1 - u],
-        ])
-        det_candidate = max((1 - u**2 - v**2) / 4, 0)
-        trace_product = np.einsum('nij,ij->n', cov_norm, cov_candidate)
-        nbs = np.sqrt(np.clip(
-            trace_product + 2 * np.sqrt(det_norm * det_candidate),
-            0,
-            1,
-        ))
-        return -np.mean(nbs)
+    def objective(cov_candidate):
+        candidate_batch = np.broadcast_to(cov_candidate, cov.shape)
+        eigvals_candidate, eigvecs_candidate = np.linalg.eigh(candidate_batch)
+        inv_sqrt_candidate = (
+            eigvecs_candidate * eigvals_candidate[..., None, :] ** -0.5
+        ) @ np.swapaxes(eigvecs_candidate, -1, -2)
+        whitened = inv_sqrt_candidate @ cov @ inv_sqrt_candidate
+        whitened = 0.5 * (whitened + np.swapaxes(whitened, -1, -2))
+        generalized_eigvals = np.linalg.eigvalsh(whitened)
+        return np.mean(np.sum(np.log(generalized_eigvals) ** 2, axis=-1))
 
     if fit_circle:
-        x_fit = np.zeros(2)
-        NBS_avg = -objective(x_fit)
+        # For cI, the AIRM optimum has log(c) equal to the mean log-eigenvalue.
+        log_variance = np.mean(np.log(eigvals))
+        cov_fit = np.exp(log_variance) * np.eye(2)
     else:
-        cov_start = np.mean(cov_norm, axis=0)
-        x0 = np.array([
-            cov_start[0, 0] - cov_start[1, 1],
-            2 * cov_start[0, 1],
-        ])
-        max_radius = np.sqrt(1 - tol)
-        if np.linalg.norm(x0) >= max_radius:
-            x0 *= max_radius / np.linalg.norm(x0)
+        # Initialize at the log-Euclidean mean, then iterate to the unique AIRM
+        # Fréchet mean (the uniform covariance minimizing summed squared AIRM).
+        log_cov = (
+            eigvecs * np.log(eigvals)[..., None, :]
+        ) @ np.swapaxes(eigvecs, -1, -2)
+        log_cov_start = np.mean(log_cov, axis=0)
+        vals, vecs = np.linalg.eigh(log_cov_start)
+        cov_fit = (vecs * np.exp(vals)) @ vecs.T
 
-        result = minimize(
-            objective,
-            x0,
-            method='SLSQP',
-            constraints={
-                'type': 'ineq',
-                'fun': lambda x: 1 - tol - np.dot(x, x),
-            },
-            options={'ftol': tol, 'maxiter': 200},
-        )
-        if not result.success:
+        for _ in range(200):
+            vals, vecs = np.linalg.eigh(cov_fit)
+            sqrt_fit = (vecs * np.sqrt(vals)) @ vecs.T
+            inv_sqrt_fit = (vecs * vals**-0.5) @ vecs.T
+
+            centered = inv_sqrt_fit @ cov @ inv_sqrt_fit
+            centered = 0.5 * (centered + np.swapaxes(centered, -1, -2))
+            centered_vals, centered_vecs = np.linalg.eigh(centered)
+            tangent = (
+                centered_vecs * np.log(centered_vals)[..., None, :]
+            ) @ np.swapaxes(centered_vecs, -1, -2)
+            tangent_mean = np.mean(tangent, axis=0)
+
+            if np.linalg.norm(tangent_mean, ord="fro") < tol:
+                break
+
+            tangent_vals, tangent_vecs = np.linalg.eigh(tangent_mean)
+            exp_tangent = (
+                tangent_vecs * np.exp(tangent_vals)
+            ) @ tangent_vecs.T
+            cov_fit = sqrt_fit @ exp_tangent @ sqrt_fit
+            cov_fit = 0.5 * (cov_fit + cov_fit.T)
+        else:
             raise RuntimeError(
-                f"NBS ellipse optimization failed: {result.message}"
+                "AIRM ellipse optimization did not converge within 200 iterations"
             )
-        x_fit = result.x
-        NBS_avg = -result.fun
-
-    u, v = x_fit
-    cov_norm_fit = 0.5 * np.array([
-        [1 + u, v],
-        [v, 1 - u],
-    ])
-    cov_fit = np.mean(traces) * cov_norm_fit
 
     eigvals_fit, eigvecs_fit = np.linalg.eigh(cov_fit)
     order = np.argsort(eigvals_fit)[::-1]
     eigvals_fit = eigvals_fit[order]
     eigvecs_fit = eigvecs_fit[:, order]
-    major, minor = np.sqrt(np.maximum(eigvals_fit, 0))
+    major, minor = np.sqrt(eigvals_fit)
 
     if fit_circle or np.isclose(major, minor, rtol=tol, atol=tol):
         angle_deg = 0.0
@@ -260,8 +239,9 @@ def fit_ellipse_max_NBS(cov, fit_circle=False, tol=1e-10):
         major_vec = eigvecs_fit[:, 0]
         angle_deg = np.degrees(np.arctan2(major_vec[1], major_vec[0])) % 180
 
-    NBS_sum = NBS_avg * cov.shape[0]
-    return major, minor, angle_deg, cov_fit, NBS_sum, NBS_avg
+    AIRM_avg = objective(cov_fit)
+    AIRM_sum = AIRM_avg * cov.shape[0]
+    return major, minor, angle_deg, cov_fit, AIRM_sum, AIRM_avg
 
 def rotAngle_to_eigenvectors(theta_degrees):
     """

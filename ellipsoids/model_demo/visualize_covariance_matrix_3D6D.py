@@ -42,6 +42,7 @@ import jax
 jax.config.update("jax_enable_x64", True)
 
 import jax.numpy as jnp
+import matplotlib.pyplot as plt
 import numpy as np
 import os
 from analysis.utils_load import get_path
@@ -49,7 +50,8 @@ from dataclasses import replace
 #load functions from other modules
 from core.wishart_process import WishartProcessModel
 from plotting.wishart_plotting import WishartModelBasicsVisualization,\
-    PlotSettingsBase, PlotBasis3DSettings, PlottingTools
+    PlotSettingsBase, PlotBasis3DSettings,\
+    PlotBasis3DBoundaryCubeSettings, PlottingTools
 from plotting.wishart_predictions_plotting import WishartPredictionsVisualization_html,\
     Plot3DPredHTMLSettings
 import plotly.graph_objects as go
@@ -107,6 +109,10 @@ Sigmas_grid = model.compute_Sigmas(U) * 0.15
 # -----------------------------------------------------------
 # SECTION 2: Configure output paths and plotting settings
 # -----------------------------------------------------------
+# True: show 2D slices as model-space dimension 3 changes over time.
+# False: show each matrix component on all six exterior cube surfaces.
+flag_plotting_slices_over_time = False
+
 # Subdirectory specific to this covariance-matrix visualization
 fig_outputDir = os.path.join(fig_output_sim, f'CovarianceMatrix_{ndims}D{ndims * 2}D')
 os.makedirs(fig_outputDir, exist_ok=True)
@@ -130,25 +136,47 @@ pltSettings_sigma3D = replace(pltSettings_3Dsigma,
                               fig_size = (8,8.5) #(9.5,7)
                               )
 # Visualization helper for Wishart model quantities
-visualize_sigma3D = WishartModelBasicsVisualization(save_fig=False,
+visualize_sigma3D = WishartModelBasicsVisualization(save_fig=True,
                                                     settings=pltSettings_base,
-                                                    save_format= 'png'
+                                                    save_format= 'pdf'
                                                     )
-# Render U as a sequence of 2D slices through the 3D field
-visualize_sigma3D.plot_basis_functions_3D(X_mesh,
-                                          Y_mesh, 
-                                          Z_mesh,
-                                          Sigmas_grid_fine, 
-                                          settings = pltSettings_sigma3D
-                                          )
+if flag_plotting_slices_over_time:
+    # Render the covariance components as 2D slices through the 3D field.
+    visualize_sigma3D.plot_basis_functions_3D(
+        X_mesh,
+        Y_mesh,
+        Z_mesh,
+        Sigmas_grid_fine,
+        settings=pltSettings_sigma3D,
+    )
 
-#save a gif
-if visualize_sigma3D.save_format == 'png':
-    PlottingTools.save_gif(fig_outputDir, 
-                           gif_name=fig_name,
-                           fig_name_start = fig_name, 
-                           fig_name_end='.png'
-                           )
+    if (visualize_sigma3D.save_fig
+            and visualize_sigma3D.save_format == 'png'):
+        PlottingTools.save_gif(
+            fig_outputDir,
+            gif_name=fig_name,
+            fig_name_start=fig_name,
+            fig_name_end='.png',
+        )
+else:
+    sigma_boundary_settings = replace(
+        PlotBasis3DBoundaryCubeSettings(),
+        fig_dir=fig_outputDir,
+        fontstyle=pltSettings_base.fontstyle,
+        dpi=100,
+        fig_size=(9, 8.5),
+        cmap_bds=[-0.06, 0.06],
+        fig_name=f'{fig_name}_boundary_cubes',
+        figure_title='3D noise covariance matrix',
+    )
+    for fig_sigma, _ in visualize_sigma3D.plot_basis_functions_3D_boundary_cubes(
+            X_mesh,
+            Y_mesh,
+            Z_mesh,
+            Sigmas_grid_fine,
+            settings=sigma_boundary_settings):
+        plt.show()
+        plt.close(fig_sigma)
 
 
 #%%
@@ -159,15 +187,37 @@ pltSettings_sigma3D = replace(pltSettings_3Dsigma,
                               fig_name = 'U_given_sampledWeightMatrix',
                               fig_size = (9.5, 8)
                               )
-visualize_sigma3D.save_fig = False
 
-# Render U as a sequence of 2D slices through the 3D field
-visualize_sigma3D.plot_basis_functions_3D(X_mesh,
-                                        Y_mesh, 
-                                        Z_mesh,
-                                        U_fine, 
-                                        settings = pltSettings_sigma3D
-                                        )
+if flag_plotting_slices_over_time:
+    # Render U as 2D slices through the 3D field.
+    visualize_sigma3D.plot_basis_functions_3D(
+        X_mesh,
+        Y_mesh,
+        Z_mesh,
+        U_fine,
+        settings=pltSettings_sigma3D,
+    )
+else:
+    num_u_rows, num_u_columns = U_fine.shape[-2:]
+    u_boundary_settings = replace(
+        PlotBasis3DBoundaryCubeSettings(),
+        fig_dir=fig_outputDir,
+        fontstyle=pltSettings_base.fontstyle,
+        dpi=100,
+        fig_size=(11, 8.5),
+        cmap_bds = [-0.26, 0.26],
+        fig_name='U_given_sampledWeightMatrix_boundary_cubes',
+        figure_title=r'3D weighted-sum components ($U$)',
+
+    )
+    for fig_u, _ in visualize_sigma3D.plot_basis_functions_3D_boundary_cubes(
+            X_mesh,
+            Y_mesh,
+            Z_mesh,
+            U_fine,
+            settings=u_boundary_settings):
+        plt.show()
+        plt.close(fig_u)
 
 #%% 
 # -----------------------------------------------------------

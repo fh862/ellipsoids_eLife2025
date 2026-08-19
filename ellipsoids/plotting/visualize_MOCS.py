@@ -147,10 +147,10 @@ PlotThresCompSettings_bds = {
 # dictionary mapping subject IDs to their specific settings
 PlotThresComp3DSettings_bds = {
     'sub1': {
-        'bds': np.array([0, 0.17]),
-        'corr_text_loc': [0.015, 0.16],
-        'slope_text_loc': [0.015, 0.15],
-        'numOverlaps_text_loc':[0.015,0.14]
+        'bds': np.array([0, 0.2]),
+        'corr_text_loc': [0.035, 0.19],
+        'slope_text_loc': [0.035, 0.18],
+        'numOverlaps_text_loc':[0.035,0.17]
     },
     'sub2': {
         'bds': np.array([0, 0.25]),
@@ -171,10 +171,10 @@ PlotThresComp3DSettings_bds = {
         'numOverlaps_text_loc':[0.055,0.25]
     }, 
     'sub8': {
-        'bds': np.array([0, 0.22]),
-        'corr_text_loc': [0.035, 0.2],
-        'slope_text_loc': [0.035, 0.185],
-        'numOverlaps_text_loc':[0.035,0.17]
+        'bds': np.array([0, 0.25]),
+        'corr_text_loc': [0.035, 0.23],
+        'slope_text_loc': [0.035, 0.215],
+        'numOverlaps_text_loc':[0.035,0.2]
     },    
     'sub10': {
         'bds': np.array([0, 0.25]),

@@ -43,8 +43,8 @@ from dataclasses import replace
 from core import chebyshev
 from core.wishart_process import WishartProcessModel
 from plotting.wishart_plotting import WishartModelBasicsVisualization, PlotSettingsBase,\
-    PlotBasis1DSettings, PlotBasis2DSettings, PlotBasis3DSettings, PlotWSettings,\
-    PlotWAllSettings
+    PlotBasis1DSettings, PlotBasis2DSettings, PlotBasis3DSettings,\
+    PlotBasis3DBoundaryCubeSettings, PlotWSettings, PlotWAllSettings
 
 # Set the output directory for figures
 baseDir = get_path("dropbox_root_mac_elps")
@@ -96,6 +96,10 @@ visualize_basis.plot_basis_function_2D(degree,
 # ---------------------------------------------------------------------
 # Visualize the chebyshev basis functions (3D)
 # ---------------------------------------------------------------------
+# True: show 2D slices as the third dimension changes over time.
+# False: show all six exterior faces of each 3D basis-function cube.
+flag_plotting_slices_over_time = False
+
 # Create 3D meshgrids from the provided `grid` array for x, y, and z coordinates respectively.
 X_mesh, Y_mesh, Z_mesh = np.meshgrid(grid, grid, grid)
 # Stack the flattened x, y, and z arrays into a single matrix and then transpose it,
@@ -119,18 +123,47 @@ phi_org = np.reshape(phi, (nbins, nbins, nbins, degree, degree, degree))
 #update the plotting data class
 pltSettings_3D = replace(PlotBasis3DSettings(), **pltSettings_base.__dict__)
 
-# Loop through each degree of the Chebyshev polynomials.
-for i in range(degree): 
-    current_settings = replace(pltSettings_3D, 
-                               fig_name=f'Chebyshev_3D_basis_function_degree{i+1}')
-    # Plot 3D basis functions for each degree using the calculated values in `phi_org`,
-    # and save the plots and GIFs to a specified directory.
-    visualize_basis.plot_basis_functions_3D(X_mesh, 
-                                            Y_mesh, 
-                                            Z_mesh,
-                                            phi_org[...,i], 
-                                            settings = pltSettings_3D
-                                            )
+if flag_plotting_slices_over_time:
+    # For each third-dimension basis order, render its 2D basis grid at
+    # every sampled value along the third dimension.
+    for degree_3_index in range(degree):
+        slice_settings = replace(
+            pltSettings_3D,
+            fig_name=(
+                'Chebyshev_3D_basis_slices_'
+                f'dim3_T{degree_3_index}'
+            ),
+        )
+        visualize_basis.plot_basis_functions_3D(
+            X_mesh,
+            Y_mesh,
+            Z_mesh,
+            phi_org[..., degree_3_index],
+            settings=slice_settings,
+        )
+        plt.close('all')
+else:
+    # Render five figures containing 5 x 5 six-face heatmap cubes.
+    boundary_settings = replace(
+        PlotBasis3DBoundaryCubeSettings(),
+        fig_dir=pltSettings_base.fig_dir,
+        fontstyle=pltSettings_base.fontstyle,
+        dpi=100,
+        row_axis_label='Basis function along dimension 1',
+        column_axis_label='Basis function along dimension 2',
+        row_titles=[rf'$T_{{{index}}}$' for index in range(degree)],
+        column_titles=[rf'$T_{{{index}}}$' for index in range(degree)],
+    )
+    for fig_basis, axes_basis in (
+            visualize_basis.plot_basis_functions_3D_boundary_cubes(
+                X_mesh,
+                Y_mesh,
+                Z_mesh,
+                phi_org,
+                settings=boundary_settings,
+            )):
+        plt.show()
+        plt.close(fig_basis)
 
 #%% 
 # ---------------------------------------------------------------------

@@ -9,12 +9,13 @@ Created on Wed Jul 17 14:36:54 2024
 import jax
 jax.config.update("jax_enable_x64", True)
 from dataclasses import dataclass, field
-from typing import List, Tuple, Union 
+from typing import List, Optional, Tuple, Union
 import matplotlib.pyplot as plt
 import matplotlib as mpl
 import numpy as np
 import imageio.v2 as imageio
 from numpy.polynomial.chebyshev import chebval2d
+from mpl_toolkits.mplot3d.art3d import Line3DCollection, Poly3DCollection
 import os
 from analysis.color_thres import color_thresholds
 from core import viz
@@ -76,6 +77,29 @@ class PlotBasis3DSettings(PlotSettingsBase):
     cmap_bds: List[float] = field(default_factory=list)
     flag_remake_cmap: bool = False
     view_anlge: Tuple[float, float] = (20, -75)
+
+@dataclass
+class PlotBasis3DBoundaryCubeSettings(PlotBasis3DSettings):
+    """Appearance settings for six-face 3D basis-function cubes."""
+
+    fontsize: int = 24
+    fig_size: Tuple[float, float] = (12, 12)
+    fig_name: str = 'Chebyshev_3D_basis_boundary_cubes'
+    figure_title: str = '3D Chebyshev basis functions'
+    row_axis_label: Optional[str] = None
+    column_axis_label: Optional[str] = None
+    panel_axis_label: str = 'Basis function along dimension 3'
+    row_titles: Optional[List[str]] = None
+    column_titles: Optional[List[str]] = None
+    panel_titles: List[str] = field(default_factory=list)
+    cmap_bds: List[float] = field(default_factory=lambda: [-1.0, 1.0])
+    cube_margin: float = 0.03
+    cube_zoom: float = 1.18
+    cube_edge_color: str = '0.25'
+    cube_edge_linewidth: float = 0.7
+    surface_alpha: float = 1.0
+    colorbar_shrink: float = 0.72
+    colorbar_pad: float = 0.02
     
 @dataclass
 class PlotWSettings(PlotSettingsBase):
@@ -691,6 +715,294 @@ class WishartModelBasicsVisualization(PlottingTools):
             plt.show()
             if settings.fig_dir and self.save_fig:
                 self._save_figure(fig, f"{settings.fig_name}_slice{l:02}")
+
+    def plot_basis_functions_3D_boundary_cubes(
+            self, XG, YG, ZG, M,
+            settings: PlotBasis3DBoundaryCubeSettings):
+        """Plot tensor-product 3D basis functions on cube boundaries.
+
+        For a three-axis component array, one figure is generated for each
+        component along its final axis. For a two-axis component array, one
+        figure is generated. Within each figure, the first two component axes
+        select subplot rows and columns. Each subplot is a cube whose six
+        exterior faces are colored by the corresponding 3D field values. The
+        front face therefore shows model-space dimensions 1 and 2, while cube
+        depth represents model-space dimension 3.
+
+        Parameters
+        ----------
+        XG, YG, ZG : array-like, shape (N, N, N)
+            Structured coordinate grids for model-space dimensions 1, 2, and
+            3. Both ``np.meshgrid`` indexing conventions are supported.
+        M : array-like, shape (N, N, N, rows, columns[, panels])
+            Values of each plotted field on the grid. A final ``panels`` axis
+            is optional.
+        settings : PlotBasis3DBoundaryCubeSettings
+            Figure, colormap, camera, cube, and output settings. ``cmap_bds``
+            sets the shared color limits for every generated figure.
+
+        Yields
+        ------
+        fig, axes
+            A Matplotlib figure and its ``(rows, columns)`` axes array for each
+            panel, or a single figure when ``M`` has no panel axis.
+        """
+        coordinate_grids = tuple(np.asarray(grid) for grid in (XG, YG, ZG))
+        basis_values = np.asarray(M)
+        grid_shape = coordinate_grids[0].shape
+
+        if any(grid.ndim != 3 or grid.shape != grid_shape
+               for grid in coordinate_grids):
+            raise ValueError("XG, YG, and ZG must be matching 3D grids.")
+        has_panel_axis = basis_values.ndim == 6
+        if basis_values.ndim == 5:
+            basis_values = basis_values[..., np.newaxis]
+        if basis_values.ndim != 6 or basis_values.shape[:3] != grid_shape:
+            raise ValueError(
+                "M must have shape (*XG.shape, rows, columns[, panels]); "
+                f"got XG.shape={grid_shape} and M.shape={basis_values.shape}."
+            )
+
+        num_rows, num_columns, num_panels = basis_values.shape[-3:]
+        if (settings.row_titles is not None
+                and len(settings.row_titles) != num_rows):
+            raise ValueError(
+                "settings.row_titles must contain one title per subplot row."
+            )
+        if (settings.column_titles is not None
+                and len(settings.column_titles) != num_columns):
+            raise ValueError(
+                "settings.column_titles must contain one title per subplot column."
+            )
+        coordinate_axes, spatial_order = self._structured_mesh_axes(
+            coordinate_grids
+        )
+        display_axes = (
+            coordinate_axes[0],
+            coordinate_axes[2],
+            coordinate_axes[1],
+        )
+        surface_grids = self._cube_surface_grids(display_axes)
+        surface_quads = self._cube_surface_quads(surface_grids)
+        cube_edges = self._cube_edges(display_axes)
+
+        cmap_bds = np.asarray(settings.cmap_bds, dtype=float)
+        if (cmap_bds.shape != (2,)
+                or not np.all(np.isfinite(cmap_bds))
+                or cmap_bds[0] >= cmap_bds[1]):
+            raise ValueError(
+                "settings.cmap_bds must contain two finite, increasing bounds."
+            )
+        cmap = (
+            self.remake_cmap(settings.cmap)
+            if settings.flag_remake_cmap
+            else plt.get_cmap(settings.cmap)
+        )
+        norm = mpl.colors.Normalize(*cmap_bds)
+        colorbar_ticks = np.linspace(*cmap_bds, 5)
+
+        for panel_index in range(num_panels):
+            fig, axes = plt.subplots(
+                num_rows,
+                num_columns,
+                figsize=settings.fig_size,
+                dpi=settings.dpi,
+                subplot_kw={'projection': '3d'},
+                constrained_layout=True,
+            )
+            axes = np.asarray(axes, dtype=object).reshape(
+                num_rows, num_columns
+            )
+
+            for row_index in range(num_rows):
+                for column_index in range(num_columns):
+                    ax = axes[row_index, column_index]
+                    basis_xyz = np.transpose(
+                        basis_values[
+                            ..., row_index, column_index, panel_index
+                        ],
+                        spatial_order,
+                    )
+                    surface_values = self._basis_cube_surface_values(basis_xyz)
+                    facecolors = np.concatenate([
+                        cmap(norm(self._cell_means(face))).reshape(-1, 4)
+                        for face in surface_values
+                    ])
+                    facecolors[:, 3] = settings.surface_alpha
+
+                    ax.add_collection3d(Poly3DCollection(
+                        surface_quads,
+                        facecolors=facecolors,
+                        edgecolors='none',
+                        linewidths=0,
+                        antialiaseds=False,
+                    ))
+                    ax.add_collection3d(Line3DCollection(
+                        cube_edges,
+                        colors=settings.cube_edge_color,
+                        linewidths=settings.cube_edge_linewidth,
+                    ))
+                    self._format_basis_cube_axis(ax, display_axes, settings)
+
+                    if row_index == 0 and settings.column_titles is not None:
+                        ax.set_title(
+                            settings.column_titles[column_index],
+                            fontsize=settings.fontsize,
+                        )
+                    if column_index == 0 and settings.row_titles is not None:
+                        ax.text2D(
+                            -0.08,
+                            0.5,
+                            settings.row_titles[row_index],
+                            transform=ax.transAxes,
+                            rotation=90,
+                            ha='center',
+                            va='center',
+                            fontsize=settings.fontsize,
+                        )
+
+            figure_title = settings.figure_title
+            if has_panel_axis:
+                panel_title = (
+                    settings.panel_titles[panel_index]
+                    if panel_index < len(settings.panel_titles)
+                    else rf'$T_{{{panel_index}}}$'
+                )
+                figure_title += (
+                    f"\n{settings.panel_axis_label}: {panel_title} "
+                    f"({panel_index + 1}/{num_panels})"
+                )
+            fig.suptitle(figure_title, fontsize=settings.fontsize + 3)
+            if settings.column_axis_label is not None:
+                fig.supxlabel(
+                    settings.column_axis_label,
+                    fontsize=settings.fontsize + 1,
+                )
+            if settings.row_axis_label is not None:
+                fig.supylabel(
+                    settings.row_axis_label,
+                    fontsize=settings.fontsize + 1,
+                )
+            colorbar = fig.colorbar(
+                mpl.cm.ScalarMappable(norm=norm, cmap=cmap),
+                ax=axes.ravel().tolist(),
+                shrink=settings.colorbar_shrink,
+                pad=settings.colorbar_pad,
+                aspect=30,
+                ticks=colorbar_ticks,
+            )
+            colorbar.ax.tick_params(labelsize=settings.fontsize)
+
+            if settings.fig_dir and self.save_fig:
+                panel_suffix = (
+                    f"_dim3_{panel_index:02d}" if has_panel_axis else ""
+                )
+                self._save_figure(
+                    fig,
+                    f"{settings.fig_name}{panel_suffix}",
+                )
+            yield fig, axes
+
+    @staticmethod
+    def _structured_mesh_axes(coordinate_grids):
+        """Return coordinate vectors and array-axis order for a 3D mesh."""
+        spatial_order = []
+        coordinate_axes = []
+        for coordinate_grid in coordinate_grids:
+            variation = [
+                np.max(np.abs(np.diff(coordinate_grid, axis=axis)))
+                if coordinate_grid.shape[axis] > 1 else 0.0
+                for axis in range(3)
+            ]
+            varying_axis = int(np.argmax(variation))
+            if variation[varying_axis] == 0:
+                raise ValueError("Each coordinate grid must vary along one axis.")
+            spatial_order.append(varying_axis)
+
+            index = [0, 0, 0]
+            index[varying_axis] = slice(None)
+            coordinate_axes.append(coordinate_grid[tuple(index)])
+
+        if len(set(spatial_order)) != 3:
+            raise ValueError(
+                "XG, YG, and ZG must vary along three different array axes."
+            )
+        return tuple(coordinate_axes), tuple(spatial_order)
+
+    @staticmethod
+    def _cube_surface_grids(display_axes):
+        """Construct the six boundary grids in displayed (x, z, y) order."""
+        axis_x, axis_y, axis_z = display_axes
+        grid_y, grid_z = np.meshgrid(axis_y, axis_z, indexing='ij')
+        grid_x_y, grid_z_y = np.meshgrid(axis_x, axis_z, indexing='ij')
+        grid_x_z, grid_y_z = np.meshgrid(axis_x, axis_y, indexing='ij')
+        return (
+            np.stack((np.full_like(grid_y, axis_x[0]), grid_y, grid_z), -1),
+            np.stack((np.full_like(grid_y, axis_x[-1]), grid_y, grid_z), -1),
+            np.stack((grid_x_y, np.full_like(grid_x_y, axis_y[0]), grid_z_y), -1),
+            np.stack((grid_x_y, np.full_like(grid_x_y, axis_y[-1]), grid_z_y), -1),
+            np.stack((grid_x_z, grid_y_z, np.full_like(grid_x_z, axis_z[0])), -1),
+            np.stack((grid_x_z, grid_y_z, np.full_like(grid_x_z, axis_z[-1])), -1),
+        )
+
+    @staticmethod
+    def _cube_surface_quads(surface_grids):
+        return np.concatenate([
+            np.stack((
+                surface[:-1, :-1],
+                surface[1:, :-1],
+                surface[1:, 1:],
+                surface[:-1, 1:],
+            ), axis=2).reshape(-1, 4, 3)
+            for surface in surface_grids
+        ])
+
+    @staticmethod
+    def _basis_cube_surface_values(basis_xyz):
+        """Match model-space values to displayed cube faces (x, z, y)."""
+        return (
+            basis_xyz[0, :, :].T,
+            basis_xyz[-1, :, :].T,
+            basis_xyz[:, :, 0],
+            basis_xyz[:, :, -1],
+            basis_xyz[:, 0, :],
+            basis_xyz[:, -1, :],
+        )
+
+    @staticmethod
+    def _cell_means(values):
+        return 0.25 * (
+            values[:-1, :-1]
+            + values[1:, :-1]
+            + values[1:, 1:]
+            + values[:-1, 1:]
+        )
+
+    @staticmethod
+    def _cube_edges(display_axes):
+        bounds = [(axis[0], axis[-1]) for axis in display_axes]
+        corners = np.array([
+            [bounds[0][x], bounds[1][y], bounds[2][z]]
+            for x in range(2) for y in range(2) for z in range(2)
+        ])
+        edge_indices = (
+            (0, 1), (0, 2), (0, 4), (1, 3), (1, 5), (2, 3),
+            (2, 6), (3, 7), (4, 5), (4, 6), (5, 7), (6, 7),
+        )
+        return tuple(corners[list(indices)] for indices in edge_indices)
+
+    @staticmethod
+    def _format_basis_cube_axis(ax, display_axes, settings):
+        for axis, setter in zip(
+                display_axes,
+                (ax.set_xlim, ax.set_ylim, ax.set_zlim)):
+            lower, upper = float(np.min(axis)), float(np.max(axis))
+            padding = settings.cube_margin * (upper - lower)
+            setter((lower - padding, upper + padding))
+        ax.set_box_aspect((1, 1, 1), zoom=settings.cube_zoom)
+        ax.set_proj_type('ortho')
+        ax.view_init(*settings.view_anlge)
+        ax.set_axis_off()
 
 #%% 
     def plot_W_selected_slice(self, W, settings: PlotWSettings, basis_orders = None,
