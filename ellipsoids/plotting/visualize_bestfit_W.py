@@ -74,16 +74,15 @@ with open(full_path, 'rb') as f:
 W_est = data_load['model_pred_Wishart'].W_est
 model = data_load['model_pred_Wishart'].model
 
-# Compute the 2D Chebyshev basis order (i + j)
-basis_orders = (
-    jnp.arange(model.degree)[:, None] +
-    jnp.arange(model.degree)[None, :]
-)
+# Total Chebyshev order at each tensor-product basis location
+basis_orders = jnp.indices(
+    (model.degree,) * model.num_dims
+).sum(axis=0)
 
-# Replicate basis orders across stimulus and covariance dimensions
-basis_orders_rep = np.tile(
-    basis_orders[:, :, np.newaxis, np.newaxis],
-    (1, 1, model.num_dims, model.num_dims + model.extra_dims)
+# Match the complete shape of W_est
+basis_orders_rep = jnp.broadcast_to(
+    basis_orders[..., None, None],
+    W_est.shape
 )
 
 # Compute prior variance envelope (±2√η)
@@ -100,18 +99,20 @@ eta_all = [gamma * e ** d for e in eps_all]
 # ±2 standard deviation envelope
 eta_sqrt = 2 * np.sqrt(eta_all)
 
-#%% --------------------------------------------------------------------
+#%%
+# --------------------------------------------------------------------
 # Plot best-fitting weights and prior envelope
 # ---------------------------------------------------------------------
 # Plot settings for weight visualization
 pltSettings_W_all = replace(PlotWAllSettings(), **pltSettings_base.__dict__)
 pltSettings_W_all = replace(
     pltSettings_W_all,
-    ybds=[-0.045, 0.045],
-    yticks=np.linspace(-0.04, 0.04, 5),
+    ybds=[-0.045, 0.045], #[-0.06, 0.06],
+    yticks= np.linspace(-0.04, 0.04, 5),#np.linspace(-0.06, 0.06, 5),
     marker_alpha=0.4,
     ylabel='Best-fitting weights',
-    xlabel=r'The order of 2D Chebyshev basis functions $(i + j)$'
+    xlabel= f'The order of {model.num_dims}D Chebyshev basis functions '
+    f'$({" + ".join("ijk"[:model.num_dims])})$'
 )
 
 # Create figure and axis
@@ -126,7 +127,6 @@ for n in range(len(eps_all)):
     ax.plot(d, eta_sqrt[n], color=cmap[n], ls=ls[n], lw=0.75,
         label=fr'$\pm 2\sqrt{{\eta}}$ at $\epsilon = {eps_all[n]:.1f}$, $\gamma = {gamma:.4f}$')
     ax.plot( d, -eta_sqrt[n], color=cmap[n], ls=ls[n], lw=0.75)
-
 ax.legend(loc='lower right', fontsize=10)
 
 # Overlay best-fitting weights
