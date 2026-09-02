@@ -232,7 +232,7 @@ class ExperimentTrialSequence:
 
         # Initialize sequences
         self.original_sequence = []
-        self.final_sequence = [[]] * nExpt
+        self.final_sequence = [[] for _ in range(nExpt)]
 
         for n in range(nExpt):
             # Create string labels for AEPsych and MOCS trials
@@ -516,7 +516,7 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
 
         # Initialize sequences
         self.original_sequence = []
-        self.final_sequence = [[]] * nExpt
+        self.final_sequence = [[] for _ in range(nExpt)]
 
         for n in range(nExpt):
             # Create string labels for AEPsych and MOCS trials
