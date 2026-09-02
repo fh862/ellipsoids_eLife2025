@@ -45,7 +45,7 @@ class SimulateTrialGivenWishart:
                         the expected number based on the trial setup.
         """
         
-        if expt_dim not in (2,3,4,5,6):
+        if expt_dim not in list(range(2,7)):
             raise ValueError("Color discrimination experiment must be either 2, 3, 4 or 6d.")
         self.expt_dim   = expt_dim
         self.gt_Wishart = gt_Wishart
@@ -94,14 +94,16 @@ class SimulateTrialGivenWishart:
         # Initialize lists to store trial data
         self._init_trial_lists()
         
-        # Validate and assign scaling factors, defaulting to 1 if not provided
-        if customized_val_scaler is not None: #customized (shuffled) sobol scalers are prioritized
+        # Customized trial-level scalers take priority over strategy-level scalers.
+        if customized_val_scaler is not None:
             self.customized_val_scaler = customized_val_scaler
             self.val_scaler = None
         else:
             self.customized_val_scaler = None
+        
+            # This method validates val_scaler and assigns the result to
+            # self.val_scaler. If val_scaler is None, it creates a list of ones.
             self._validate_val_scaler(val_scaler)
-            self.val_scaler = val_scaler
     
     def _extract_field_vals(self, section, field, strsplit = False):
         """

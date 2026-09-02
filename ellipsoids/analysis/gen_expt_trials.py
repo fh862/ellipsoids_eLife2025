@@ -10,7 +10,6 @@ import numpy as np
 import time  
 import threading
 import dill as pickled
-import os
 from analysis.sim_trials import SimulateTrialGivenWishart
 
 #%%
@@ -363,10 +362,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                     trial_sequence.set_trial_status(expt_idx, trial_counter, "Completed_in_time")
                     self.keep_track_trials_finished += 1
                     
-                elif trial_type == 'AEPsych':
-                    # Configure the trial for the AEPsych client
-                    #self._configure_session_trial(client, trial_idx)
-                    
+                elif trial_type == 'AEPsych':                    
                     if (self.keep_track_trials_finished - trial_counter) >= self.max_shifts_MOCS:
                         pause_for_bumpingMOCS = True
                     if (self.keep_track_trials_finished - trial_counter) == 0:
