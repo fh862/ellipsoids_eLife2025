@@ -17,36 +17,63 @@ from core import oddity_task
 
 #%%
 class SimulateTrialGivenWishart:
+    """Simulate threshold oddity trials proposed by AEPsych.
+
+    The base class implements the shared AEPsych loop, timeout monitoring,
+    value scaling, and trial-data storage. Subclasses can specialize the
+    stimulus/response processing through ``_process_trial`` and
+    ``_simulate_pregenerated_trial`` and can replace ``_trial_data_fields``
+    to define their storage schema.
+
+    All configuration strings are assumed to use the same parameter names,
+    strategy names, and per-strategy trial quotas; those fields are read from
+    the first configuration string.
+    """
+
+    # This schema drives list initialization, trial updates, and final stacking.
+    _trial_data_fields = (
+        "xref",
+        "x1",
+        "Uref",
+        "U1",
+        "signed_diff",
+        "pX1",
+        "binaryResp",
+    )
+    
     def __init__(self, expt_dim, config_all, gt_Wishart, ref = None, 
                  pseudo_randomize = False, pseudo_randomize_seed = None, 
                  val_scaler = None, customized_val_scaler = None):
         """
-        Initializes the trial simulation with specific experimental dimensions and configurations,
-        while optionally setting up for pseudo-randomized trials and value scaling.
-        
-        The initialization also sets up necessary parameters based on the dimensionality of the
-        experiment, which dictates the experimental setup and the data required.
+        Initialize a threshold-trial simulator and its storage arrays.
         
         Args:
-            expt_dim (int): Number of dimensions in the color discrimination experiment. Valid options are:
-                            - 2D: Manipulates two dimensions of color.
-                            - 3D: Manipulates three dimensions of color.
-                            - 4D: Adjusts two dimensions for the reference and their deltas for comparison.
-                            - 6D: Adjusts three dimensions for the reference and their deltas for comparison.
-            config_all (list of str): Configuration strings for each trial setup.
-            gt_Wishart (object): Wishart model predictions.
-            ref (list, optional): Reference stimuli configurations, required for 2D and 3D experiments.
-            pseudo_randomize (bool): If True, configures trials in a pseudo-random order.
-            val_scaler (list, optional): Scaling factors to adjust trial values dynamically.
+            expt_dim (int): AEPsych parameterization dimension. Supported
+                values are 2 through 6. The 5D case uses four sampled color
+                parameters plus one fixed ancillary value selected from
+                ``ref``.
+            config_all (list of str): One AEPsych configuration string per
+                experimental condition.
+            gt_Wishart (object): Wishart model used to simulate responses.
+            ref (sequence, optional): Fixed references for 2D/3D experiments,
+                or fixed ancillary values for 5D experiments. It is required
+                when either of those parameterizations is used.
+            pseudo_randomize (bool): Whether to shuffle condition order
+                independently at every trial position.
+            pseudo_randomize_seed (int, optional): Seed for condition-order
+                shuffling. It does not seed simulated binary responses.
+            val_scaler (sequence, optional): One scaling factor per AEPsych
+                strategy. Short or long sequences are padded or truncated.
+            customized_val_scaler (sequence, optional): Trial-level scaling
+                factors. When supplied, these take priority over ``val_scaler``.
         
         Raises:
-            ValueError: If the experiment dimension is not one of [2, 3, 4, 6], or if reference data is
-                        required but not provided, or if the number of scaling factors does not match
-                        the expected number based on the trial setup.
+            ValueError: If ``expt_dim`` is outside 2--6 or if a required fixed
+                reference is missing for a 2D/3D experiment.
         """
         
         if expt_dim not in list(range(2,7)):
-            raise ValueError("Color discrimination experiment must be either 2, 3, 4 or 6d.")
+            raise ValueError("Color discrimination experiment must be 2, 3, 4, 5, or 6D.")
         self.expt_dim   = expt_dim
         self.gt_Wishart = gt_Wishart
         self.config_all = config_all
@@ -57,14 +84,11 @@ class SimulateTrialGivenWishart:
         if (self.expt_dim == 2 or self.expt_dim == 3) and self.ref is None:
             raise ValueError("If the experiment has fixed ref stimulus, you need to specify ref stimuli!")
         
-        # Retrieve parameter names, strategy names, and trial numbers
+        # All conditions are expected to share this structure, so parsing the
+        # first configuration is sufficient for the common metadata.
         self.parnames       = self._extract_field_vals('common','parnames', strsplit = True)
         self.strat_names    = self._extract_field_vals('common','strategy_names', strsplit = True)
         
-        # Read per-strategy trial quotas from the config.
-        # Exactly ONE of these fields is used in a given config:
-        #   - "min_asks" (standard workflow)
-        #   - "min_total_tells" (DB-switch / preload workflow)
         # Read per-strategy trial quotas from the config.
         #
         # Normal workflow uses `min_asks` (strategy advances after generating N asks).
@@ -85,8 +109,8 @@ class SimulateTrialGivenWishart:
         self.nTrials_cumsum = np.cumsum(np.array(self.nTrials_strat))
         self.nTrials        = self.nTrials_cumsum[-1]
         
-        # Initialize pseudo-random order of configurations if enabled
-        # if pseudo_randomize is false, the return pseudo_order will not be shuffled
+        # Each column maps scheduling lanes to condition indices. The subclass
+        # overrides the number of columns for a longer interleaved sequence.
         self.pseudo_randomize = pseudo_randomize
         self.pseudo_randomize_seed = pseudo_randomize_seed
         self.pseudo_order = self._create_pseudorandom_order()
@@ -107,7 +131,7 @@ class SimulateTrialGivenWishart:
     
     def _extract_field_vals(self, section, field, strsplit = False):
         """
-        Extracts and optionally splits values from config strings using a ConfigParser.
+        Extract a field from the first AEPsych configuration string.
         
         Args:
             section (str): Section name in the configuration.
@@ -115,7 +139,8 @@ class SimulateTrialGivenWishart:
             strsplit (bool): If True, splits the string into a list.
         
         Returns:
-            Extracted value, optionally as a list.
+            str or list[str]: The raw field value, or a comma-separated list
+            parsed from bracket notation when ``strsplit`` is True.
         """
     
         # Create a new ConfigParser object
@@ -166,13 +191,17 @@ class SimulateTrialGivenWishart:
         
     def _validate_val_scaler(self, val_scaler):
         """
-        Validates and adjusts the 'val_scaler' list to ensure its length matches 
-        'nTrials_cumsum'. If 'val_scaler' is not provided, defaults to a list of 
-        1s matching the length of 'nTrials_cumsum'.
+        Normalize strategy-level scaling factors to the strategy count.
+
+        Missing factors are filled with 1, excess factors are discarded, and
+        an omitted sequence becomes one factor of 1 per strategy.
+
+        Args:
+            val_scaler (sequence, optional): Proposed strategy-level factors.
         """
         # Check if a val_scaler list was provided
         if val_scaler is not None:
-            # Calculate the difference in length between nTrials_cumsum and val_scaler
+            # ``nTrials_cumsum`` has one entry per configured strategy.
             len_diff = len(self.nTrials_cumsum) - len(val_scaler)
             # If lengths are equal, no adjustment is needed
             if len_diff == 0:
@@ -180,14 +209,14 @@ class SimulateTrialGivenWishart:
             else:
                 # Adjust val_scaler based on len_diff
                 if len_diff > 0:
-                    # If there are more trials than scalers, extend val_scaler with 1s
+                    # Pad missing strategy-level factors with neutral scaling.
                     self.val_scaler = val_scaler + [1] * len_diff
                     # Use warnings.warn to issue a warning
                     warnings.warn(f"The number of val scalers ({len(val_scaler)}) is less"+\
                                   " than the expected number ({len(self.nTrials_cumsum)}).")
                     print(" Padding with 1's to match the count.")
                 else:
-                    # If there are fewer trials than scalers, truncate val_scaler
+                    # Ignore factors that do not correspond to a strategy.
                     self.val_scaler = val_scaler[:len(self.nTrials_cumsum)]
                     warnings.warn(f"The number of val scalers ({len(val_scaler)}) is greater"+\
                                   " than the expected number ({len(self.nTrials_cumsum)}).")
@@ -198,35 +227,26 @@ class SimulateTrialGivenWishart:
             
     def _init_trial_lists(self, prefix=""):
         """
-        Initializes lists to store data collected during the trial simulation.
+        Initialize one storage list for every field in the active schema.
+
+        Because the schema is a class attribute, this method automatically
+        initializes the additional ``x2``/``U2``/``pX2`` lists when invoked on
+        a suprathreshold subclass instance.
     
         Args:
             prefix (str): Prefix for the attribute names (e.g., "pregenerated_").
         """
-        # Define the list of attributes to initialize
-        attributes = [
-            "xref_list",
-            "x1_list",
-            "Uref_list",
-            "U1_list",
-            "signed_diff_list",
-            "pX1_list",
-            "binaryResp_list"
-        ]
-    
-        # Initialize each attribute dynamically with the prefix
-        for attr_name in attributes:
-            setattr(self, f"{prefix}{attr_name}", [])
+        for field in self._trial_data_fields:
+            setattr(self, f"{prefix}{field}_list", [])        
             
     def _configure_trial(self, client, trial_counter, config_index):
         """
-        Configures or resumes a trial based on its number. If it's the first trial, 
-        it configures a new trial. Otherwise, it resumes the existing configuration.
+        Configure a condition on its first AEPsych trial, then resume it.
         
         Args:
-            client: An instance of the client that communicates with the trial configuration server.
-            trial_counter (int): The current trial number, determining if a new configuration or a resume is needed.
-            config_index (int): Index to select the specific trial configuration from `self.config_all`.
+            client: Client connected to the AEPsych server.
+            trial_counter (int): Within-condition AEPsych trial index.
+            config_index (int): Condition/configuration index.
         """
     
         if trial_counter == 0:
@@ -322,17 +342,17 @@ class SimulateTrialGivenWishart:
     
     def _apply_val_scaling(self, trial_counter, trial_val):
         """
-        Scales the values of trial parameters based on a predefined scaling sequence. 
-        The scaling adjusts trial values to be closer to or further from the reference values, 
-        depending on the trial's progress and the dimensionality of the experiment.
+        Scale comparison-offset parameters for the current AEPsych trial.
+
+        A customized trial-level factor takes priority. Otherwise the cumulative
+        strategy quotas determine which strategy-level factor applies.
     
         Args:
-            trial_counter (int): The current number of the trial, used to determine the scaling factor.
-            trial_val (list): List of values from the current trial to be scaled. These represent
-                              delta values of the comparison stimulus    
+            trial_counter (int): Within-condition AEPsych trial index.
+            trial_val (list): Comparison offsets to scale.
+
         Returns:
-            list: Scaled trial values, where each value has been adjusted according to the 
-            specified scaling logic.
+            list: Scaled comparison offsets.
         """
         
         # Determine the scaling factor index based on how many trials have been completed.
@@ -344,11 +364,12 @@ class SimulateTrialGivenWishart:
         #initialize
         trial_val_scaled =[]
         
-        # Apply scaling for 2D and 3D experiments where scaling is relative to a reference value.
+        # In 2D/3D, every proposed parameter is a comparison offset.
         if self.expt_dim == 2 or self.expt_dim == 3:
             len_par = len(self.parnames)
         else:
-            # Apply direct scaling for 4D and 6D experiments because they are delta values!
+            # In 4D/5D/6D parameterizations, this helper receives one half of
+            # the sampled parameters: the comparison-offset portion.
             len_par = len(self.parnames)//2
             
         for i in range(len_par): 
@@ -359,16 +380,20 @@ class SimulateTrialGivenWishart:
       
     def _predict_probability_correct(self, xref, x1):
         """
-        Predicts the probability of correctly identifying the odd stimulus in a 
-        trial using a given model. The method utilizes the model's basis functions
-        to compute weighted sums for both reference and comparison stimuli, and 
-        calculates the probability of a correct response.
+        Simulate a threshold response for one reference/comparison pair.
+
+        The Wishart model produces the local representations used by the oddity
+        observer. ``pX1`` is the probability of selecting the comparison, and
+        ``binaryResp`` is one Bernoulli draw from that probability.
         
         Args:
             xref (array-like): Normalized dimensions of the reference stimulus,
                                values ranging from -1 to 1.
             x1 (array-like): Normalized dimensions of the comparison stimulus,
-                             similar scale as xref.
+                              similar scale as xref.
+
+        Returns:
+            tuple: ``(Uref, U1, signed_diff, pX1, binaryResp)``.
         """
         # compute weighted sum of basis function at the reference
         Uref = self.gt_Wishart.model.compute_U(self.gt_Wishart.W_est, xref)
@@ -380,99 +405,173 @@ class SimulateTrialGivenWishart:
             (xref, x1, Uref, U1), self.gt_Wishart.opt_key, 
             self.gt_Wishart.opt_params['mc_samples'],
             self.gt_Wishart.model.diag_term)
-        # Compute the probability of correctly identifying the odd stimulus using the signed difference.
+        # Convert the signed decision-variable samples into P(select x1).
         pX1 = oddity_task.approx_cdf_one_trial(0.0, signed_diff,
                                                self.gt_Wishart.opt_params['bandwidth'])
         
-        # Generate a random response based on the predicted probability and send feedback to the client
+        # Response randomness is independent of ``pseudo_randomize_seed``.
         randNum = np.random.rand() 
         binaryResp = int(randNum < pX1)
         
         return Uref, U1, signed_diff, pX1, binaryResp
-    
-    def _update_trial_lists(self, xref, x1, binaryResp, 
-                            Uref = None, U1 = None, signed_diff = None, pX1 = None, 
-                            prefix=""):
+                
+    def _update_trial_lists(self, *, prefix="", **trial_data):
         """
-        Append elements to the lists to store data collected during the trial simulation.
+        Append one trial's data to the corresponding storage lists.
     
+        Fields not supplied are stored as None. This supports experiment
+        runs where model-derived values such as Uref are unavailable.
+
         Args:
-            xref, x1, Uref, U1, signed_diff, pX1, binaryResp: Data to append.
-            prefix (str): Prefix for the attribute names (e.g., "pregenerated_").
+            prefix (str): Optional namespace for a parallel set of lists, such
+                as ``"pregenerated_"``.
+            **trial_data: Field values keyed by names in
+                ``self._trial_data_fields``.
+
+        Raises:
+            ValueError: If a supplied field is not part of the active schema.
         """
-        # Define the attribute names and their corresponding values
-        attributes = [
-            (f"{prefix}xref_list", xref),
-            (f"{prefix}x1_list", x1),
-            (f"{prefix}Uref_list", Uref),
-            (f"{prefix}U1_list", U1),
-            (f"{prefix}signed_diff_list", signed_diff),
-            (f"{prefix}pX1_list", pX1),
-            (f"{prefix}binaryResp_list", binaryResp)
-        ]
+        unknown_fields = set(trial_data) - set(self._trial_data_fields)
     
-        # Append the values to the corresponding attributes
-        for attr_name, value in attributes:
-            getattr(self, attr_name).append(value)
+        if unknown_fields:
+            raise ValueError(
+                f"Unrecognized trial-data fields: {unknown_fields}"
+            )
     
+        for field in self._trial_data_fields:
+            value = trial_data.get(field)
+            getattr(self, f"{prefix}{field}_list").append(value)
+                
     def _stack_them_all(self, stacking_ax=0, prefix=""):
         """
-        Aggregates all the trial data lists into single arrays for further analysis or storage.
+        Stack completed trial lists into ``<field>_all`` arrays.
+
+        ``binaryResp`` is converted directly to an array. Other fields are
+        stacked only when every stored value is available; fields containing
+        ``None`` remain list-only because model-derived values are optional in
+        real-participant experiments.
         
         Args:
             stacking_ax (int): Axis along which to stack the data.
             prefix (str): Prefix for the attribute names (e.g., "pregenerated_").
         """
-        # Define the mapping of attributes to be stacked
-        attributes = {
-            "xref_list": "xref_all",
-            "x1_list": "x1_all",
-            "Uref_list": "Uref_all",
-            "U1_list": "U1_all",
-            "signed_diff_list": "signed_diff_all",
-            "pX1_list": "pX1_all",
-            "binaryResp_list": "binaryResp_all"
+        for field in self._trial_data_fields:
+            list_name = f"{prefix}{field}_list"
+            array_name = f"{prefix}{field}_all"
+            values = getattr(self, list_name)
+    
+            if field == "binaryResp":
+                setattr(self, array_name, jnp.array(values))
+            elif len(values) == 0:
+                setattr(self, array_name, jnp.array([]))
+            elif all(value is not None for value in values):
+                setattr(self, array_name, jnp.stack(values, axis=stacking_ax))
+    
+    def _simulate_pregenerated_trial(self, pregenerated_trials):
+        """Simulate and store one threshold pregenerated trial.
+
+        Args:
+            pregenerated_trials (dict): Arrays named ``xref`` and ``x1``.
+                ``self.pregenerated_trial_counter`` selects the current row.
+
+        Returns:
+            int: Simulated binary response.
+
+        Notes:
+            The suprathreshold subclass overrides this hook to load ``x2`` and
+            apply its three-stimulus response model.
+        """
+    
+        xref = pregenerated_trials["xref"][self.pregenerated_trial_counter]
+        x1 = pregenerated_trials["x1"][self.pregenerated_trial_counter]
+    
+        Uref, U1, signed_diff, pX1, binaryResp = (
+            self._predict_probability_correct(xref, x1)
+        )
+    
+        self._update_trial_lists(
+            xref=xref,
+            x1=x1,
+            binaryResp=binaryResp,
+            Uref=Uref,
+            U1=U1,
+            signed_diff=signed_diff,
+            pX1=pX1,
+            prefix="pregenerated_",
+        )
+    
+        return binaryResp
+    
+    def _process_trial(self, trial_counter, trial_val, config_index):
+        """Process one threshold AEPsych proposal using a simulated response.
+
+        Args:
+            trial_counter (int): Within-condition AEPsych trial index.
+            trial_val (list): Parameter values returned by ``client.ask()``.
+            config_index (int): Condition index used to select fixed values.
+
+        Returns:
+            tuple: ``(trial_val_report, trial_data)``. ``trial_val_report`` is
+            sent back to AEPsych and ``trial_data`` matches the active storage
+            schema.
+
+        Notes:
+            This is an override hook. Simulation subclasses can change the
+            response model, while experiment subclasses can present the derived
+            stimuli and collect a participant response instead.
+        """
+    
+        xref, x1, trial_val_report = self._derive_xref_x1(
+            trial_counter,
+            trial_val,
+            config_index,
+        )
+    
+        Uref, U1, signed_diff, pX1, binaryResp = (
+            self._predict_probability_correct(xref, x1)
+        )
+    
+        trial_data = {
+            "xref": xref,
+            "x1": x1,
+            "Uref": Uref,
+            "U1": U1,
+            "signed_diff": signed_diff,
+            "pX1": pX1,
+            "binaryResp": binaryResp,
         }
     
-        # Loop through attributes and process dynamically
-        for list_attr, array_attr in attributes.items():
-            list_attr_name = f"{prefix}{list_attr}"
-            array_attr_name = f"{prefix}{array_attr}"
-            
-            # Retrieve the list values
-            list_values = getattr(self, list_attr_name)
-    
-            # Handle binaryResp_list (uses jnp.array directly)
-            if list_attr == "binaryResp_list":
-                setattr(self, array_attr_name, jnp.array(list_values))
-            else:
-                # Stack only if there are no None values in the list
-                if all(v is not None for v in list_values):
-                    setattr(self, array_attr_name, jnp.stack(list_values, axis=stacking_ax))
-                else:
-                    # Skip stacking if any None is found
-                    continue
-    
+        return trial_val_report, trial_data
+
     def _monitor_time_insert_pregenerated_trials(self, start_time, max_wait_time,
                                                  pregenerated_trials, stop_event):
-        # Function to monitor elapsed time and perform side tasks
+        """Insert pregenerated trials while an AEPsych ask is still pending.
+
+        The monitor invokes ``_simulate_pregenerated_trial`` polymorphically,
+        so the required dictionary fields depend on the concrete simulator.
+        It may insert multiple trials if the ask remains pending across
+        multiple timeout intervals.
+
+        Args:
+            start_time (float): Start time from ``time.time()``.
+            max_wait_time (float): Seconds between fallback insertions.
+            pregenerated_trials (dict): Pregenerated stimulus arrays.
+            stop_event (threading.Event): Set when ``client.ask()`` completes.
+        """
         while not stop_event.is_set():  # Exit if stop_event is set
             elapsed_time = time.time() - start_time
             if elapsed_time > max_wait_time:
-                print(f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated trial...")
-                
-                # Get the stimulus information
-                xref = pregenerated_trials['xref'][self.pregenerated_trial_counter]
-                x1 = pregenerated_trials['x1'][self.pregenerated_trial_counter]
-                
-                # Simulate response based on the reference and comparison stimuli
-                Uref, U1, signed_diff, pX1, binaryResp = self._predict_probability_correct(xref, x1)
-                print(f"Simulated responses (#trial {self.pregenerated_trial_counter}): {binaryResp}")
-                
-                #store simulated responses
-                self._update_trial_lists(xref, x1, binaryResp, 
-                                         Uref, U1, signed_diff, pX1, 
-                                         prefix = "pregenerated_")
+                print(f"Deadline exceeded ({elapsed_time:.2f}s).")
+
+                # Break the loop if all pre-generated trials are exhausted
+                if self.pregenerated_trial_counter >= len(pregenerated_trials['xref']):
+                    print("All pre-generated trials have been used.")
+                    break
+                                    
+                # simulated binary response
+                print("Running a pre-generated trial...")
+                binaryResp = self._simulate_pregenerated_trial(pregenerated_trials)
+                print(f"Simulated response (#trial {self.pregenerated_trial_counter}): {binaryResp}")
                 
                 # Increase trial counter
                 self.pregenerated_trial_counter += 1
@@ -480,33 +579,33 @@ class SimulateTrialGivenWishart:
                 # Reset the start time for the next pre-generated trial
                 start_time = time.time()
     
-                # Break the loop if all pre-generated trials are exhausted
-                if self.pregenerated_trial_counter >= len(pregenerated_trials['xref']):
-                    print("All pre-generated trials have been used.")
-                    break
             time.sleep(0.05)  # Check every 50 ms
        
     def run_simulation(self, client, pregenerated_trials = None, max_wait_time = None):
         """
-        Simulates color-discrimination responses using AEPsych and ground truth data. 
-        Ground truth can be based on Wishart fits to pilot data or CIELAB thresholds.
-    
-        This method interleaves AEPsych trials with pregenerated trials. If 
-        AEPsych takes too long to generate a trial, a pregenerated trial is used instead. 
-        Unlike the run_simulation_wMOCSinserted method, this approach does not require 
-        MOCS trials as pregenerated trials. The pregenerated trials can include trials 
-        near thresholds or other predefined configurations. Additionally, this method 
-        does not rely on a pseudorandomized pregenerated trial sequence but inserts 
-        pregenerated trials dynamically when needed.
+        Run the shared AEPsych simulation loop for every condition.
+
+        AEPsych proposals are converted into complete trial results through the
+        concrete class's ``_process_trial`` hook. When a timeout is
+        configured, pregenerated trials are simulated while ``client.ask()``
+        remains pending. These fallback trials are inserted dynamically rather
+        than according to a predefined MOCS/AEPsych sequence.
     
         Args:
             client (object): AEPsych client instance used to configure and query trials.
-            pregenerated_trials (dict): A dictionary containing pregenerated trial pairs 
-                                        of xref and x1.
-            max_wait_time (float): Maximum allowed wait time for AEPsych trial generation. 
-                                   If exceeded, a pregenerated trial is used.
+            pregenerated_trials (dict, optional): Pregenerated stimulus arrays.
+                Threshold simulation requires ``xref`` and ``x1``; the
+                suprathreshold subclass additionally requires ``x2``.
+            max_wait_time (float, optional): Seconds to wait before each
+                pregenerated fallback trial. If omitted, no fallback-monitor
+                thread is started.
+
+        Raises:
+            ValueError: If ``max_wait_time`` is provided without
+                ``pregenerated_trials``.
         """
-        # Check if a time limit for trial generation is specified
+        # Timeout insertion is optional; when enabled, it uses storage lists
+        # matching the concrete class's trial-data schema.
         if max_wait_time is not None:
             # If a time limit is provided, ensure pregenerated_trials are also provided
             if pregenerated_trials is None:
@@ -515,11 +614,8 @@ class SimulateTrialGivenWishart:
                     "Please supply pregenerated_trials to use during long wait times."
                 )
             else:
-                # Initialize a counter to track the number of pregenerated trials used
                 self.pregenerated_trial_counter = 0
-                # Initialize lists to store data specifically for pregenerated trials
                 self._init_trial_lists(prefix="pregenerated_")     
-                # Set a flag to indicate that pregenerated trials are available for use
                 flag_insert_pregen = True
         else:
             # If no time limit is provided, pregenerated trials are not used
@@ -534,7 +630,8 @@ class SimulateTrialGivenWishart:
             for i in range(self.numConfig):
                 ii = self.pseudo_order[i, trial_counter]
                 
-                # Start the timer for the trial
+                # The timer includes AEPsych computation and any fallback
+                # trials presented while waiting for the ask to complete.
                 start_time = time.time()
                 
                 self._configure_trial(client, trial_counter, ii)
@@ -560,24 +657,24 @@ class SimulateTrialGivenWishart:
                 #End the timer
                 end_time = time.time()
                 
-                # Extract stimulus dimensions from the trial configuration
+                # Preserve the parameter order declared by the AEPsych config.
                 trial_val = []
                 for s in self.parnames:
                     trial_val.append(trial_AEPsych["config"][s][0])
                 
-                # Compute xref and x1
-                xref, x1, trial_val_report = self._derive_xref_x1(trial_counter, trial_val, ii)
+                # Dispatch to the threshold or suprathreshold implementation.
+                trial_val_report, trial_data = \
+                    self._process_trial(trial_counter, trial_val, ii)
                 
-                # Simulate one single trial
-                Uref, U1, signed_diff, pX1, binaryResp = self._predict_probability_correct(xref, x1)
+                client.tell(
+                    config=dict(zip(self.parnames, trial_val_report)),
+                    outcome=trial_data["binaryResp"],
+                )
                 
-                # Report back to AEPsych client
-                client.tell(config=dict(zip(self.parnames, trial_val_report)),
-                            outcome=binaryResp)
-                            
-                self._update_trial_lists(xref, x1, binaryResp, Uref, U1, signed_diff, pX1)
+                self._update_trial_lists(**trial_data)
                 
-                # calculate elapsed time
+                # Estimate AEPsych-only computation time by subtracting one
+                # timeout interval for each fallback trial that was inserted.
                 if flag_insert_pregen:
                     pregenerated_trial_counter_after = self.pregenerated_trial_counter
                     used_pregenerated_trial = pregenerated_trial_counter_after - pregenerated_trial_counter_before
@@ -586,7 +683,8 @@ class SimulateTrialGivenWishart:
                     trial_duration = end_time - start_time
                 time_elapsed.append(trial_duration)  # Record the time for this trial
                 
-                # Check if the experiment is finished based on the AEPsych server's response
+                # This assumes all condition configs share the same trial quotas;
+                # the last response in each sweep controls loop termination.
                 finished = trial_AEPsych["is_finished"]
                 
             # After all reference stimuli were tested
@@ -604,35 +702,33 @@ class SimulateTrialGivenWishart:
                                          trial_sequence, expt_counter, trial_counter, 
                                          stop_event, mocs_triggered):
         """
-        Monitors elapsed time and performs tasks such as running MOCS trials 
-        if the deadline is exceeded.
-    
-        Parameters:
-        - start_time: Time when the monitoring started.
-        - max_wait_time (list): Time limits for AEPsych trial generation. The first 
-                        missed presentation uses max_wait_time[0]; subsequent misses use 
-                        max_wait_time[1] (accounting for response and inter-trial interval delays).
-        - trial_sequence: The trial sequence object to be updated with trial results.
-        - expt_counter (int): Counter to track the experiment configuration index.
-        - trial_counter (int): Counter to track the current trial index.
-        - stop_event: An event to signal the thread to stop monitoring.
-        - mocs_triggered: A threading event to indicate a MOCS trial was executed.
-    
-        Behavior:
-        - Checks if the elapsed time exceeds the current threshold in `max_wait_time`.
-        - If exceeded, it runs a MOCS trial by updating the trial sequence with pre-generated data.
-        - Updates the trial status and flags the MOCS trial as completed.
-        - Resets the start time for the next monitoring cycle and increments the count of MOCS trials executed.
-    
-        Returns:
-        - None. Updates are made to the `trial_sequence` object directly.
+        Bump up threshold MOCS trials while an AEPsych ask is pending.
+
+        The first insertion uses ``max_wait_time[0]``; subsequent insertions
+        use the last entry to account for presentation, response, and intertrial
+        delays. Results and sequence status are written directly to
+        ``trial_sequence``.
+
+        Args:
+            start_time (float): Start time from ``time.time()``.
+            max_wait_time (sequence): First and subsequent timeout durations.
+            trial_sequence: Threshold sequence containing two-stimulus MOCS data.
+            expt_counter (int): Experimental-condition index.
+            trial_counter (int): Current global sequence position.
+            stop_event (threading.Event): Set when ``client.ask()`` completes.
+            mocs_triggered (threading.Event): Set after any MOCS insertion.
+
+        Notes:
+            This is a threshold-only legacy hook: it loads only ``xref`` and
+            ``x1`` and calls the two-stimulus response model. A suprathreshold
+            workflow must override it rather than inherit it unchanged.
         """      
         num_bumped_up_MOCS = 0
         while not stop_event.is_set():  # Exit if stop_event is set
             elapsed_time = time.time() - start_time
             max_wait_time_ii = max_wait_time[0] if num_bumped_up_MOCS == 0 else max_wait_time[-1]
             
-            #if the time elapsed exceeds the max wait time
+            # Insert another available MOCS trial after the applicable timeout.
             if elapsed_time > max_wait_time_ii:
                 #find the next available MOCS trial in the list
                 print(f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated MOCS trial...")
@@ -644,14 +740,14 @@ class SimulateTrialGivenWishart:
                 x1 = trial_sequence.pregenerated_MOCS['x1'][trial_replacement_idx_MOCSlist]
     
                 # Simulate response based on the reference and comparison stimuli
-                _, _, _, _, binaryResp = self._predict_probability_correct(xref, x1)
+                *_, binaryResp = self._predict_probability_correct(xref, x1)
                 print(f"Simulated responses (#trial {trial_replacement_idx_MOCSlist}): {binaryResp}")
     
                 # Store simulated responses
                 trial_sequence.update_data_MOCS(trial_replacement_idx_MOCSlist,
                                                 xref, x1, binaryResp)
-                # Set the status of the MOCS trial to 'completed'
-                # it is trial counter because the sequence has been updated 
+                # ``bump_up_one_MOCS_trial`` returns the new placement in the
+                # already-updated sequence, so status uses that placement index.
                 trial_sequence.set_trial_status(expt_counter, trial_placement_idx_originallist, "Completed")
                 
                 # Set the flag to indicate a MOCS trial was run
@@ -667,12 +763,11 @@ class SimulateTrialGivenWishart:
         
     def run_simulation_wMOCSinserted(self, client, trial_sequence, max_wait_time=[2.4, 3.6]):
         """
-        Simulates color-discrimination responses using AEPsych and ground truth data. 
-        Ground truth can be based on Wishart fits to pilot data or CIELAB thresholds.
-    
-        This method interleaves AEPsych trials with pre-generated MOCS trials. If 
-        AEPsych takes too long to generate a trial, a MOCS trial is inserted as a 
-        fallback. The interleaving sequence is pre-generated in the `trial_sequence` class.
+        Run the legacy threshold simulation with scheduled MOCS trials.
+
+        The sequence predetermines AEPsych and two-stimulus MOCS positions. If
+        an AEPsych ask exceeds a timeout, a later MOCS trial can be moved forward
+        and simulated while the ask remains pending.
     
         Args:
             client (object): AEPsych client instance used to configure and query trials.
@@ -681,6 +776,14 @@ class SimulateTrialGivenWishart:
             max_wait_time (list): Time limits for AEPsych trial generation. The first 
                 missed presentation uses max_wait_time[0]; subsequent misses use 
                 max_wait_time[1] (accounting for response and inter-trial interval delays).
+
+        Returns:
+            object: The updated ``trial_sequence``.
+
+        Notes:
+            This method assumes threshold MOCS entries contain only ``xref`` and
+            ``x1``. It is not compatible with
+            ``SimulateTrialGivenWishart_suprathres`` without an override.
         """    
         time_elapsed = []  # List to store elapsed time for AEPsych trials
         trial_counter = 0  # Counter to track the current trial number
@@ -711,7 +814,7 @@ class SimulateTrialGivenWishart:
                     x1 = trial_sequence.pregenerated_MOCS['x1'][trial_idx]
                     
                     # Simulate the trial and record the binary response
-                    _, _, _, _, binaryResp = self._predict_probability_correct(xref, x1)
+                    *_, binaryResp = self._predict_probability_correct(xref, x1)
                     # Update the MOCS trial data with the simulated response
                     trial_sequence.update_data_MOCS(trial_idx, xref, x1, binaryResp)
                     # Mark the trial as completed within the time window
@@ -752,14 +855,14 @@ class SimulateTrialGivenWishart:
                     trial_val = [trial_AEPsych["config"][s][0] for s in self.parnames]
                     # Simulate the trial
                     xref, x1, trial_val_report = self._derive_xref_x1(trial_idx, trial_val, ii)
-                    _, _, _, _, binaryResp = self._predict_probability_correct(xref, x1)
+                    *_, binaryResp = self._predict_probability_correct(xref, x1)
                 
                     # Report the result back to AEPsych
                     client.tell(config=dict(zip(self.parnames, trial_val_report)),
                                 outcome=binaryResp)
                                 
                     # Update trial-related data
-                    self._update_trial_lists(xref, x1, binaryResp)
+                    self._update_trial_lists(xref=xref, x1=x1, binaryResp=binaryResp)
                     
                     # Record elapsed time for the trial
                     trial_duration = end_time - start_time
@@ -791,11 +894,53 @@ class SimulateTrialGivenWishart:
 
 #%%
 class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
+    """Simulate three-stimulus suprathreshold comparison trials.
+
+    A response of 1 means that comparison 2 (``x2``) was judged more
+    different from ``xref`` than comparison 1 (``x1``). The subclass reuses
+    the base simulation loop and storage machinery while overriding the
+    stimulus derivation and response-simulation hooks.
+    """
+
+    # Replace the threshold schema with its three-stimulus counterpart.
+    _trial_data_fields = (
+        "xref",
+        "x1",
+        "x2",
+        "Uref",
+        "U1",
+        "U2",
+        "signed_diff",
+        "pX2",
+        "binaryResp",
+    )
+    
     def __init__(self, expt_dim, config_all, gt_Wishart, ref = None, 
                  pseudo_randomize = False, pseudo_randomize_seed = None, 
                  val_scaler = None, customized_val_scaler = None,
                  comp1 = None, nTrials_total = None):
-        # Handle subclass-specific stuff
+        """Initialize a suprathreshold simulator.
+
+        Shared arguments follow ``SimulateTrialGivenWishart``.
+
+        Args:
+            expt_dim (int): Supported suprathreshold parameterization: 2, 3,
+                4, or 6. A 5D suprathreshold mapping is not implemented.
+            ref (sequence): One fixed reference stimulus per condition. Unlike
+                the threshold base class, this is used in both the 2D/3D and
+                4D/6D suprathreshold mappings.
+            comp1 (sequence, optional): Fixed comparison-1 stimuli for 2D/3D
+                experiments. In 4D/6D, comparison 1 is instead constructed
+                from the first half of each AEPsych proposal.
+            nTrials_total (int): Number of positions per lane in the complete
+                interleaved sequence. This is required to construct
+                ``pseudo_order`` during base-class initialization.
+
+        Raises:
+            ValueError: If ``comp1`` is missing for a 2D/3D experiment.
+        """
+        # These fields must exist before ``super().__init__`` because the base
+        # constructor dispatches to this class's pseudorandom-order hook.
         self.comp1 = comp1
         self.nTrials_total = nTrials_total
         
@@ -815,18 +960,15 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
        
     def _create_pseudorandom_order(self):
         """
-        Generate a 2D array specifying the order of trial configurations for each trial set.
-    
-        If `self.pseudo_randomize` is False, the configurations are repeated in the same
-        fixed order across all trial sets (i.e., sequential). If True, each column
-        (trial set) is independently shuffled to introduce randomization.
-    
-        If `self.pseudo_randomize_seed` is provided, it is used to seed the random number
-        generator for reproducible shuffling.
+        Create condition assignments for every interleaved lane position.
+
+        Each column contains every condition index exactly once. Columns stay
+        sequential when ``pseudo_randomize`` is False and are independently
+        shuffled otherwise.
     
         Returns:
-            np.ndarray: A 2D array of shape (numConfig, nTrials), where each column contains
-                        the order of configurations for a given trial set.
+            np.ndarray: Integer array with shape
+                ``(numConfig, nTrials_total)``.
         """
         order_temp = np.array(list(range(self.numConfig)))
         pseudo_order = np.tile(order_temp[:, np.newaxis], (1, self.nTrials_total))
@@ -840,109 +982,24 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
             rng.shuffle(pseudo_order[:, i])
     
         return pseudo_order
-    
-    def _init_trial_lists(self, prefix=""):
-        """
-        Initializes lists to store data collected during the trial simulation.
-    
-        Args:
-            prefix (str): Prefix for the attribute names (e.g., "pregenerated_").
-        """
-        # Define the list of attributes to initialize
-        attributes = [
-            "xref_list",
-            "x1_list",
-            "x2_list",
-            "Uref_list",
-            "U1_list",
-            "U2_list",
-            "signed_diff_list",
-            "pX2_list",
-            "binaryResp_list"
-        ]
-    
-        # Initialize each attribute dynamically with the prefix
-        for attr_name in attributes:
-            setattr(self, f"{prefix}{attr_name}", [])   
-            
-    def _update_trial_lists(self, xref, x1, x2, binaryResp, 
-                            Uref = None, U1 = None, U2 = None, 
-                            signed_diff = None, pX2 = None, 
-                            prefix=""):
-        """
-        Append elements to the lists to store data collected during the trial simulation.
-    
-        Args:
-            xref, x1, Uref, U1, signed_diff, pX1, binaryResp: Data to append.
-            prefix (str): Prefix for the attribute names (e.g., "pregenerated_").
-        """
-        # Define the attribute names and their corresponding values
-        attributes = [
-            (f"{prefix}xref_list", xref),
-            (f"{prefix}x1_list", x1),
-            (f"{prefix}x2_list", x2),
-            (f"{prefix}Uref_list", Uref),
-            (f"{prefix}U1_list", U1),
-            (f"{prefix}U2_list", U2),
-            (f"{prefix}signed_diff_list", signed_diff),
-            (f"{prefix}pX2_list", pX2),
-            (f"{prefix}binaryResp_list", binaryResp)
-        ]
-    
-        # Append the values to the corresponding attributes
-        for attr_name, value in attributes:
-            getattr(self, attr_name).append(value)
-    
-    def _stack_them_all(self, stacking_ax=0, prefix=""):
-        """
-        Aggregates all the trial data lists into single arrays for further analysis or storage.
         
-        Args:
-            stacking_ax (int): Axis along which to stack the data.
-            prefix (str): Prefix for the attribute names (e.g., "pregenerated_").
-        """
-        # Define the mapping of attributes to be stacked
-        attributes = {
-            "xref_list": "xref_all",
-            "x1_list": "x1_all",
-            "x2_list": "x2_all",
-            "Uref_list": "Uref_all",
-            "U1_list": "U1_all",
-            "U2_list": "U2_all",
-            "signed_diff_list": "signed_diff_all",
-            "pX2_list": "pX2_all",
-            "binaryResp_list": "binaryResp_all"
-        }
-    
-        # Loop through attributes and process dynamically
-        for list_attr, array_attr in attributes.items():
-            list_attr_name = f"{prefix}{list_attr}"
-            array_attr_name = f"{prefix}{array_attr}"
-            
-            # Retrieve the list values
-            list_values = getattr(self, list_attr_name)
-    
-            # Handle binaryResp_list (uses jnp.array directly)
-            if list_attr == "binaryResp_list":
-                setattr(self, array_attr_name, jnp.array(list_values))
-            else:
-                # Stack only if there are no None values in the list
-                if all(v is not None for v in list_values):
-                    setattr(self, array_attr_name, jnp.stack(list_values, axis=stacking_ax))
-                else:
-                    # Skip stacking if any None is found
-                    continue
-    
     def _derive_xref_x1_x2(self, trial_counter, trial_val, config_index = None):
         """
-        Derives normalized reference and comparison stimulus dimensions based on the 
-        experiment dimensionality.
+        Convert an AEPsych proposal into three suprathreshold stimuli.
+
+        For 2D/3D, ``xref`` and ``x1`` are fixed by ``config_index`` and all
+        proposed parameters are the scaled offset used to construct ``x2``.
+        For 4D/6D, ``xref`` remains fixed by ``config_index``; the first half
+        of the proposal is the offset for ``x1`` and the scaled second half is
+        the offset for ``x2``.
         
         Args:
-            trial_counter (int): Current trial number to determine the scaling factor.
-            trial_val (list): Current trial values that need to be scaled and normalized.
-            config_index (int): Index of the current configuration for selecting reference values.
-                                Default is None as this is not relevant for 4d/6d experiments.
+            trial_counter (int): Within-condition AEPsych trial index used for
+                value scaling.
+            trial_val (list): Parameter values returned by ``client.ask()``.
+            config_index (int): Condition index selecting the fixed reference
+                for every supported dimensionality and fixed ``comp1`` for
+                2D/3D.
         
         Returns:
             tuple: 
@@ -952,53 +1009,62 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
                     (W unit: between -1 and 1).
                 x2 (jax.numpy.array): Normalized comparison stimulus #2
                     (W unit: between -1 and 1).
-                trial_val_report (list): Adjusted values of the trial used for reporting and 
-                    further calculations.
+                trial_val_report (list): Proposal values after comparison-2
+                    scaling, in the order expected by AEPsych ``tell``.
         """
         
         if self.expt_dim == 2 or self.expt_dim == 3:
+            # Both anchors are fixed for the condition; AEPsych varies only x2.
             xref = jnp.array(self.ref[config_index])    
             x1 = jnp.array(self.comp1[config_index])
             trial_val_delta_comp2_scaled = self._apply_val_scaling(trial_counter, trial_val)
             x2 = jnp.array(trial_val_delta_comp2_scaled) + xref
             trial_val_report= list(trial_val_delta_comp2_scaled)
             
-        elif self.expt_dim == 4 or self.expt_dim == 6: #full 4D or 6D experiment
-            # Normalize reference and comparison stimulus dimensions.
+        elif self.expt_dim == 4 or self.expt_dim == 6:
+            # The physical stimulus has half as many coordinates as the
+            # AEPsych parameterization, which contains two comparison offsets.
             xref = jnp.array(self.ref[config_index])    
             
-            # Separate the reference and comparison values for higher dimensions.
+            # The first half specifies x1's offset; the second specifies x2's.
             trial_val_delta_comp1 = trial_val[:self.expt_dim//2]
             trial_val_delta_comp2 = trial_val[(self.expt_dim//2):]
             trial_val_delta_comp2_scaled = self._apply_val_scaling(\
                 trial_counter, trial_val_delta_comp2)
-            #put reference and delta values to a list and report it back to the client
-            trial_val_report = trial_val_delta_comp1 + trial_val_delta_comp2_scaled #lists
+            # Tell AEPsych the unscaled x1 offset and the scaled x2 offset.
+            trial_val_report = trial_val_delta_comp1 + trial_val_delta_comp2_scaled
             
-            # Add deltas on top of the ref stimulus to derive comparison stimulus
+            # Add both offsets to the condition's fixed reference.
             x1 = jnp.array(trial_val_delta_comp1) + xref
             x2 = jnp.array(trial_val_delta_comp2_scaled) + xref
-        else: 
+        else:
+            # Unlike the base threshold simulator, no 5D suprathreshold
+            # parameterization is currently implemented.
             print('not supported right now!')
         return xref, x1, x2, trial_val_report
     
     def _predict_probability_correct(self, xref, x1, x2):
         """
-        Predicts the probability of correctly identifying the odd stimulus in a 
-        trial using a given model. The method utilizes the model's basis functions
-        to compute weighted sums for both reference and comparison stimuli, and 
-        calculates the probability of a correct response.
+        Simulate one suprathreshold comparison response.
+
+        ``pX2`` is the probability that comparison 2 is judged more different
+        from the reference than comparison 1. ``binaryResp`` is one Bernoulli
+        draw from that probability.
         
         Args:
             xref (array-like): Normalized dimensions of the reference stimulus,
                                values ranging from -1 to 1.
             x1 (array-like): Normalized dimensions of the comparison stimulus,
-                             similar scale as xref.
+                              similar scale as xref.
+            x2 (array-like): Normalized dimensions of comparison stimulus 2.
+
+        Returns:
+            tuple: ``(Uref, U1, U2, signed_diff, pX2, binaryResp)``.
         """
         
         # compute weighted sum of basis function at the reference
         Uref = self.gt_Wishart.model.compute_U(self.gt_Wishart.W_est, xref)
-        # compute weighted sum of basis function at the comparison
+        # Compute the model representation for both comparisons.
         U1   = self.gt_Wishart.model.compute_U(self.gt_Wishart.W_est, x1)
         U2   = self.gt_Wishart.model.compute_U(self.gt_Wishart.W_est, x2)
         
@@ -1007,88 +1073,85 @@ class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
             (xref, x1, x2, Uref, U1, U2), self.gt_Wishart.opt_key, 
             self.gt_Wishart.opt_params['mc_samples'],
             self.gt_Wishart.model.diag_term)
-        # Compute the probability of correctly identifying the odd stimulus using the signed difference.
+        # Convert the signed decision-variable samples into P(select x2).
         pX2 = oddity_task.approx_cdf_one_trial(0.0, signed_diff,
                                                self.gt_Wishart.opt_params['bandwidth'])
         
-        # Generate a random response based on the predicted probability and send feedback to the client
+        # Response randomness is independent of ``pseudo_randomize_seed``.
         randNum = np.random.rand() 
         binaryResp = int(randNum < pX2)
         
         return Uref, U1, U2, signed_diff, pX2, binaryResp
-        
-    def run_simulation(self, client, pregenerated_trials = None, max_wait_time = None):
-        """
-        Simulates color-discrimination responses using AEPsych and ground truth data. 
-        Ground truth can be based on Wishart fits to pilot data or CIELAB thresholds.
     
-        This method interleaves AEPsych trials with pregenerated trials. If 
-        AEPsych takes too long to generate a trial, a pregenerated trial is used instead. 
-        Unlike the run_simulation_wMOCSinserted method, this approach does not require 
-        MOCS trials as pregenerated trials. The pregenerated trials can include trials 
-        near thresholds or other predefined configurations. Additionally, this method 
-        does not rely on a pseudorandomized pregenerated trial sequence but inserts 
-        pregenerated trials dynamically when needed.
-    
+    def _simulate_pregenerated_trial(self, pregenerated_trials):
+        """Simulate and store one suprathreshold pregenerated trial.
+
         Args:
-            client (object): AEPsych client instance used to configure and query trials.
-            pregenerated_trials (dict): A dictionary containing pregenerated trial pairs 
-                                        of xref and x1.
-            max_wait_time (float): Maximum allowed wait time for AEPsych trial generation. 
-                                   If exceeded, a pregenerated trial is used.
-        """    
-        trial_counter = 0
-        time_elapsed = []
-        finished = False
-        while not finished:
-            print(trial_counter)
-            
-            for i in range(self.numConfig):
-                ii = self.pseudo_order[i, trial_counter]
-                
-                # Start the timer for the trial
-                start_time = time.time()
-                
-                self._configure_trial(client, trial_counter, ii)
-                
-                # Request a new trial configuration from the AEPsych client
-                trial_AEPsych = client.ask()
-                
-                #End the timer
-                end_time = time.time()
-                
-                # Extract stimulus dimensions from the trial configuration
-                trial_val = []
-                for s in self.parnames:
-                    trial_val.append(trial_AEPsych["config"][s][0])
-                
-                # Compute xref and x1
-                xref, x1, x2, trial_val_report = self._derive_xref_x1_x2(trial_counter, trial_val, ii)
-                
-                # Simulate one single trial
-                Uref, U1, U2, signed_diff, pX2, binaryResp = self._predict_probability_correct(xref, x1, x2)
-                
-                # Report back to AEPsych client
-                #1: pick comp#2 as more different; 0: pick comp#1 as more different
-                client.tell(config=dict(zip(self.parnames, trial_val_report)),
-                            outcome=binaryResp)
-                            
-                self._update_trial_lists(xref, x1, x2, binaryResp, Uref, U1, U2, signed_diff, pX2)
-                
-                # calculate elapsed time
-                trial_duration = end_time - start_time
-                time_elapsed.append(trial_duration)  # Record the time for this trial
-                
-                # Check if the experiment is finished based on the AEPsych server's response
-                finished = trial_AEPsych["is_finished"]
-                
-            # After all reference stimuli were tested
-            trial_counter += 1
+            pregenerated_trials (dict): Arrays named ``xref``, ``x1``, and
+                ``x2``. ``self.pregenerated_trial_counter`` selects the row.
+
+        Returns:
+            int: Simulated binary response, where 1 selects comparison 2.
+        """
+    
+        xref = pregenerated_trials["xref"][self.pregenerated_trial_counter]
+        x1 = pregenerated_trials["x1"][self.pregenerated_trial_counter]
+        x2 = pregenerated_trials["x2"][self.pregenerated_trial_counter]
+    
+        Uref, U1, U2, signed_diff, pX2, binaryResp = (
+            self._predict_probability_correct(xref, x1, x2)
+        )
+    
+        self._update_trial_lists(
+            xref=xref,
+            x1=x1,
+            x2=x2,
+            binaryResp=binaryResp,
+            Uref=Uref,
+            U1=U1,
+            U2=U2,
+            signed_diff=signed_diff,
+            pX2=pX2,
+            prefix="pregenerated_",
+        )
+    
+        return binaryResp
         
-        # Aggregate all the trial data lists into single arrays
-        self._stack_them_all()
-            
-        # Record time
-        self.time_elapsed = time_elapsed
+    def _process_trial(self, trial_counter, trial_val, config_index):
+        """Process one suprathreshold proposal using a simulated response.
+
+        Args:
+            trial_counter (int): Within-condition AEPsych trial index.
+            trial_val (list): Parameter values returned by ``client.ask()``.
+            config_index (int): Condition index used to select fixed stimuli.
+
+        Returns:
+            tuple: ``(trial_val_report, trial_data)``. ``trial_data`` follows
+            the subclass's three-stimulus storage schema.
+        """
+    
+        xref, x1, x2, trial_val_report = self._derive_xref_x1_x2(
+            trial_counter,
+            trial_val,
+            config_index,
+        )
+    
+        Uref, U1, U2, signed_diff, pX2, binaryResp = (
+            self._predict_probability_correct(xref, x1, x2)
+        )
+    
+        trial_data = {
+            "xref": xref,
+            "x1": x1,
+            "x2": x2,
+            "Uref": Uref,
+            "U1": U1,
+            "U2": U2,
+            "signed_diff": signed_diff,
+            "pX2": pX2,
+            "binaryResp": binaryResp,
+        }
+
+        return trial_val_report, trial_data
         
     
