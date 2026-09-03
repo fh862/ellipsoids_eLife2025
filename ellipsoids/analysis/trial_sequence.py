@@ -139,6 +139,18 @@ class ExperimentTrialSequence:
             U1 (float, optional): Utility value for the comparison stimulus (simulation only).
             signed_diff (float, optional): Signed difference between stimuli (simulation only).
             pX1 (float, optional): Probability associated with the comparison stimulus (simulation only).
+
+        Notes
+        -----
+        This base implementation stores each MOCS result under ``trial_idx``
+        only, so it is intended for a single experiment with one flattened
+        pool of MOCS trials. This matches the 4D/6D experiments, where all MOCS
+        trials are flattened and managed by one ``ExperimentTrialSequence``.
+
+        Do not use this implementation for interleaved multi-experiment MOCS
+        data: different experiments can have the same ``trial_idx`` and would
+        overwrite one another. Use ``ExperimentTrialSequence_suprathres`` for
+        that case; it stores results under ``(expt_idx, trial_idx)``.
         """
         self.data_MOCS[trial_idx] = {
             'xref': xref,
@@ -260,7 +272,7 @@ class ExperimentTrialSequence:
             # Append the randomized sequence to the original sequence list
             self.original_sequence.append(shuffled_labels)
 
-        # Create a shallow copy of the original sequence for updates
+        # Retain a separate reference used when searching the planned sequence.
         self.updated_sequence = list(self.original_sequence)
 
         # Initialize trial status tracking for all experiments
@@ -400,41 +412,51 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
             pregenerated_Sobol=pregenerated_Sobol,
         )
 
-        self.nBumpUp_MOCS = [0] * nExpt
+        self.nBumpUp_MOCS = [0] * self.nExpt
 
     def _initialize_data_MOCS(self):
         """
-        Initialize the `data_MOCS` dictionary to store trial-specific data.
-    
-        If self.nExpt == 1:
-            data_MOCS[trial_idx]
-        If self.nExpt > 1:
-            data_MOCS[(expt_idx, trial_idx)]
+        Initialize one data entry for every pregenerated MOCS trial.
+
+        The first axis of ``pregenerated_MOCS`` is a scheduling lane (and its
+        associated AEPsych train), not a fixed MOCS reference condition. The
+        actual reference-condition index can therefore vary across trials in
+        the same lane and is read from ``pregenerated_MOCS['condition_idx']``.
+
+        ``lane_idx`` and ``condition_idx`` are populated at initialization so
+        that each entry retains its scheduling and stimulus identities. The
+        stimulus, response, and optional simulation fields remain ``None``
+        until ``update_data_MOCS`` records the completed trial.
+
+        For a single lane, entries are keyed by ``trial_idx``. For multiple
+        lanes, entries are keyed by ``(lane_idx, trial_idx)``.
         """
-        def empty_entry():
+        def empty_entry(lane_idx, trial_idx):
             return {
-                'xref': None,   # Reference stimulus 
-                'x1': None,     # Comparison stimulus #1
-                'x2': None,     # Comparison stimulus #2
-                'Uref': None,   # Weighted sum of basis functions for reference
-                'U1': None,     # Weighted sum of basis functions for comp #1
-                'U2': None,     # Weighted sum of basis functions for comp #2
-                'signed_diff': None,  # Signed difference of squared Mahalanobis distance
-                'pX2': None,    # P(comp #2 is judged more different from ref)
-                'binaryResp': None,   # 1 = chose comp #2, 0 = chose comp #1
+                "lane_idx": lane_idx,
+                "condition_idx": int(
+                    self.pregenerated_MOCS["condition_idx"][lane_idx, trial_idx]
+                ),
+                "xref": None,
+                "x1": None,
+                "x2": None,
+                "Uref": None,
+                "U1": None,
+                "U2": None,
+                "signed_diff": None,
+                "pX2": None,
+                "binaryResp": None,
             }
-    
-        if getattr(self, "nExpt", 1) == 1:
-            # Keys: trial index only
+        
+        if self.nExpt == 1:
             self.data_MOCS = {
-                trial: empty_entry()
+                trial: empty_entry(0, trial)
                 for trial in range(self.nTrials_MOCS)
             }
         else:
-            # Keys: (expt index, trial index)
             self.data_MOCS = {
-                (expt, trial): empty_entry()
-                for expt in range(self.nExpt)
+                (lane, trial): empty_entry(lane, trial)
+                for lane in range(self.nExpt)
                 for trial in range(self.nTrials_MOCS)
             }
             
@@ -444,9 +466,15 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
         """
         trial_status = []
         for i in range(nExpt):
-            trial_status.append([[f'Trial_{n}_Cond_{i}_'+self.original_sequence[i][n]] \
+            trial_status.append([[f'Trial_{n}_Lane_{i}_'+self.original_sequence[i][n]] \
                                  for n in range(self.nTrials_total)])
         self.trial_status = trial_status
+
+    def generate_init_sequence(self, seed=None):
+        return super().generate_init_sequence(
+            nExpt=self.nExpt,
+            seed=seed,
+        )
 
     def update_data_MOCS(self, expt_idx, trial_idx, xref, x1, x2, binaryResp,
                          Uref=None, U1=None, U2=None, signed_diff=None, pX2=None):
@@ -474,91 +502,14 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
         else:
             key = (expt_idx, trial_idx)
     
-        self.data_MOCS[key] = {
-            'xref': xref,
-            'x1': x1,
-            'x2': x2,
-            'Uref': Uref,
-            'U1': U1,
-            'U2': U2,
-            'signed_diff': signed_diff,
-            'pX2': pX2,
-            'binaryResp': binaryResp,
-        }
-        
-    def generate_init_sequence(self, nExpt=1, seed=None):
-        """
-        Generate a randomized sequence of trial labels for AEPsych and MOCS trials,
-        ensuring that trials are evenly distributed across experimental blocks.
-
-        Parameters
-        ----------
-        nExpt : int, optional
-            Number of experiment configurations to generate sequences for. Default is 1.
-        seed : int, optional
-            Random seed for reproducible randomization. Default is None.
-
-        Returns
-        -------
-        None
-            The method updates the following attributes:
-            - `self.original_sequence`: A list of randomized trial sequences for all experiments.
-            - `self.updated_sequence`: A copy of the original sequences, which can be modified later.
-            - Initializes `self.trial_status` for tracking the status of each trial.
-
-        Notes
-        -----
-        - Each experimental block contains a balanced split of AEPsych and MOCS trials.
-        - Trial labels are formatted as 'AEPsych_{n}' or 'MOCS_{n}', where `{n}` is the trial index.
-        """
-        # Set up the random seed for reproducibility
-        rng = np.random.default_rng(seed)
-
-        # Initialize sequences
-        self.original_sequence = []
-        self.final_sequence = [[] for _ in range(nExpt)]
-
-        for n in range(nExpt):
-            # Create string labels for AEPsych and MOCS trials
-            list_str_AEPsych = [f'AEPsych_{n}' for n in range(self.nTrials_AEPsych)]
-            list_str_MOCS = [f'MOCS_{n}' for n in range(self.nTrials_MOCS)]
-
-            # Initialize a randomized list to store trial assignments
-            list_randomized = []
-            for n in range(self.nBlocks):
-                # Ensure AEPsych and MOCS trials are evenly split across blocks
-                temp_list = [0] * self.nTrials_AEPsych_perBlock + [1] * self.nTrials_MOCS_perBlock
-                rng.shuffle(temp_list)  # Shuffle the trial assignments within the block
-                list_randomized += temp_list
-
-            # Initialize `shuffled_labels` with the appropriate size and type
-            shuffled_labels = np.empty((self.nTrials_total,), dtype=object)
-
-            # Map randomized trial assignments to their corresponding labels
-            idx_match0 = np.where(np.array(list_randomized) == 0)[0]
-            shuffled_labels[idx_match0] = list_str_AEPsych
-
-            idx_match1 = np.where(np.array(list_randomized) == 1)[0]
-            shuffled_labels[idx_match1] = list_str_MOCS
-            
-            # --- Enforce that the first trial is AEPsych ---
-            if not str(shuffled_labels[0]).startswith("AEPsych_"):
-                # Find the first AEPsych label and swap it to the front
-                swap_idx = next(
-                    (i for i, lab in enumerate(shuffled_labels)
-                     if str(lab).startswith("AEPsych_")),
-                    None
-                )
-                if swap_idx is not None:
-                    shuffled_labels[0], shuffled_labels[swap_idx] = \
-                        shuffled_labels[swap_idx], shuffled_labels[0]
-            # -----------------------------------------------
-
-            # Append the randomized sequence to the original sequence list
-            self.original_sequence.append(shuffled_labels)
-
-        # Create a shallow copy of the original sequence for updates
-        self.updated_sequence = list(self.original_sequence)
-
-        # Initialize trial status tracking for all experiments
-        self._initialize_trial_status(nExpt)
+        self.data_MOCS[key].update({
+            "xref": xref,
+            "x1": x1,
+            "x2": x2,
+            "Uref": Uref,
+            "U1": U1,
+            "U2": U2,
+            "signed_diff": signed_diff,
+            "pX2": pX2,
+            "binaryResp": binaryResp,
+        })
