@@ -696,7 +696,7 @@ class SimulateTrialGivenWishart:
             self._stack_them_all(prefix="pregenerated_")
             
         # Record time
-        self.time_elapsed = time_elapsed 
+        self.time_elapsed = time_elapsed
 
 #%%
 class SimulateTrialGivenWishart_suprathres(SimulateTrialGivenWishart):
