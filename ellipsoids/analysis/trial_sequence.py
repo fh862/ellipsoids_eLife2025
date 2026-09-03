@@ -11,7 +11,7 @@ import numpy as np
 #%% create a new file
 class ExperimentTrialSequence:
     def __init__(self, nTrials_AEPsych, pregenerated_MOCS = None, nBlocks = 1, 
-                 break_trials = [], pregenerated_Sobol = None):
+                 break_trials = None, pregenerated_Sobol = None):
         """
         Initializes the ExperimentTrialSequence with the given number of trials and blocks.
         
@@ -46,7 +46,7 @@ class ExperimentTrialSequence:
         self._check_divisible()
         self.nTrials_total = nTrials_AEPsych + self.nTrials_MOCS  # Total number of trials across all blocks.
         self.nBumpUp_MOCS = 0 #the number of times that a MOCS trial is bumped up 
-        self.break_trials = break_trials
+        self.break_trials = [] if break_trials is None else list(break_trials)
         self.pregenerated_Sobol = pregenerated_Sobol
         
     def _check_divisible(self):
@@ -74,14 +74,27 @@ class ExperimentTrialSequence:
         else:
             self.nTrials_MOCS_perBlock = self.nTrials_MOCS // self.nBlocks
             
-    def _initialize_trial_status(self, nExpt):
+    def _format_trial_status_label(self, expt_idx, trial_idx):
+        """Return the initial status label for one planned trial."""
+        return (
+            f"Trial_{trial_idx}_"
+            f"{self.original_sequence[expt_idx][trial_idx]}"
+        )
+
+    def _initialize_trial_status(self, nExpt=None):
         """
         Initializes the trial_status list.
         """
-        trial_status = []
-        for i in range(nExpt):
-            trial_status.append([[f'Trial_{n}_'+self.original_sequence[i][n]] for n in range(self.nTrials_total)])
-        self.trial_status = trial_status
+        if nExpt is None:
+            nExpt = getattr(self, "nExpt", 1)
+
+        self.trial_status = [
+            [
+                [self._format_trial_status_label(expt_idx, trial_idx)]
+                for trial_idx in range(self.nTrials_total)
+            ]
+            for expt_idx in range(nExpt)
+        ]
             
     def _initialize_data_MOCS(self):
         """
@@ -131,6 +144,8 @@ class ExperimentTrialSequence:
         `signed_diff`, `pX1`). For actual experiments, only `xref`, `x1`, and `binaryResp` are updated.
 
         Args:
+            expt_idx (int): Scheduling-lane index used as the first element
+                of the ``(lane_idx, trial_idx)`` storage key.
             trial_idx (int): The trial index to update.
             xref (float): Reference stimulus value.
             x1 (float): Comparison stimulus value.
@@ -400,9 +415,6 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
         # Store the experiment index / label
         self.nExpt = nExpt
 
-        if break_trials is None:
-            break_trials = []
-
         # Call parent constructor to do all the standard setup
         super().__init__(
             nTrials_AEPsych=nTrials_AEPsych,
@@ -428,8 +440,9 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
         stimulus, response, and optional simulation fields remain ``None``
         until ``update_data_MOCS`` records the completed trial.
 
-        For a single lane, entries are keyed by ``trial_idx``. For multiple
-        lanes, entries are keyed by ``(lane_idx, trial_idx)``.
+        Entries are always keyed by ``(lane_idx, trial_idx)``, including when
+        there is only one lane. This keeps the storage interface consistent
+        across single- and multi-lane suprathreshold experiments.
         """
         def empty_entry(lane_idx, trial_idx):
             return {
@@ -448,27 +461,31 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
                 "binaryResp": None,
             }
         
-        if self.nExpt == 1:
-            self.data_MOCS = {
-                trial: empty_entry(0, trial)
-                for trial in range(self.nTrials_MOCS)
-            }
-        else:
-            self.data_MOCS = {
-                (lane, trial): empty_entry(lane, trial)
-                for lane in range(self.nExpt)
-                for trial in range(self.nTrials_MOCS)
-            }
+        self.data_MOCS = {
+            (lane, trial): empty_entry(lane, trial)
+            for lane in range(self.nExpt)
+            for trial in range(self.nTrials_MOCS)
+        }
             
-    def _initialize_trial_status(self, nExpt):
+    def _format_trial_status_label(self, lane_idx, trial_idx):
         """
-        Initializes the trial_status list.
+        Return the initial status label for one suprathreshold trial.
+
+        ``Lane`` identifies the independently scheduled trial stream whose
+        counter, timeout fallback, and MOCS bumping are managed together. 
+
+        For an AEPsych trial, the lane index is also the AEPsych condition
+        index. For a MOCS trial, however, the lane index is not its actual 
+        stimulus-condition index. MOCS conditions are shuffled across lanes, 
+        so their actual condition is stored separately in
+        ``pregenerated_MOCS['condition_idx']`` and in the
+        corresponding ``data_MOCS`` record entry. Using ``Lane`` rather than
+        ``Cond`` therefore avoids mislabeling interleaved MOCS trials.
         """
-        trial_status = []
-        for i in range(nExpt):
-            trial_status.append([[f'Trial_{n}_Lane_{i}_'+self.original_sequence[i][n]] \
-                                 for n in range(self.nTrials_total)])
-        self.trial_status = trial_status
+        return (
+            f"Trial_{trial_idx}_Lane_{lane_idx}_"
+            f"{self.original_sequence[lane_idx][trial_idx]}"
+        )
 
     def generate_init_sequence(self, seed=None):
         return super().generate_init_sequence(
@@ -496,11 +513,7 @@ class ExperimentTrialSequence_suprathres(ExperimentTrialSequence):
             signed_diff (float, optional): Signed difference between stimuli (simulation only).
             pX2 (float, optional): Probability of identifying the comp#2 as more different from the reference (simulation only).
         """
-        # Choose key type depending on whether there are multiple experiments
-        if getattr(self, "nExpt", 1) == 1:
-            key = trial_idx
-        else:
-            key = (expt_idx, trial_idx)
+        key = (expt_idx, trial_idx)
     
         self.data_MOCS[key].update({
             "xref": xref,
