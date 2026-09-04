@@ -246,9 +246,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
             
             #if the time elapsed exceeds the max wait time
             if elapsed_time > max_wait_time_ii:
-                print('Reached the maximum shift for the MOCS trials within a block!')
                 #find the next available MOCS trial in the list
-                print(f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated Sobol trial...")
                 sobol_idx = self.keep_track_trials_finished_pregenSobol
                                 
                 #handle the case in which pregenerated Sobol trials ran out
@@ -263,6 +261,9 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                 # Get the stimulus information
                 xref = trial_sequence.pregenerated_Sobol['xref'][sobol_idx]
                 x1 = trial_sequence.pregenerated_Sobol['x1'][sobol_idx]
+                
+                print(f"AEPsych still pending after {elapsed_time:.2f}s wait. "
+                      f"Presenting pregenerated Sobol_{sobol_idx}.")
     
                 # Send the stimulus information and wait for the subject to make a response
                 binaryResp = self._send_stim_and_wait_for_resp(trial_sequence.nTrials_total + sobol_idx, 
