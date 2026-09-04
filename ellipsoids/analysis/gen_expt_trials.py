@@ -15,13 +15,14 @@ from analysis.sim_trials import SimulateTrialGivenWishart
 #%%
 class ExptTrialGeneration(SimulateTrialGivenWishart):
     """
-    ExptTrialGeneration extends SimulateTrialGivenWishart to allow for additional 
-    functionalities in trial generation, such as custom trial sequences, 
-    data storage, or extended experimental configurations.
+    Run a participant experiment using trial-generation utilities inherited
+    from ``SimulateTrialGivenWishart``.
 
-    Inherits all methods and properties from SimulateTrialGivenWishart.
-
-    Additional parameters and methods can be added here as needed.
+    The inherited interface represents configurations as ``config_all`` and
+    records their count in ``numConfig``. This class retains that representation
+    for compatibility, but its ``run_experiment_wMOCSinserted`` workflow
+    currently supports exactly one configured AEPsych condition. ``numConfig``
+    is therefore also used to validate that restriction before the run starts.
     """
     
     def __init__(self, expt_dim, config_all, flag_noMore_MOCS = False, 
@@ -38,7 +39,10 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                 if we do, set it to False, otherwise, set it to True
             max_shifts_MOCS: the maximum trials ahead of MOCS relative to AEPsych that's
                 allowed when AEPsych is taking its time to determine the next trial
-            config_all (list of str): Configuration strings for each trial setup.
+            config_all (list of str): AEPsych configuration strings. The
+                list-based interface is inherited from
+                ``SimulateTrialGivenWishart``; this participant experiment
+                currently requires the list to contain exactly one string.
             ref (list, optional): Reference stimuli configurations.
             pseudo_randomize (bool, optional): If True, configures trials in a pseudo-random order.
             val_scaler (list, optional): Scaling factors to adjust trial values dynamically.
@@ -49,6 +53,10 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                          pseudo_randomize_seed = pseudo_randomize_seed,
                          val_scaler = val_scaler, 
                          customized_val_scaler = customized_val_scaler)
+
+        # The parent stores ``config_all`` and ``numConfig`` using its general
+        # multi-configuration representation. The participant runner below
+        # checks ``numConfig`` and currently accepts only one condition.
         
         # Store additional parameters specific to ExptTrialGeneration
         # set up communicator via a text file in a network disk
@@ -149,8 +157,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
             time.sleep(self.communicator.retry_delay)
     
         return binaryResp
-    
-    #%%
+
     def _monitor_time_insert_MOCS_trials(self, start_time, max_wait_time,
                                          trial_sequence, expt_counter, trial_counter, 
                                          stop_event, event_triggered):
@@ -223,11 +230,14 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                 self.keep_track_trials_finished += 1
                 
                 trial_sequence.final_sequence[expt_counter].append(trial_placement_id)
-            time.sleep(0.1)  # Check every 10 ms
+            time.sleep(0.1) 
             
     def _monitor_time_insert_pregenSobol_trials(self, start_time, max_wait_time,
                                          trial_sequence, expt_counter, trial_counter, 
                                          stop_event, event_triggered):     
+        #total number of pregenerated sobol trials
+        n_sobol_trials = len(trial_sequence.pregenerated_Sobol["xref"])
+        
         num_bumped_up_Sobol = 0
         while not stop_event.is_set():  # Exit if stop_event is set
             elapsed_time = time.time() - start_time
@@ -240,6 +250,15 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                 #find the next available MOCS trial in the list
                 print(f"Deadline exceeded ({elapsed_time:.2f}s). Running a pre-generated Sobol trial...")
                 sobol_idx = self.keep_track_trials_finished_pregenSobol
+                                
+                #handle the case in which pregenerated Sobol trials ran out
+                #(unlikely because I pregenerated a lot of them)
+                if sobol_idx >= n_sobol_trials:
+                    print(
+                        "All pregenerated Sobol trials have been used. "
+                        "Waiting for AEPsych without another fallback trial."
+                    )
+                    return
     
                 # Get the stimulus information
                 xref = trial_sequence.pregenerated_Sobol['xref'][sobol_idx]
@@ -266,7 +285,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                 num_bumped_up_Sobol += 1
                 self.keep_track_trials_finished_pregenSobol += 1
                 
-            time.sleep(0.1)  # Check every 10 ms
+            time.sleep(0.1)  # Check every 100 ms
             
     def pause_experiment_for_breaks(self):
         # Break time
@@ -303,7 +322,20 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
             max_wait_time (list): Time limits for AEPsych trial generation. The first 
                 missed presentation uses max_wait_time[0]; subsequent misses use 
                 max_wait_time[1] (accounting for response and inter-trial interval delays).
+
+        Notes:
+            This method supports exactly one configured AEPsych condition. It
+            does not support interleaving multiple conditions or tasks.
+
+        Raises:
+            NotImplementedError: If more than one configuration is provided.
         """    
+        if self.numConfig != 1:
+            raise NotImplementedError(
+                "run_experiment_wMOCSinserted currently supports exactly "
+                "one configured AEPsych condition."
+            )
+
         time_elapsed = []  # List to store elapsed time for AEPsych trials
         
         #trial_counter is defined a little bit unsual: it's not the actual counter
@@ -429,7 +461,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                                 outcome=binaryResp)
                                 
                     # Update trial-related data
-                    self._update_trial_lists(xref, x1, binaryResp)
+                    self._update_trial_lists(xref=xref, x1=x1, binaryResp=binaryResp)
                     self.keep_track_trials_finished += 1
                     
                     # Record elapsed time for the trial
