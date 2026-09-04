@@ -434,14 +434,13 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                         monitor_thread.start()  
                         
                     # Request a new trial configuration from AEPsych
+                    ask_start_time = time.time() # Measure only the blocking AEPsych request.
                     trial_AEPsych = client.ask()
+                    ask_end_time = time.time() #record the time AEPsych hands back an answer
                     
                     # Once AEPsych finishes, stop the monitoring thread
                     stop_event.set()
                     monitor_thread.join()  # Ensure the thread finishes before continuing
-                    
-                    #record the time AEPsych hands back an answer
-                    end_time = time.time()
                     
                     # Extract stimulus dimensions for the trial
                     trial_val = [trial_AEPsych["config"][s][0] for s in self.parnames]
@@ -465,7 +464,7 @@ class ExptTrialGeneration(SimulateTrialGivenWishart):
                     self.keep_track_trials_finished += 1
                     
                     # Record elapsed time for the trial
-                    trial_duration = end_time - start_time
+                    trial_duration = ask_end_time - ask_start_time
                     time_elapsed.append(trial_duration)
                     
                     # Mark trial as completed with appropriate status
