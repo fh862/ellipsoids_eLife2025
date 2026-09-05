@@ -725,7 +725,7 @@ def symmetric_angle_difference(angle1, angle2):
 
 def compute_radii_scaler_to_reach_targetPC(pC_target, ndims = 2, lb = 2, ub = 3,
                                            nsteps = 100, nz = int(1e4),
-                                           flag_visualize = False):
+                                           flag_visualize = False, seed = None):
     """
     Computes the optimal scaling factor (radii) to reach a target probability of 
     correct classification (pC_target) between three points in a 2D bivariate 
@@ -738,6 +738,8 @@ def compute_radii_scaler_to_reach_targetPC(pC_target, ndims = 2, lb = 2, ub = 3,
     - ub: Upper bound of the scaler (radius) range to search over.
     - nsteps: Number of steps for the scaler search range.
     - nz: Number of samples to generate for the distribution.
+    - seed: Optional seed for a local NumPy generator. None uses fresh entropy.
+      This function does not change NumPy's global random state.
     
     Returns:
     - opt_scaler: The scaler that yields the probability closest to the target pC_target.
@@ -745,6 +747,7 @@ def compute_radii_scaler_to_reach_targetPC(pC_target, ndims = 2, lb = 2, ub = 3,
     """
     
     # Define the mean vector and covariance matrix for the bivariate Gaussian distribution
+    rng = np.random.default_rng(seed)
     mean = [0] * ndims
     cov = np.eye(ndims)  
     
@@ -758,12 +761,12 @@ def compute_radii_scaler_to_reach_targetPC(pC_target, ndims = 2, lb = 2, ub = 3,
     for idx, scaler in enumerate(z2_scaler):            
         # Draw nz samples from the bivariate Gaussian distribution for z0 and z1 
         #(two independent points)
-        z0 = np.random.multivariate_normal(mean, cov, nz)
-        z1 = np.random.multivariate_normal(mean, cov, nz)
+        z0 = rng.multivariate_normal(mean, cov, nz)
+        z1 = rng.multivariate_normal(mean, cov, nz)
     
         # For z2, apply a center offset based on the current scaler value
         z2_center = np.array([0] *(ndims - 1) + [scaler])
-        z2 = np.random.multivariate_normal(mean, cov, nz) + z2_center[None, :]
+        z2 = rng.multivariate_normal(mean, cov, nz) + z2_center[None, :]
     
         # Compute pairwise differences between points z0, z1, and z2
         r01 = z0 - z1   
