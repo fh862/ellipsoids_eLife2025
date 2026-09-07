@@ -87,6 +87,8 @@ color_thres_data.load_model_fits(CIE_version = coloralg)
 
 # Retrieve the fitted Wishart-model predictions from the loaded dataset
 gt_Wishart  = color_thres_data.get_data('model_pred_Wishart', dataset = 'Wishart_data')
+# Use a tiny bandwidth to make smoothing of the simulated choice probability negligible.
+gt_Wishart.opt_params['bandwidth'] = 1e-8
 
 #%% 
 #------------------------------------------------------------------------------ 

@@ -81,6 +81,9 @@ gt_file_path = os.path.join(file_dir, file_name)
 # Load ground-truth model object + metadata
 with open(gt_file_path, "rb") as f:
     gt_Wishart = pickled.load(f)
+# Use a tiny bandwidth to make smoothing of the simulated choice probability negligible.
+gt_Wishart.opt_params['bandwidth'] = 1e-8
+    
 color_thres_data = gt_Wishart["color_thres_data"]
 ndims = color_thres_data.color_dimension         
 

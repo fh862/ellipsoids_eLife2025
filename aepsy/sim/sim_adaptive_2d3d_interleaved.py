@@ -92,6 +92,8 @@ color_thres_data.load_model_fits(CIE_version = coloralg)
 # Retrieve specific data from Wishart_data
 gt_Wishart  = color_thres_data.get_data(f'model_pred_Wishart_grid{num_grid_pts}',
                                         dataset = 'Wishart_data')
+# Use a tiny bandwidth to make smoothing of the simulated choice probability negligible.
+gt_Wishart.opt_params['bandwidth'] = 1e-8
 
 grid = color_thres_data.get_data(f'grid{num_grid_pts}',
                                  dataset = 'Wishart_data')
